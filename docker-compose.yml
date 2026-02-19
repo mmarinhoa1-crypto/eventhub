@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: eventhub_postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: eventhub
+      POSTGRES_PASSWORD: EventHub2026Prod!
+      POSTGRES_DB: eventhub
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  evolution_api:
+    image: atendai/evolution-api:v1.8.7
+    container_name: evolution_api
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      AUTHENTICATION_API_KEY: MINHA_CHAVE_SECRETA_2026
+    volumes:
+      - evolution_data:/evolution/instances
+
+  eventhub-backend:
+    build: ./backend
+    container_name: eventhub_backend
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./backend/.env
+    volumes:
+      - eventhub_data:/app/data
+    depends_on:
+      - postgres
+      - evolution_api
+
+volumes:
+  pg_data:
+    driver: local
+  evolution_data:
+    driver: local
+  eventhub_data:
+    driver: local
