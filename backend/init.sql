@@ -137,6 +137,7 @@ CREATE TABLE IF NOT EXISTS cronograma_marketing (
   hora_publicacao VARCHAR(20) DEFAULT '',
   conteudo TEXT DEFAULT '',
   hashtags TEXT DEFAULT '',
+  collaborators TEXT DEFAULT '',
   status VARCHAR(50) DEFAULT 'pendente',
   criado_em TIMESTAMP DEFAULT NOW()
 );
@@ -153,6 +154,69 @@ CREATE TABLE IF NOT EXISTS materiais_marketing (
   data_vencimento VARCHAR(20) DEFAULT '',
   notas TEXT DEFAULT '',
   concluido BOOLEAN DEFAULT false,
+  criado_em TIMESTAMP DEFAULT NOW()
+);
+
+-- PRODUTOS DE CONSUMO (BEBIDAS)
+CREATE TABLE IF NOT EXISTS produtos_consumo (
+  id SERIAL PRIMARY KEY,
+  org_id INTEGER REFERENCES organizacoes(id),
+  nome VARCHAR(255) NOT NULL,
+  categoria VARCHAR(100) NOT NULL,
+  unidade VARCHAR(50) DEFAULT 'unidade',
+  volume_ml INTEGER DEFAULT 0,
+  ativo BOOLEAN DEFAULT true,
+  criado_em TIMESTAMP DEFAULT NOW()
+);
+
+-- SETORES DE CONSUMO (open bar / bar vendido)
+CREATE TABLE IF NOT EXISTS setores_consumo (
+  id SERIAL PRIMARY KEY,
+  org_id INTEGER REFERENCES organizacoes(id),
+  id_evento INTEGER REFERENCES eventos(id) ON DELETE CASCADE,
+  nome VARCHAR(255) NOT NULL,
+  tipo VARCHAR(50) NOT NULL DEFAULT 'open',
+  publico_real INTEGER NOT NULL DEFAULT 0,
+  criado_em TIMESTAMP DEFAULT NOW()
+);
+
+-- CONSUMO POR EVENTO/SETOR
+CREATE TABLE IF NOT EXISTS consumo_eventos (
+  id SERIAL PRIMARY KEY,
+  org_id INTEGER REFERENCES organizacoes(id),
+  id_evento INTEGER REFERENCES eventos(id),
+  id_setor INTEGER REFERENCES setores_consumo(id) ON DELETE CASCADE,
+  id_produto INTEGER REFERENCES produtos_consumo(id) ON DELETE CASCADE,
+  quantidade_consumida DECIMAL(10,2) NOT NULL DEFAULT 0,
+  publico_real INTEGER NOT NULL DEFAULT 0,
+  notas TEXT DEFAULT '',
+  criado_em TIMESTAMP DEFAULT NOW(),
+  atualizado_em TIMESTAMP DEFAULT NOW()
+);
+
+-- PEDIDOS DE BEBIDAS
+CREATE TABLE IF NOT EXISTS pedidos_bebidas (
+  id SERIAL PRIMARY KEY,
+  org_id INTEGER REFERENCES organizacoes(id),
+  id_evento INTEGER REFERENCES eventos(id),
+  nome VARCHAR(255) DEFAULT '',
+  publico_estimado INTEGER NOT NULL DEFAULT 0,
+  margem_seguranca DECIMAL(4,2) DEFAULT 1.30,
+  status VARCHAR(50) DEFAULT 'rascunho',
+  notas TEXT DEFAULT '',
+  criado_em TIMESTAMP DEFAULT NOW(),
+  atualizado_em TIMESTAMP DEFAULT NOW()
+);
+
+-- ITENS DO PEDIDO DE BEBIDAS
+CREATE TABLE IF NOT EXISTS itens_pedido (
+  id SERIAL PRIMARY KEY,
+  id_pedido INTEGER REFERENCES pedidos_bebidas(id) ON DELETE CASCADE,
+  id_produto INTEGER REFERENCES produtos_consumo(id),
+  media_por_pessoa DECIMAL(10,4) DEFAULT 0,
+  quantidade_base DECIMAL(10,2) DEFAULT 0,
+  quantidade_final DECIMAL(10,2) DEFAULT 0,
+  quantidade_manual DECIMAL(10,2),
   criado_em TIMESTAMP DEFAULT NOW()
 );
 

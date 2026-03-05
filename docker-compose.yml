@@ -4,7 +4,7 @@ services:
     container_name: eventhub_postgres
     restart: always
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     environment:
       POSTGRES_USER: eventhub
       POSTGRES_PASSWORD: EventHub2026Prod!
@@ -17,7 +17,7 @@ services:
     container_name: evolution_api
     restart: always
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     environment:
       AUTHENTICATION_API_KEY: MINHA_CHAVE_SECRETA_2026
     volumes:
@@ -28,14 +28,24 @@ services:
     container_name: eventhub_backend
     restart: always
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     env_file:
       - ./backend/.env
     volumes:
       - eventhub_data:/app/data
+      - eventhub_uploads:/app/uploads
     depends_on:
       - postgres
       - evolution_api
+
+  eventhub-frontend:
+    build: ./frontend
+    container_name: eventhub_frontend
+    restart: always
+    ports:
+      - "127.0.0.1:8081:80"
+    depends_on:
+      - eventhub-backend
 
 volumes:
   pg_data:
@@ -43,4 +53,6 @@ volumes:
   evolution_data:
     driver: local
   eventhub_data:
+    driver: local
+  eventhub_uploads:
     driver: local

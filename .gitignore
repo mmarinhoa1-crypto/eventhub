@@ -1,0 +1,14 @@
+# Dependências
+node_modules/
+
+# Variáveis de ambiente
+.env
+
+# IDE
+.vscode/
+
+# Backups
+*.bak
+
+# Build
+frontend/dist/
