@@ -92,13 +92,13 @@ export default function Sidebar() {
   return (
     <nav
       ref={navRef}
-      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50"
+      className="fixed top-4 left-1/2 -translate-x-1/2 z-50"
       style={{ maxWidth: 'calc(100vw - 2rem)' }}
     >
       {/* Submenus — sobem acima da barra */}
       {openMenu === 'marketing' && showMarketing && (
         <div
-          className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 rounded-2xl overflow-hidden shadow-2xl min-w-[180px]"
+          className="absolute top-full mt-3 left-1/2 -translate-x-1/2 rounded-2xl overflow-hidden shadow-2xl min-w-[180px]"
           style={submenuStyle}
         >
           <div className="px-2 py-2 space-y-0.5">
@@ -117,7 +117,7 @@ export default function Sidebar() {
 
       {openMenu === 'financeiro' && showFinanceiro && (
         <div
-          className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 rounded-2xl overflow-hidden shadow-2xl min-w-[180px]"
+          className="absolute top-full mt-3 left-1/2 -translate-x-1/2 rounded-2xl overflow-hidden shadow-2xl min-w-[180px]"
           style={submenuStyle}
         >
           <div className="px-2 py-2 space-y-0.5">
@@ -137,6 +137,10 @@ export default function Sidebar() {
         className="flex items-center gap-1 px-3 py-2.5 rounded-2xl shadow-2xl"
         style={barStyle}
       >
+        {/* Logo 314 */}
+        <img src="/logo.png" alt="314 Produções" className="h-7 w-auto mr-1 flex-shrink-0" />
+        <div className={`w-px h-5 mx-1 ${divider}`} />
+
         {/* Links de navegação */}
         {mainLinks
           .filter(l => l.roles.includes(funcao))
