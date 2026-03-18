@@ -16,8 +16,8 @@ function tempoAtras(dataStr) {
 }
 
 const TIPO_CONFIG = {
-  novo_evento: { icon: Calendar, bg: 'bg-blue-100', color: 'text-blue-600', label: 'Novo evento' },
-  demanda_aprovacao: { icon: FileText, bg: 'bg-amber-100', color: 'text-amber-600', label: 'Aprovação' },
+  novo_evento: { icon: Calendar, bg: 'bg-blue-100 dark:bg-blue-500/20', color: 'text-blue-600 dark:text-blue-400', label: 'Novo evento' },
+  demanda_aprovacao: { icon: FileText, bg: 'bg-amber-100 dark:bg-amber-500/20', color: 'text-amber-600 dark:text-amber-400', label: 'Aprovação' },
 }
 
 // Swipeable notification item
@@ -86,7 +86,7 @@ function NotificationItem({ notif, onDismiss, onRead }) {
         onPointerCancel={handlePointerUp}
         onClick={handleClick}
         className={`flex items-start gap-3 px-4 py-3 rounded-xl cursor-pointer select-none transition-colors
-          ${notif.lida ? 'bg-gray-50 hover:bg-gray-100' : 'bg-white hover:bg-blue-50 border border-blue-100 shadow-sm'}`}
+          ${notif.lida ? 'bg-gray-50 hover:bg-gray-100' : 'bg-white dark:bg-white/[0.04] hover:bg-blue-50 dark:hover:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 shadow-sm'}`}
       >
         {/* Icon */}
         <div className={`w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center ${cfg.bg}`}>
@@ -188,7 +188,7 @@ export default function NotificationPanel() {
 
       {/* Panel */}
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-[360px] max-h-[520px] bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 flex flex-col overflow-hidden"
+        <div className="absolute right-0 top-full mt-2 w-[360px] max-h-[520px] bg-white dark:bg-[rgba(19,19,22,0.95)] dark:backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-100 dark:border-white/[0.08] z-50 flex flex-col overflow-hidden"
           style={{ animation: 'fadeSlideDown 0.18s ease' }}>
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
@@ -196,7 +196,7 @@ export default function NotificationPanel() {
               <Bell size={16} className="text-gray-600" />
               <span className="font-semibold text-gray-800 text-sm">Notificações</span>
               {naoLidas > 0 && (
-                <span className="text-xs font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
+                <span className="text-xs font-bold bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full">
                   {naoLidas} nova{naoLidas > 1 ? 's' : ''}
                 </span>
               )}
@@ -204,7 +204,7 @@ export default function NotificationPanel() {
             <div className="flex items-center gap-1">
               {naoLidas > 0 && (
                 <button onClick={marcarTodasLidas}
-                  className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700 font-semibold px-2 py-1 rounded-lg hover:bg-blue-50 transition">
+                  className="flex items-center gap-1 text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-semibold px-2 py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-500/10 transition">
                   <CheckCheck size={13} />
                   Marcar todas
                 </button>

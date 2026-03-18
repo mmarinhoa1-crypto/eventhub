@@ -4,8 +4,8 @@ import api from '../../api/client'
 import toast from 'react-hot-toast'
 
 const TIPOS_SETOR = [
-  { value: 'open', label: 'Open Bar', color: 'bg-green-100 text-green-700' },
-  { value: 'vendido', label: 'Bar Vendido', color: 'bg-orange-100 text-orange-700' },
+  { value: 'open', label: 'Open Bar', color: 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400' },
+  { value: 'vendido', label: 'Bar Vendido', color: 'bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400' },
 ]
 
 export default function RegistrosConsumo() {
@@ -231,7 +231,7 @@ export default function RegistrosConsumo() {
               {!criandoSetor && (
                 <button
                   onClick={() => setCriandoSetor(true)}
-                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition"
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition"
                 >
                   <Plus size={14} /> Novo Setor
                 </button>

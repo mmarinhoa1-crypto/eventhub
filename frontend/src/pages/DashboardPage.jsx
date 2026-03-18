@@ -10,13 +10,13 @@ function fmt(v) { return 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimu
 function fmtK(v) { return v >= 1000000 ? 'R$ ' + (v / 1000000).toFixed(2) + 'M' : v >= 1000 ? 'R$ ' + (v / 1000).toFixed(1) + 'K' : fmt(v) }
 
 const statusStyle = {
-  pendente:    { dot: 'bg-yellow-400', label: 'Pendente',  pill: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
-  rascunho:    { dot: 'bg-yellow-400', label: 'Rascunho',  pill: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
-  em_producao: { dot: 'bg-blue-400',   label: 'Produção',  pill: 'bg-blue-50 text-blue-700 border-blue-200' },
-  producao:    { dot: 'bg-blue-400',   label: 'Produção',  pill: 'bg-blue-50 text-blue-700 border-blue-200' },
-  aprovado:    { dot: 'bg-green-400',  label: 'Aprovado',  pill: 'bg-green-50 text-green-700 border-green-200' },
-  pronto:      { dot: 'bg-green-400',  label: 'Pronto',    pill: 'bg-green-50 text-green-700 border-green-200' },
-  publicado:   { dot: 'bg-purple-400', label: 'Publicado', pill: 'bg-purple-50 text-purple-700 border-purple-200' },
+  pendente:    { dot: 'bg-yellow-400', label: 'Pendente',  pill: 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-500/30' },
+  rascunho:    { dot: 'bg-yellow-400', label: 'Rascunho',  pill: 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-500/30' },
+  em_producao: { dot: 'bg-blue-400',   label: 'Produção',  pill: 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/30' },
+  producao:    { dot: 'bg-blue-400',   label: 'Produção',  pill: 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/30' },
+  aprovado:    { dot: 'bg-green-400',  label: 'Aprovado',  pill: 'bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/30' },
+  pronto:      { dot: 'bg-green-400',  label: 'Pronto',    pill: 'bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/30' },
+  publicado:   { dot: 'bg-purple-400', label: 'Publicado', pill: 'bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/30' },
 }
 
 const COLORS_REC  = ['#2563eb', '#10b981', '#f59e0b', '#ef4444']
@@ -34,10 +34,10 @@ function ChartTooltip({ active, payload }) {
 
 function KpiCard({ icon: Icon, label, value, sub, color, onClick }) {
   const colors = {
-    blue:   { icon: 'bg-blue-50 text-blue-500',   value: 'text-blue-600',   border: 'border-blue-100 hover:border-blue-200' },
-    green:  { icon: 'bg-green-50 text-green-500',  value: 'text-green-600',  border: 'border-green-100 hover:border-green-200' },
-    red:    { icon: 'bg-red-50 text-red-500',      value: 'text-red-500',    border: 'border-red-100 hover:border-red-200' },
-    yellow: { icon: 'bg-yellow-50 text-yellow-500',value: 'text-yellow-600', border: 'border-yellow-100 hover:border-yellow-200' },
+    blue:   { icon: 'bg-blue-50 dark:bg-blue-500/10 text-blue-500',   value: 'text-blue-600 dark:text-blue-400',   border: 'border-blue-100 hover:border-blue-200' },
+    green:  { icon: 'bg-green-50 dark:bg-green-500/10 text-green-500',  value: 'text-green-600 dark:text-green-400',  border: 'border-green-100 hover:border-green-200' },
+    red:    { icon: 'bg-red-50 dark:bg-red-500/10 text-red-500',      value: 'text-red-500',    border: 'border-red-100 hover:border-red-200' },
+    yellow: { icon: 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-500',value: 'text-yellow-600 dark:text-yellow-400', border: 'border-yellow-100 hover:border-yellow-200' },
   }
   const c = colors[color]
   return (
@@ -181,7 +181,7 @@ export default function DashboardPage() {
       {/* ── Hero — Saldo Geral ───────────────────── */}
       <div
         className="rounded-2xl p-6 text-white relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #3b82f6 100%)' }}
+        style={{ background: 'var(--gradient-info)' }}
       >
         {/* Círculos decorativos */}
         <div className="absolute -top-12 -right-12 w-44 h-44 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }} />
@@ -245,16 +245,16 @@ export default function DashboardPage() {
       {/* ── Gráficos + Posts Hoje ─────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Posts hoje */}
-        <div className="bg-white rounded-2xl border-2 border-blue-100 overflow-hidden flex flex-col">
-          <div className="px-5 py-3 border-b border-blue-50 flex items-center justify-between bg-blue-50/60">
+        <div className="bg-white rounded-2xl border-2 border-blue-100 dark:border-blue-500/30 overflow-hidden flex flex-col">
+          <div className="px-5 py-3 border-b border-blue-50 dark:border-blue-500/20 flex items-center justify-between bg-blue-50/60 dark:bg-blue-500/10">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-blue-400">Hoje</p>
-              <p className="text-base font-extrabold text-blue-700">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-blue-400 dark:text-blue-400">Hoje</p>
+              <p className="text-base font-extrabold text-blue-700 dark:text-blue-400">
                 {new Date().toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' })}
               </p>
             </div>
             {postsHoje.length > 0 && (
-              <span className="text-xs font-extrabold text-blue-600 bg-blue-100 px-2.5 py-1 rounded-full">
+              <span className="text-xs font-extrabold text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-500/20 px-2.5 py-1 rounded-full">
                 {postsHoje.length} post{postsHoje.length > 1 ? 's' : ''}
               </span>
             )}
@@ -273,7 +273,7 @@ export default function DashboardPage() {
                   key={post.id}
                   onClick={() => selectPost(post)}
                   className={`rounded-xl p-3 cursor-pointer border transition-all ${
-                    isSel ? 'bg-blue-50 border-blue-300 ring-1 ring-blue-200' : 'bg-gray-50 border-gray-100 hover:border-gray-200 hover:shadow-sm'
+                    isSel ? 'bg-blue-50 dark:bg-blue-500/10 border-blue-300 dark:border-blue-500/30 ring-1 ring-blue-200 dark:ring-blue-500/20' : 'bg-gray-50 border-gray-100 hover:border-gray-200 hover:shadow-sm'
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-1">
@@ -284,7 +284,7 @@ export default function DashboardPage() {
                     {post.hora_publicacao && <span className="text-[10px] text-gray-400">{post.hora_publicacao}</span>}
                     {post.plataforma && <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{post.plataforma}</span>}
                   </div>
-                  {post.evento_nome && <p className="text-[10px] text-blue-500 font-semibold mt-1 truncate">{post.evento_nome}</p>}
+                  {post.evento_nome && <p className="text-[10px] text-blue-500 dark:text-blue-400 font-semibold mt-1 truncate">{post.evento_nome}</p>}
                 </div>
               )
             })}
@@ -300,7 +300,7 @@ export default function DashboardPage() {
 
       {/* Detail panel do post selecionado */}
       {selectedPost && (
-        <div className="bg-white rounded-2xl border border-blue-100 shadow-lg overflow-hidden animate-fadeIn">
+        <div className="bg-white rounded-2xl border border-blue-100 dark:border-blue-500/30 shadow-lg overflow-hidden animate-fadeIn">
           <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <span className={`w-2.5 h-2.5 rounded-full ${(statusStyle[selectedPost.status] || statusStyle.pendente).dot}`} />
@@ -362,7 +362,7 @@ export default function DashboardPage() {
               {selectedPost.hashtags && (
                 <div className="bg-gray-50 rounded-xl px-3 py-2.5">
                   <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1">Hashtags</p>
-                  <p className="text-xs text-blue-500">{selectedPost.hashtags}</p>
+                  <p className="text-xs text-blue-500 dark:text-blue-400">{selectedPost.hashtags}</p>
                 </div>
               )}
             </div>
@@ -376,7 +376,7 @@ export default function DashboardPage() {
           <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Próximo Evento</p>
           <div
             onClick={() => navigate('/eventos/' + proximo.id)}
-            className="bg-white rounded-2xl border border-gray-100 hover:shadow-lg hover:border-blue-100 transition-all duration-200 cursor-pointer overflow-hidden"
+            className="bg-white rounded-2xl border border-gray-100 hover:shadow-lg hover:border-blue-100 dark:hover:border-blue-500/30 transition-all duration-200 cursor-pointer overflow-hidden"
           >
             <div className="flex items-stretch">
               <div className="w-1.5 flex-shrink-0" style={{ background: 'linear-gradient(180deg, #2563eb, #60a5fa)' }} />
@@ -401,7 +401,7 @@ export default function DashboardPage() {
                     {(() => {
                       const s = (proximo.receitas || 0) - (proximo.despesas || 0)
                       return (
-                        <span className={`px-4 py-1.5 rounded-full text-sm font-extrabold border ${s >= 0 ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-600 border-red-200'}`}>
+                        <span className={`px-4 py-1.5 rounded-full text-sm font-extrabold border ${s >= 0 ? 'bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/30' : 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-500/30'}`}>
                           {s >= 0 ? '+' : ''}{fmtK(s)}
                         </span>
                       )
@@ -410,13 +410,13 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
-                  <div className="bg-blue-50 rounded-xl px-4 py-3 border border-blue-100">
+                  <div className="bg-blue-50 dark:bg-blue-500/10 rounded-xl px-4 py-3 border border-blue-100 dark:border-blue-500/20">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-blue-400 mb-1">Despesas</p>
-                    <p className="text-base font-extrabold text-blue-700">{fmtK(proximo.despesas || 0)}</p>
+                    <p className="text-base font-extrabold text-blue-700 dark:text-blue-400">{fmtK(proximo.despesas || 0)}</p>
                   </div>
-                  <div className="bg-green-50 rounded-xl px-4 py-3 border border-green-100">
+                  <div className="bg-green-50 dark:bg-green-500/10 rounded-xl px-4 py-3 border border-green-100 dark:border-green-500/20">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-green-400 mb-1">Receitas</p>
-                    <p className="text-base font-extrabold text-green-700">{fmtK(proximo.receitas || 0)}</p>
+                    <p className="text-base font-extrabold text-green-700 dark:text-green-400">{fmtK(proximo.receitas || 0)}</p>
                   </div>
                   <div className="bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">Orçamento</p>
@@ -438,7 +438,7 @@ export default function DashboardPage() {
             <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
               <button onClick={() => setShowTodos(!showTodos)} className="flex items-center gap-2.5">
                 <h3 className="text-sm font-extrabold text-gray-900">Todos os Eventos</h3>
-                <span className="text-xs font-extrabold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{outrosEventos.length}</span>
+                <span className="text-xs font-extrabold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-2 py-0.5 rounded-full">{outrosEventos.length}</span>
                 <ChevronRight size={15} className={`text-gray-400 transition-transform duration-200 ${showTodos ? 'rotate-90' : ''}`} />
               </button>
               {showTodos && (
@@ -463,8 +463,8 @@ export default function DashboardPage() {
                     return (
                       <div key={ev.id} onClick={() => navigate('/eventos/' + ev.id)} className="px-5 py-3.5 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition">
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
-                            <Calendar size={16} className="text-blue-500" />
+                          <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                            <Calendar size={16} className="text-blue-500 dark:text-blue-400" />
                           </div>
                           <div className="min-w-0">
                             <p className="text-sm font-bold text-gray-800 truncate">{ev.nome}</p>
@@ -475,7 +475,7 @@ export default function DashboardPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-3 flex-shrink-0 ml-4">
-                          <span className={`text-xs font-extrabold px-2.5 py-1 rounded-full ${saldo >= 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
+                          <span className={`text-xs font-extrabold px-2.5 py-1 rounded-full ${saldo >= 0 ? 'bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400' : 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400'}`}>
                             {saldo >= 0 ? '+' : ''}{fmtK(saldo)}
                           </span>
                           <ChevronRight size={14} className="text-gray-300" />
@@ -493,7 +493,7 @@ export default function DashboardPage() {
           <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
             <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
               <h3 className="text-sm font-extrabold text-gray-900">Chamados Recentes</h3>
-              <button onClick={() => navigate('/chamados')} className="text-xs font-bold text-blue-600 hover:text-blue-800 transition">
+              <button onClick={() => navigate('/chamados')} className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition">
                 Ver todos →
               </button>
             </div>
@@ -509,8 +509,8 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0 ml-4">
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      c.prioridade === 'alta' ? 'bg-red-50 text-red-500' :
-                      c.prioridade === 'media' ? 'bg-yellow-50 text-yellow-600' :
+                      c.prioridade === 'alta' ? 'bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400' :
+                      c.prioridade === 'media' ? 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-600 dark:text-yellow-400' :
                       'bg-gray-100 text-gray-500'
                     }`}>{c.prioridade || '—'}</span>
                     <ChevronRight size={14} className="text-gray-300" />

@@ -189,7 +189,7 @@ export default function EventoDetalhe({ eventoId }) {
                 Orçamento: <span className="font-medium text-gray-900">R$ {orcamento.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
               </span>
               <span className="text-gray-500">
-                Gasto: <span className={`font-medium ${Number(pct) > 90 ? 'text-red-600' : 'text-gray-900'}`}>R$ {gasto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                Gasto: <span className={`font-medium ${Number(pct) > 90 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white/90'}`}>R$ {gasto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
               </span>
               <span className="text-gray-500">
                 Utilizado: <span className="font-medium text-gray-900">{pct}%</span>
@@ -361,7 +361,7 @@ export default function EventoDetalhe({ eventoId }) {
                   <tr key={i} className="border-t border-gray-50 hover:bg-gray-50">
                     <td className="px-5 py-3 font-medium text-gray-800">{c.nome} <span className="text-gray-400 text-xs ml-1">{c.titular}</span></td>
                     <td className="px-5 py-3 text-right text-gray-600">{pctConta}%</td>
-                    <td className={'px-5 py-3 text-right font-bold ' + (parte >= 0 ? 'text-emerald-600' : 'text-red-600')}>{fmt(Math.abs(parte))}</td>
+                    <td className={'px-5 py-3 text-right font-bold ' + (parte >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400')}>{fmt(Math.abs(parte))}</td>
                   </tr>
                 )
               })}
@@ -383,12 +383,12 @@ export default function EventoDetalhe({ eventoId }) {
               <p className="text-lg font-bold text-gray-900">{fornecedores.length}</p>
               <p className="text-xs text-gray-500">Total</p>
             </div>
-            <div className="text-center p-3 rounded-xl bg-emerald-50">
-              <p className="text-lg font-bold text-emerald-600">{fornPagos}</p>
+            <div className="text-center p-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10">
+              <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{fornPagos}</p>
               <p className="text-xs text-gray-500">Pagos</p>
             </div>
-            <div className="text-center p-3 rounded-xl bg-blue-50">
-              <p className="text-lg font-bold text-blue-600">{fmt(fornTotal)}</p>
+            <div className="text-center p-3 rounded-xl bg-blue-50 dark:bg-blue-500/10">
+              <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{fmt(fornTotal)}</p>
               <p className="text-xs text-gray-500">Valor Total</p>
             </div>
           </div>
@@ -422,16 +422,16 @@ export default function EventoDetalhe({ eventoId }) {
             </button>
           </div>
           <div className="grid grid-cols-3 gap-3 mb-4">
-            <div className="text-center p-3 rounded-xl bg-yellow-50">
-              <p className="text-lg font-bold text-yellow-600">{briefingsPendentes}</p>
+            <div className="text-center p-3 rounded-xl bg-yellow-50 dark:bg-yellow-500/10">
+              <p className="text-lg font-bold text-yellow-600 dark:text-yellow-400">{briefingsPendentes}</p>
               <p className="text-xs text-gray-500">Pendentes</p>
             </div>
-            <div className="text-center p-3 rounded-xl bg-blue-50">
-              <p className="text-lg font-bold text-blue-600">{briefingsAndamento}</p>
+            <div className="text-center p-3 rounded-xl bg-blue-50 dark:bg-blue-500/10">
+              <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{briefingsAndamento}</p>
               <p className="text-xs text-gray-500">Em Produção</p>
             </div>
-            <div className="text-center p-3 rounded-xl bg-emerald-50">
-              <p className="text-lg font-bold text-emerald-600">{briefingsAprovados}</p>
+            <div className="text-center p-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10">
+              <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{briefingsAprovados}</p>
               <p className="text-xs text-gray-500">Aprovados</p>
             </div>
           </div>
@@ -463,7 +463,7 @@ export default function EventoDetalhe({ eventoId }) {
           className="flex items-center justify-between p-4 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-blue-200 hover:shadow-md transition-all group"
         >
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-blue-50 text-blue-600"><DollarSign size={20} /></div>
+            <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400"><DollarSign size={20} /></div>
             <div className="text-left">
               <p className="font-semibold text-gray-900 text-sm">Financeiro Completo</p>
               <p className="text-xs text-gray-500">Planilha, contas e encontro de contas</p>
@@ -476,7 +476,7 @@ export default function EventoDetalhe({ eventoId }) {
           className="flex items-center justify-between p-4 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-violet-200 hover:shadow-md transition-all group"
         >
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-violet-50 text-blue-600"><Megaphone size={20} /></div>
+            <div className="p-2 rounded-xl bg-violet-50 dark:bg-violet-500/20 text-blue-600 dark:text-blue-400"><Megaphone size={20} /></div>
             <div className="text-left">
               <p className="font-semibold text-gray-900 text-sm">Marketing Completo</p>
               <p className="text-xs text-gray-500">Cronograma, briefings, tráfego e campanhas IA</p>
@@ -523,16 +523,16 @@ export default function EventoDetalhe({ eventoId }) {
 
 function KPICard({ icon, label, value, color, sub }) {
   const colors = {
-    emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-    rose: 'bg-rose-50 text-rose-600 border-rose-100',
-    indigo: 'bg-blue-50 text-blue-600 border-blue-100',
-    violet: 'bg-violet-50 text-blue-600 border-violet-100',
+    emerald: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/25',
+    rose: 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-500/25',
+    indigo: 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-500/25',
+    violet: 'bg-violet-50 dark:bg-violet-500/10 text-blue-600 dark:text-blue-400 border-violet-100 dark:border-violet-500/25',
   }
   const iconColors = {
-    emerald: 'bg-emerald-100 text-emerald-600',
-    rose: 'bg-rose-100 text-rose-600',
-    indigo: 'bg-blue-100 text-blue-600',
-    violet: 'bg-violet-100 text-blue-600',
+    emerald: 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400',
+    rose: 'bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400',
+    indigo: 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400',
+    violet: 'bg-violet-100 dark:bg-violet-500/20 text-blue-600 dark:text-blue-400',
   }
   return (
     <div className={`rounded-2xl p-4 border shadow-sm hover:shadow-md transition-all duration-300 ${colors[color] || colors.indigo}`}>

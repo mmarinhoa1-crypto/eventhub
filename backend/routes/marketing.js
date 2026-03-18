@@ -70,6 +70,23 @@ post.briefing_id=brf.rows[0].id;
 }
 res.json(post)}catch(e){res.status(500).json({erro:e.message})}});
 
+// Toggle visibilidade do briefing para o designer
+router.post('/api/cronograma/:id/toggle-designer',auth,async(req,res)=>{try{
+const{ativo,descricao='',tipo_conteudo='',formato='',referencia='',musica=''}=req.body;
+const br=await pool.query('SELECT id FROM briefings WHERE cronograma_id=$1 AND org_id=$2',[req.params.id,req.user.org_id]);
+if(ativo&&br.rows.length===0){
+  const cm=await pool.query('SELECT * FROM cronograma_marketing WHERE id=$1 AND org_id=$2',[req.params.id,req.user.org_id]);
+  const post=cm.rows[0];
+  if(!post)return res.status(404).json({erro:'Post não encontrado'});
+  await pool.query('INSERT INTO briefings(org_id,id_evento,titulo,tipo,descricao,status,data_vencimento,hora_vencimento,tipo_conteudo,formato,referencia,musica,cronograma_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)',
+    [req.user.org_id,post.id_evento,post.titulo,'post',descricao||post.conteudo||'','pendente',post.data_publicacao||'',post.hora_publicacao||'',tipo_conteudo||'',formato||'',referencia||'',musica||'',post.id]);
+  res.json({sucesso:true,ativo:true});
+}else if(!ativo&&br.rows.length>0){
+  await pool.query('DELETE FROM briefings WHERE id=$1 AND org_id=$2',[br.rows[0].id,req.user.org_id]);
+  res.json({sucesso:true,ativo:false});
+}else{res.json({sucesso:true,ativo:!!ativo});}
+}catch(e){res.status(500).json({erro:e.message})}});
+
 router.patch('/api/cronograma/:id',auth,async(req,res)=>{try{
 const b=req.body;const fields=[];const vals=[];let idx=1;
 ['titulo','plataforma','data_publicacao','hora_publicacao','conteudo','hashtags','formato','status','feedback','auto_publish','boost_enabled','boost_budget','boost_duration','boost_age_min','boost_age_max','boost_cities','collaborators'].forEach(function(k){if(b[k]!==undefined){fields.push(k+'=$'+idx);vals.push(b[k]);idx++}});

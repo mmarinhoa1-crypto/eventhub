@@ -1,84 +1,155 @@
-# EventHub
+# EventHub — Contexto do Projeto
 
-Plataforma web de gestão de eventos. Interface em português (pt-BR).
+## Visão Geral
 
-## Stack
+EventHub é uma plataforma de gestão de eventos em português brasileiro, desenvolvida para a **314 Produções** (app.314br.com). O sistema cobre todo o ciclo de vida de eventos: planejamento, briefing, cronograma, marketing, design e operação.
 
-- **Frontend**: React 18 + Vite + Tailwind CSS
-- **Backend**: Express.js + PostgreSQL 16 + Multer (uploads)
-- **Infra**: Docker Compose + Nginx no host + HTTPS (Let's Encrypt)
-- **Domínio**: `app.314br.com` (HTTPS via Let's Encrypt)
+## Stack Técnica
 
-## Estrutura do Projeto
+- **Frontend**: React 18+ com JSX (SPA)
+- **Estilo**: CSS modules / inline styles (sem Tailwind)
+- **Backend**: Node.js + Express (API REST)
+- **Banco**: PostgreSQL
+- **Infra**: VPS Linux (produção direta, sem staging)
+- **Deploy**: Manual via SSH — arquivos editados diretamente no servidor
+- **Servidor**: `/opt/eventhub/` no VPS
+
+## Arquitetura de Componentes
+
+### Views Principais
+
+| View | Descrição | Arquivos Críticos |
+|------|-----------|-------------------|
+| **AdminPage** | Gestão geral, configurações | `AdminPage.jsx` |
+| **MarketingPage** | Redes sociais, posts, métricas | `MarketingPage.jsx` |
+| **DesignerPage** | Demandas de design, briefings | `DesignerPage.jsx` |
+| **MinhasDemandas** | Kanban de demandas por usuário | `MinhasDemandas.jsx` |
+| **Cronograma** | Calendário semanal de eventos | `Cronograma.jsx` |
+
+### Padrões de Componente
+
+```jsx
+// Padrão EventHub: componente funcional com hooks
+import React, { useState, useEffect } from 'react';
+
+const NomeComponente = ({ eventoId, onUpdate }) => {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchData();
+  }, [eventoId]);
+
+  const fetchData = async () => {
+    try {
+      const res = await fetch(`/api/endpoint/${eventoId}`);
+      const json = await res.json();
+      setData(json);
+    } catch (err) {
+      console.error('Erro ao carregar:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) return <div className="loading">Carregando...</div>;
+
+  return (
+    <div className="container">
+      {/* conteúdo */}
+    </div>
+  );
+};
+
+export default NomeComponente;
+```
+
+## ⚠️ Regras Críticas de Desenvolvimento
+
+### 1. NUNCA sobrescrever funcionalidades existentes
+
+Antes de editar qualquer arquivo JSX:
+- Ler o arquivo COMPLETO primeiro
+- Listar todas as funcionalidades presentes
+- Confirmar com o usuário quais funcionalidades manter
+- Após edição, verificar que NADA foi removido
+
+### 2. Arquivos grandes (>1500 linhas)
+
+O terminal tem limite de ~1500 linhas para paste. Para arquivos grandes:
+- Usar `str_replace` para edições pontuais (PREFERIDO)
+- Nunca reescrever o arquivo inteiro se só precisa mudar uma seção
+- Se precisar reescrever, dividir em múltiplas operações
+
+### 3. Deploy no VPS
+
+- Servidor de produção: edições são LIVE imediatamente
+- Sempre fazer backup antes: `cp arquivo.jsx arquivo.jsx.bak`
+- Testar mudanças incrementais, não big-bang
+- Reiniciar serviço se necessário: `pm2 restart eventhub`
+
+### 4. Idioma
+
+- Toda interface em **português brasileiro**
+- Variáveis e funções em **inglês** (padrão de código)
+- Comentários em **português** quando explicativos
+- Commits e documentação em **português**
+
+## Funcionalidades Recentes (não remover!)
+
+- Filtros de evento com dropdown pesquisável + botão limpar
+- Kanban de briefing com ordenação por cards
+- Calendário cronograma com visualização semanal padrão
+- Event switcher no header da MarketingPage
+- Abas de redes sociais na view de marketing
+
+## Features Planejadas
+
+- [ ] Instagram collab posts (Graph API `collaborators`)
+- [ ] WhatsApp bot para classificação receita vs. despesa (keyword-in-caption)
+- [ ] Mapa interativo de venue (seções: Palco, Gourmet, Premium, Soirée)
+
+## Estrutura de Pastas
 
 ```
 /opt/eventhub/
-├── frontend/              # React + Vite
-│   └── src/
-│       ├── api/client.js  # Axios (baseURL: '/api')
-│       ├── components/
-│       │   ├── auth/      # ProtectedRoute, RoleRedirect
-│       │   ├── chamados/  # Tickets/suporte
-│       │   ├── consumo/   # Consumo/pedidos
-│       │   ├── equipe/    # Gestão de equipe
-│       │   ├── eventos/   # Eventos, briefings, financeiro, marketing
-│       │   ├── layout/    # DashboardLayout, Header, Sidebar
-│       │   └── ui/        # Badge, Button, Card, Input, Modal, Table, etc.
-│       └── pages/         # Páginas da aplicação
-├── backend/
-│   ├── server.js          # Todas as rotas da API
-│   ├── init.sql           # Schema do banco
-│   └── uploads/           # Arquivos enviados (volume Docker)
-└── docker-compose.yml     # postgres, backend, frontend, evolution_api
+├── client/
+│   ├── src/
+│   │   ├── components/    # Componentes reutilizáveis
+│   │   ├── pages/         # Views principais
+│   │   ├── hooks/         # Custom hooks
+│   │   └── utils/         # Funções auxiliares
+│   └── public/
+├── server/
+│   ├── routes/            # Rotas da API
+│   ├── controllers/       # Lógica de negócio
+│   ├── models/            # Models PostgreSQL
+│   └── middleware/
+├── CLAUDE.md              # Este arquivo
+└── _bmad/                 # BMAD Method configs
 ```
 
-## Containers Docker
-
-| Container           | Porta local | Descrição                    |
-|---------------------|-------------|------------------------------|
-| eventhub_postgres   | 5432        | PostgreSQL 16                |
-| eventhub_backend    | 3000        | API Express                  |
-| eventhub_frontend   | 8081        | Nginx com build do React     |
-| evolution_api       | 8080        | API de WhatsApp (Evolution)  |
-
-## Deploy — IMPORTANTE
-
-O Nginx do **host** serve o frontend estático de `/var/www/eventhub/`, NÃO do container. Após cada build do frontend:
+## Comandos Úteis
 
 ```bash
-docker compose up -d --build eventhub-frontend
-rm -f /var/www/eventhub/assets/*
-docker cp eventhub_frontend:/usr/share/nginx/html/. /var/www/eventhub/
+# Logs do servidor
+pm2 logs eventhub
+
+# Restart
+pm2 restart eventhub
+
+# Status
+pm2 status
+
+# Backup rápido de arquivo
+cp arquivo.jsx arquivo.jsx.bak.$(date +%Y%m%d%H%M)
 ```
 
-Após mudanças no nginx do host:
+## Git
+
+⚠️ Git não está rastreando todos os arquivos. Sempre verificar status antes de assumir que algo está versionado.
+
 ```bash
-nginx -t && systemctl reload nginx
+git status
+git diff nome-do-arquivo.jsx
 ```
-
-Config do nginx do host: `/etc/nginx/sites-enabled/eventhub-app`
-
-## Banco de Dados
-
-- Acesso: `docker exec eventhub_postgres psql -U eventhub -d eventhub`
-- Schema em `backend/init.sql`
-- Tabelas principais: usuarios, briefings, arquivos, organizacoes, eventos, despesas, chamados
-
-## Uploads
-
-- Multer com limite de 1GB
-- Tipos aceitos: jpg, jpeg, png, gif, mp4, mov, pdf, webp
-- Diretório: `/app/uploads` (volume Docker `eventhub_uploads`)
-- Nginx do host: `client_max_body_size 1G`, proxy timeouts 600s
-
-## Convenções
-
-- Todo o código e interface em **português (pt-BR)**
-- Backend monolítico em `server.js` (todas as rotas)
-- Frontend usa componentes reutilizáveis em `components/ui/`
-- Axios client centralizado em `frontend/src/api/client.js`
-- Autenticação via JWT (bcryptjs + jsonwebtoken)
-
-## Bug Conhecido
-
-File input (`<input type="file">`) não abre no Chrome. Suspeita: `document.body.style.overflow = 'hidden'` no Modal.jsx. Workarounds ativos: drag-and-drop + Ctrl+V.

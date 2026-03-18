@@ -85,8 +85,8 @@ export default function NovoEventoModal({ open, onClose, onCreated }) {
     <Modal open={open} onClose={onClose} title="Novo Evento">
       <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
         
-        <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-          <p className="text-xs text-blue-600 font-medium">Quanto mais informacoes voce preencher, mais inteligente a IA sera nos briefings, atendimento e financeiro.</p>
+        <div className="bg-blue-50 dark:bg-blue-500/10 rounded-lg p-3 border border-blue-200 dark:border-blue-500/30">
+          <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">Quanto mais informacoes voce preencher, mais inteligente a IA sera nos briefings, atendimento e financeiro.</p>
         </div>
 
         <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide border-b pb-1">Dados basicos</h3>
@@ -156,8 +156,8 @@ export default function NovoEventoModal({ open, onClose, onCreated }) {
         <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide border-b pb-1">Financeiro</h3>
         <Input label="Orcamento (R$)" type="number" step="0.01" value={form.orcamento} onChange={e=>set('orcamento',e.target.value)} placeholder="50000.00" />
         
-        <div className="bg-green-50 rounded-lg p-3 border border-green-200">
-          <p className="text-xs text-green-600 font-medium">Vincule o grupo financeiro do WhatsApp. A IA vai registrar despesas automaticamente quando enviarem comprovantes nesse grupo.</p>
+        <div className="bg-green-50 dark:bg-green-500/10 rounded-lg p-3 border border-green-200 dark:border-green-500/30">
+          <p className="text-xs text-green-600 dark:text-green-400 font-medium">Vincule o grupo financeiro do WhatsApp. A IA vai registrar despesas automaticamente quando enviarem comprovantes nesse grupo.</p>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Grupo WhatsApp Financeiro</label>
@@ -173,7 +173,7 @@ export default function NovoEventoModal({ open, onClose, onCreated }) {
               {grupos.filter(g=>!filtroGrupo||g.nome.toLowerCase().includes(filtroGrupo.toLowerCase())).map(g=><option key={g.id} value={g.id}>{g.nome} ({g.participantes} membros)</option>)}
             </select>
           )}
-          {form.id_grupo && <p className="text-xs text-green-600 mt-1">Grupo vinculado!</p>}
+          {form.id_grupo && <p className="text-xs text-green-600 dark:text-green-400 mt-1">Grupo vinculado!</p>}
         </div>
 
         <textarea placeholder="Observacoes gerais (qualquer info extra para a IA usar)" value={form.observacoes} onChange={e=>set('observacoes',e.target.value)} rows={2} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />

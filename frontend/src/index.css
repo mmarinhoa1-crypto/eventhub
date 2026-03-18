@@ -4,27 +4,91 @@
 
 /* ===== VARIÁVEIS DE TEMA ===== */
 :root {
+  /* Backgrounds */
   --bg-main: #f8f8f7;
   --bg-surface: #ffffff;
   --bg-subtle: #f1f1ef;
+  --bg-tertiary: #f3f4f6;
+  --bg-hover: rgba(0, 0, 0, 0.04);
+  --bg-active: rgba(248, 13, 82, 0.08);
+  --bg-overlay: rgba(0, 0, 0, 0.5);
+
+  /* Texto */
   --text-primary: #1a1a1a;
   --text-secondary: #6b7280;
   --text-muted: #9ca3af;
+  --text-disabled: #d1d5db;
+  --text-inverse: #ffffff;
+  --text-accent: #f80d52;
+  --text-destructive: #dc2626;
+
+  /* Bordas */
   --border: #e5e7eb;
   --border-subtle: #f3f4f6;
+  --border-strong: #d1d5db;
+  --divider: #f0f0ee;
+
+  /* Status */
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-danger: #dc2626;
+  --color-info: #2563eb;
   --accent: #f80d52;
+
+  /* Gradientes */
+  --gradient-primary: linear-gradient(135deg, #f80d52, #ff6b9d);
+  --gradient-info: linear-gradient(135deg, #2563eb, #60a5fa);
+  --gradient-surface: linear-gradient(135deg, #f8f8f7, #ffffff);
+
+  /* Sidebar (floating glass bar) */
+  --sidebar-bar-bg: rgba(255, 255, 255, 0.80);
+  --sidebar-bar-border: rgba(0, 0, 0, 0.08);
+  --sidebar-submenu-bg: rgba(255, 255, 255, 0.92);
+  --sidebar-submenu-border: rgba(0, 0, 0, 0.08);
 }
 
 html.dark {
+  /* Backgrounds */
   --bg-main: #131316;
   --bg-surface: rgba(255, 255, 255, 0.04);
   --bg-subtle: rgba(255, 255, 255, 0.02);
+  --bg-tertiary: rgba(255, 255, 255, 0.06);
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --bg-active: rgba(248, 13, 82, 0.15);
+  --bg-overlay: rgba(0, 0, 0, 0.75);
+
+  /* Texto */
   --text-primary: #f0f0ee;
   --text-secondary: #a1a1aa;
   --text-muted: #71717a;
+  --text-disabled: #52525b;
+  --text-inverse: #ffffff;
+  --text-accent: #f80d52;
+  --text-destructive: #f87171;
+
+  /* Bordas */
   --border: rgba(255, 255, 255, 0.08);
   --border-subtle: rgba(255, 255, 255, 0.04);
+  --border-strong: rgba(255, 255, 255, 0.15);
+  --divider: rgba(255, 255, 255, 0.06);
+
+  /* Status */
+  --color-success: #4ade80;
+  --color-warning: #fbbf24;
+  --color-danger: #f87171;
+  --color-info: #60a5fa;
   --accent: #f80d52;
+
+  /* Gradientes */
+  --gradient-primary: linear-gradient(135deg, #f80d52, #ff6b9d);
+  --gradient-info: linear-gradient(135deg, #1d4ed8, #3b82f6);
+  --gradient-surface: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+
+  /* Sidebar (floating glass bar) */
+  --sidebar-bar-bg: rgba(20, 20, 30, 0.70);
+  --sidebar-bar-border: rgba(255, 255, 255, 0.10);
+  --sidebar-submenu-bg: rgba(20, 20, 30, 0.82);
+  --sidebar-submenu-border: rgba(255, 255, 255, 0.10);
 }
 
 /* ===== FUNDO GLOBAL — LIGHT E DARK ===== */
@@ -36,13 +100,7 @@ body {
 
 /* ===== DARK MODE — OVERRIDES GLOBAIS ===== */
 
-/* Backgrounds */
-html.dark .bg-white {
-  background: rgba(255, 255, 255, 0.05) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-}
-
+/* Backgrounds — generic fallbacks for elements without explicit dark: variants */
 html.dark .bg-gray-50 {
   background: rgba(255, 255, 255, 0.03) !important;
 }
@@ -95,14 +153,6 @@ html.dark textarea::placeholder {
 html.dark .hover\:bg-gray-50:hover { background: rgba(255, 255, 255, 0.04) !important; }
 html.dark .hover\:bg-gray-100:hover { background: rgba(255, 255, 255, 0.08) !important; }
 
-/* Header */
-html.dark header {
-  background: rgba(19, 19, 22, 0.85) !important;
-  backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
-}
-
 /* Scrollbar dark */
 html.dark ::-webkit-scrollbar-thumb { background: #3f3f46; }
 html.dark ::-webkit-scrollbar-thumb:hover { background: #52525b; }
@@ -114,10 +164,21 @@ html.dark ::-webkit-scrollbar-thumb:hover { background: #52525b; }
   border-right: 1px solid #e5e7eb;
 }
 
+html.dark .bg-gradient-sidebar {
+  background: rgba(20, 20, 30, 0.70);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 .sidebar-active {
   background: #eff6ff;
   color: #2563eb;
   border: 1px solid #dbeafe;
+}
+
+html.dark .sidebar-active {
+  background: rgba(37, 99, 235, 0.20);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.30);
 }
 
 .sidebar-link {
@@ -125,9 +186,18 @@ html.dark ::-webkit-scrollbar-thumb:hover { background: #52525b; }
   border: 1px solid transparent;
 }
 
+html.dark .sidebar-link {
+  color: rgba(255, 255, 255, 0.55);
+}
+
 .sidebar-link:hover {
   color: #1e293b;
   background: #f8fafc;
+}
+
+html.dark .sidebar-link:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .logo-gradient {
@@ -135,7 +205,7 @@ html.dark ::-webkit-scrollbar-thumb:hover { background: #52525b; }
 }
 
 .btn-gradient {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  background: var(--gradient-info);
 }
 
 .btn-gradient:hover {

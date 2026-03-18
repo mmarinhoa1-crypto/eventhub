@@ -62,44 +62,32 @@ export default function Sidebar() {
     navigate('/entrar')
   }
 
-  // Estilos adaptativos por tema
-  const barBg = isDark
-    ? 'rgba(20, 20, 30, 0.70)'
-    : 'rgba(255, 255, 255, 0.80)'
-  const barBorder = isDark
-    ? 'rgba(255,255,255,0.10)'
-    : 'rgba(0,0,0,0.08)'
-  const submenuBg = isDark
-    ? 'rgba(20, 20, 30, 0.82)'
-    : 'rgba(255, 255, 255, 0.92)'
-  const submenuBorder = isDark
-    ? 'rgba(255,255,255,0.10)'
-    : 'rgba(0,0,0,0.08)'
+  // Estilos da barra glass — via CSS variables definidas no index.css
+  const barStyle = {
+    background: 'var(--sidebar-bar-bg)',
+    backdropFilter: 'blur(32px)',
+    WebkitBackdropFilter: 'blur(32px)',
+    border: '1px solid var(--sidebar-bar-border)',
+  }
+  const submenuStyle = {
+    background: 'var(--sidebar-submenu-bg)',
+    backdropFilter: 'blur(28px)',
+    WebkitBackdropFilter: 'blur(28px)',
+    border: '1px solid var(--sidebar-submenu-border)',
+  }
 
   const linkBase = 'px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap'
-  const linkActive = isDark
-    ? 'bg-white/20 text-white'
-    : 'bg-black/8 text-gray-900 font-semibold'
-  const linkInactive = isDark
-    ? 'text-white/60 hover:text-white hover:bg-white/10'
-    : 'text-gray-500 hover:text-gray-900 hover:bg-black/5'
+  const linkActive = 'bg-black/8 text-gray-900 font-semibold dark:bg-white/20 dark:text-white'
+  const linkInactive = 'text-gray-500 hover:text-gray-900 hover:bg-black/5 dark:text-white/60 dark:hover:text-white dark:hover:bg-white/10'
 
   const subLinkBase = 'block px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-150 whitespace-nowrap'
-  const subLinkActive = isDark
-    ? 'bg-white/20 text-white'
-    : 'bg-black/8 text-gray-900 font-semibold'
-  const subLinkInactive = isDark
-    ? 'text-white/70 hover:text-white hover:bg-white/15'
-    : 'text-gray-500 hover:text-gray-900 hover:bg-black/5'
+  const subLinkActive = 'bg-black/8 text-gray-900 font-semibold dark:bg-white/20 dark:text-white'
+  const subLinkInactive = 'text-gray-500 hover:text-gray-900 hover:bg-black/5 dark:text-white/70 dark:hover:text-white dark:hover:bg-white/15'
 
-  const iconBtn = isDark
-    ? 'text-white/50 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-all'
-    : 'text-gray-400 hover:text-gray-700 hover:bg-black/6 p-1.5 rounded-lg transition-all'
+  const iconBtn = 'text-gray-400 hover:text-gray-700 hover:bg-black/[0.06] p-1.5 rounded-lg transition-all dark:text-white/50 dark:hover:text-white dark:hover:bg-white/10'
 
-  const divider = isDark ? 'bg-white/15' : 'bg-black/10'
-  const sairClass = isDark
-    ? `${linkBase} text-red-400/80 hover:text-red-300 hover:bg-red-500/10`
-    : `${linkBase} text-red-400 hover:text-red-600 hover:bg-red-50`
+  const divider = 'bg-black/10 dark:bg-white/15'
+  const sairClass = `${linkBase} text-red-400 hover:text-red-600 hover:bg-red-50 dark:text-red-400/80 dark:hover:text-red-300 dark:hover:bg-red-500/10`
 
   return (
     <nav
@@ -111,7 +99,7 @@ export default function Sidebar() {
       {openMenu === 'marketing' && showMarketing && (
         <div
           className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 rounded-2xl overflow-hidden shadow-2xl min-w-[180px]"
-          style={{ background: submenuBg, backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)', border: `1px solid ${submenuBorder}` }}
+          style={submenuStyle}
         >
           <div className="px-2 py-2 space-y-0.5">
             {marketingSubLinks
@@ -130,7 +118,7 @@ export default function Sidebar() {
       {openMenu === 'financeiro' && showFinanceiro && (
         <div
           className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 rounded-2xl overflow-hidden shadow-2xl min-w-[180px]"
-          style={{ background: submenuBg, backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)', border: `1px solid ${submenuBorder}` }}
+          style={submenuStyle}
         >
           <div className="px-2 py-2 space-y-0.5">
             {financeiroSubLinks.map(({ to, label }) => (
@@ -147,12 +135,7 @@ export default function Sidebar() {
       {/* Barra principal */}
       <div
         className="flex items-center gap-1 px-3 py-2.5 rounded-2xl shadow-2xl"
-        style={{
-          background: barBg,
-          backdropFilter: 'blur(32px)',
-          WebkitBackdropFilter: 'blur(32px)',
-          border: `1px solid ${barBorder}`,
-        }}
+        style={barStyle}
       >
         {/* Links de navegação */}
         {mainLinks
@@ -206,7 +189,7 @@ export default function Sidebar() {
 
         <div className={`w-px h-5 mx-1 ${divider}`} />
 
-        <span className={`text-xs font-medium px-1 hidden sm:block ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
+        <span className="text-xs font-medium px-1 hidden sm:block text-gray-400 dark:text-white/40">
           {usuario?.nome?.split(' ')[0] || 'Usuário'}
         </span>
 

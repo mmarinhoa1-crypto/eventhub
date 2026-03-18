@@ -182,7 +182,7 @@ export default function ChamadoDetalhe({ chamadoId }) {
               <p className="text-sm text-gray-400 text-center py-4">Nenhuma anotação</p>
             ) : (
               anotacoes.map((a) => (
-                <div key={a.id} className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <div key={a.id} className="bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/30 rounded-lg p-3">
                   <p className="text-sm text-gray-800 whitespace-pre-wrap">{a.texto}</p>
                   <p className="text-xs text-gray-400 mt-1">
                     {a.hora && isValid(new Date(a.hora)) ? format(new Date(a.hora), "dd/MM/yyyy HH:mm", { locale: ptBR }) : (a.hora || '')}

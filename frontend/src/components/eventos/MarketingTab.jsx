@@ -841,12 +841,12 @@ export default function MarketingTab({ eventoId }) {
                     {briefingsFiltrados.filter(b => b.status !== 'cancelado').length} total
                   </span>
                   {briefingsFiltrados.filter(b => b.status === 'pendente').length > 0 && (
-                    <span className="bg-yellow-100 text-yellow-700 px-2.5 py-0.5 rounded-full text-xs font-bold">
+                    <span className="bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 px-2.5 py-0.5 rounded-full text-xs font-bold">
                       {briefingsFiltrados.filter(b => b.status === 'pendente').length} pendentes
                     </span>
                   )}
                   {briefingsFiltrados.filter(b => b.data_vencimento && new Date(b.data_vencimento + 'T23:59:59') < new Date() && !['aprovado','publicado','cancelado'].includes(b.status)).length > 0 && (
-                    <span className="bg-red-100 text-red-700 px-2.5 py-0.5 rounded-full text-xs font-bold animate-pulse">
+                    <span className="bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 px-2.5 py-0.5 rounded-full text-xs font-bold animate-pulse">
                       {briefingsFiltrados.filter(b => b.data_vencimento && new Date(b.data_vencimento + 'T23:59:59') < new Date() && !['aprovado','publicado','cancelado'].includes(b.status)).length} atrasados
                     </span>
                   )}
@@ -896,22 +896,22 @@ export default function MarketingTab({ eventoId }) {
                             <div className="p-3 space-y-2">
                               <div className="flex items-start justify-between gap-1">
                                 <h4 onClick={() => { carregarArquivos(b.id); setBriefingDetalhe(b) }} className="font-bold text-gray-900 text-xs leading-tight flex-1 cursor-pointer hover:text-blue-600 transition">{b.titulo}</h4>
-                                {isAtrasado && <span className="text-[9px] font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded-full whitespace-nowrap">ATRASADO</span>}
+                                {isAtrasado && <span className="text-[9px] font-bold text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-500/20 px-1.5 py-0.5 rounded-full whitespace-nowrap">ATRASADO</span>}
                               </div>
                               {b.data_vencimento && (
                                 <div className="flex items-center gap-1.5 text-[11px] text-gray-500">
-                                  <Calendar size={10} className={isAtrasado ? 'text-red-400' : 'text-blue-400'} />
-                                  <span className={isAtrasado ? 'text-red-600 font-semibold' : 'font-medium'}>{new Date(b.data_vencimento + 'T12:00:00').toLocaleDateString('pt-BR')}{b.hora_vencimento ? ' ' + b.hora_vencimento.slice(0,5) : ''}</span>
+                                  <Calendar size={10} className={isAtrasado ? 'text-red-400 dark:text-red-400' : 'text-blue-400'} />
+                                  <span className={isAtrasado ? 'text-red-600 dark:text-red-400 font-semibold' : 'font-medium'}>{new Date(b.data_vencimento + 'T12:00:00').toLocaleDateString('pt-BR')}{b.hora_vencimento ? ' ' + b.hora_vencimento.slice(0,5) : ''}</span>
                                 </div>
                               )}
                               {b.tipo_conteudo && (
                                 <div className="flex flex-wrap gap-1">{b.tipo_conteudo.split(',').filter(Boolean).map(tc => (
-                                  <span key={tc} className="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] font-bold">{tc === 'ESTATICA' ? '🖼️' : tc === 'VIDEO' ? '🎬' : '✨'} {tc}</span>
+                                  <span key={tc} className="px-1.5 py-0.5 bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded text-[10px] font-bold">{tc === 'ESTATICA' ? '🖼️' : tc === 'VIDEO' ? '🎬' : '✨'} {tc}</span>
                                 ))}</div>
                               )}
                               {b.formato && (
                                 <div className="flex flex-wrap gap-1">{b.formato.split(',').filter(Boolean).map(fm => (
-                                  <span key={fm} className="px-1.5 py-0.5 bg-violet-50 text-blue-600 rounded text-[10px] font-bold">{fm === 'FEED' ? '📱' : fm === 'STORIES' ? '📲' : fm === 'CARROSSEL' ? '🔄' : '🎥'} {fm}</span>
+                                  <span key={fm} className="px-1.5 py-0.5 bg-violet-50 dark:bg-violet-500/10 text-blue-600 dark:text-blue-400 rounded text-[10px] font-bold">{fm === 'FEED' ? '📱' : fm === 'STORIES' ? '📲' : fm === 'CARROSSEL' ? '🔄' : '🎥'} {fm}</span>
                                 ))}</div>
                               )}
                               {b.descricao && <p className="text-[11px] text-gray-500 line-clamp-2">{b.descricao}</p>}
@@ -1003,9 +1003,9 @@ export default function MarketingTab({ eventoId }) {
                 <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Cancelados</span>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {briefingsFiltrados.filter(b => b.status === 'cancelado').map(b => (
-                    <div key={b.id} className="flex items-center gap-2 bg-red-50 px-3 py-1.5 rounded-lg">
-                      <span className="text-xs text-red-600 line-through">{b.titulo}</span>
-                      <button onClick={() => atualizarBriefing(b.id, { status: 'pendente' })} className="text-[10px] text-blue-500 hover:text-blue-700 font-medium">Restaurar</button>
+                    <div key={b.id} className="flex items-center gap-2 bg-red-50 dark:bg-red-500/10 px-3 py-1.5 rounded-lg">
+                      <span className="text-xs text-red-600 dark:text-red-400 line-through">{b.titulo}</span>
+                      <button onClick={() => atualizarBriefing(b.id, { status: 'pendente' })} className="text-[10px] text-blue-500 dark:text-blue-400 hover:text-blue-700 font-medium">Restaurar</button>
                       <button onClick={() => removerBriefing(b.id)} className="text-red-300 hover:text-red-500"><Trash2 size={11} /></button>
                     </div>
                   ))}
@@ -1061,7 +1061,7 @@ export default function MarketingTab({ eventoId }) {
           else { const d = new Date(calendarDate); d.setDate(d.getDate() + 7); setCalendarDate(d) }
         }
 
-        const statusDot = { pendente: 'bg-yellow-400', em_andamento: 'bg-blue-500', publicado: 'bg-green-500', cancelado: 'bg-red-400' }
+        const statusDot = { pendente: 'bg-yellow-400 dark:bg-yellow-500', em_andamento: 'bg-blue-500', publicado: 'bg-green-500', cancelado: 'bg-red-400' }
 
         return (
           <div className="space-y-4">
@@ -1074,7 +1074,7 @@ export default function MarketingTab({ eventoId }) {
                     <h3 className="font-bold text-gray-900 text-lg min-w-[200px] text-center">{monthNames[month]} {year}</h3>
                     <button onClick={nextPeriod} className="p-1.5 rounded-lg hover:bg-gray-100 transition"><ChevronRight size={18} className="text-gray-600" /></button>
                   </div>
-                  <button onClick={() => setCalendarDate(new Date())} className="text-xs font-medium text-blue-600 hover:text-indigo-800 bg-blue-50 px-3 py-1.5 rounded-lg transition">Hoje</button>
+                  <button onClick={() => setCalendarDate(new Date())} className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-indigo-800 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-500/20 px-3 py-1.5 rounded-lg transition">Hoje</button>
                   <div className="flex bg-gray-100 rounded-lg p-0.5">
                     <button onClick={() => setCalendarView('month')} className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${calendarView === 'month' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Mês</button>
                     <button onClick={() => setCalendarView('week')} className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${calendarView === 'week' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Semana</button>
@@ -1084,7 +1084,7 @@ export default function MarketingTab({ eventoId }) {
                   <span className="text-sm text-gray-500">{cronograma.length} posts</span>
                   {igConnection && (
                     <div className="flex items-center gap-1.5">
-                      <span className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-pink-50 border border-pink-200 text-xs font-bold text-pink-600">
+                      <span className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-pink-50 dark:bg-pink-500/10 border border-pink-200 dark:border-pink-500/30 text-xs font-bold text-pink-600 dark:text-pink-400">
                         <Instagram size={12} /> @{igConnection.ig_username}
                       </span>
                       <button onClick={desconectarInstagram} className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition" title="Desconectar Instagram">
@@ -1131,9 +1131,9 @@ export default function MarketingTab({ eventoId }) {
                     const posts = postsForDate(dayObj.date)
                     const isToday = dayObj.date.toDateString() === today.toDateString()
                     return (
-                      <div key={idx} onClick={() => { if (dayObj.current) { if (posts.length > 0) { setDiaSelecionado({ date: dayObj.date, posts }) } else { const d = dayObj.date; const dateStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); setCronogramaFormDate(dateStr); setShowCronogramaForm(true) } } }} className={`min-h-[110px] border-b border-r border-gray-100 p-1.5 transition-colors ${!dayObj.current ? 'bg-gray-50/60' : 'hover:bg-gray-50/40 cursor-pointer'} ${isToday ? 'bg-blue-50/60' : ''} ${dayObj.current ? 'hover:ring-1 hover:ring-blue-300 hover:ring-inset' : ''}`}>
+                      <div key={idx} onClick={() => { if (dayObj.current) { if (posts.length > 0) { setDiaSelecionado({ date: dayObj.date, posts }) } else { const d = dayObj.date; const dateStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); setCronogramaFormDate(dateStr); setShowCronogramaForm(true) } } }} className={`min-h-[110px] border-b border-r border-gray-100 p-1.5 transition-colors ${!dayObj.current ? 'bg-gray-50/60' : 'hover:bg-gray-50/40 cursor-pointer'} ${isToday ? 'bg-blue-50/60 dark:bg-blue-500/10' : ''} ${dayObj.current ? 'hover:ring-1 hover:ring-blue-300 dark:hover:ring-blue-500/30 hover:ring-inset' : ''}`}>
                         <div className="flex items-center justify-between mb-1">
-                          <span className={`text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full ${isToday ? 'bg-blue-600 text-white' : dayObj.current ? 'text-gray-700' : 'text-gray-300'}`}>
+                          <span className={`text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full ${isToday ? 'bg-blue-600 text-white' : dayObj.current ? 'text-gray-700 dark:text-white/70' : 'text-gray-300 dark:text-white/20'}`}>
                             {dayObj.date.getDate()}
                           </span>
                           {posts.length > 0 && <span className="text-[9px] font-bold text-gray-400">{posts.length}</span>}
@@ -1161,9 +1161,9 @@ export default function MarketingTab({ eventoId }) {
                     const posts = postsForDate(day)
                     const isToday = day.toDateString() === today.toDateString()
                     return (
-                      <div key={idx} className={`p-2 ${isToday ? 'bg-blue-50/50' : ''}`} style={{ minHeight: 380 }}>
+                      <div key={idx} className={`p-2 ${isToday ? 'bg-blue-50/50 dark:bg-blue-500/10' : ''}`} style={{ minHeight: 380 }}>
                         <div className="text-center mb-3">
-                          <span className={`text-sm font-bold w-8 h-8 flex items-center justify-center rounded-full mx-auto ${isToday ? 'bg-blue-600 text-white' : 'text-gray-700'}`}>
+                          <span className={`text-sm font-bold w-8 h-8 flex items-center justify-center rounded-full mx-auto ${isToday ? 'bg-blue-600 text-white' : 'text-gray-700 dark:text-white/70'}`}>
                             {day.getDate()}
                           </span>
                         </div>
@@ -1182,7 +1182,7 @@ export default function MarketingTab({ eventoId }) {
                                   </div>
                                 )}
                                 {c.conteudo && <p className="text-[10px] text-gray-400 line-clamp-2">{c.conteudo}</p>}
-                                {c.formato && <span className="inline-block text-[10px] font-medium text-blue-600 bg-violet-50 px-1.5 py-0.5 rounded">{c.formato}</span>}
+                                {c.formato && <span className="inline-block text-[10px] font-medium text-blue-600 dark:text-blue-400 bg-violet-50 dark:bg-violet-500/10 px-1.5 py-0.5 rounded">{c.formato}</span>}
                                 {(cronogramaArquivos[c.id] || []).length > 0 && (
                                   <div className="flex flex-wrap gap-1">
                                     {(cronogramaArquivos[c.id] || []).map(arq => (
@@ -1239,17 +1239,17 @@ export default function MarketingTab({ eventoId }) {
                                 )}
                                 {c.status === 'publicado' && (
                                   <div className="mt-1.5 space-y-1">
-                                    <div className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[10px] font-bold bg-green-100 text-green-600">
+                                    <div className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[10px] font-bold bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400">
                                       ✅ Publicado
                                     </div>
                                     {/* Boost / Tráfego Pago */}
                                     {c.boost_status === 'active' ? (
-                                      <div className="flex items-center justify-between px-2 py-1.5 rounded-md bg-orange-50 border border-orange-200">
-                                        <span className="text-[9px] font-bold text-orange-600">🚀 Impulsionado</span>
+                                      <div className="flex items-center justify-between px-2 py-1.5 rounded-md bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/30">
+                                        <span className="text-[9px] font-bold text-orange-600 dark:text-orange-400">🚀 Impulsionado</span>
                                         <button onClick={(e) => { e.stopPropagation(); pararBoost(c.id) }} className="text-[9px] font-bold text-red-500 hover:text-red-700">Pausar</button>
                                       </div>
                                     ) : showBoostConfig === c.id ? (
-                                      <div onClick={(e) => e.stopPropagation()} className="p-2 rounded-md bg-orange-50 border border-orange-200 space-y-1.5">
+                                      <div onClick={(e) => e.stopPropagation()} className="p-2 rounded-md bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/30 space-y-1.5">
                                         <p className="text-[10px] font-bold text-gray-700">🚀 Configurar Impulsionamento</p>
                                         <div className="grid grid-cols-2 gap-1">
                                           <div>
@@ -1277,7 +1277,7 @@ export default function MarketingTab({ eventoId }) {
                                         </div>
                                       </div>
                                     ) : (
-                                      <button onClick={(e) => { e.stopPropagation(); setShowBoostConfig(c.id) }} className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[10px] font-bold bg-orange-50 text-orange-600 border border-orange-200 hover:bg-orange-100 transition">
+                                      <button onClick={(e) => { e.stopPropagation(); setShowBoostConfig(c.id) }} className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[10px] font-bold bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-500/30 hover:bg-orange-100 dark:hover:bg-orange-500/20 transition">
                                         🚀 Impulsionar
                                       </button>
                                     )}
@@ -1286,7 +1286,7 @@ export default function MarketingTab({ eventoId }) {
 
                                 {/* Pre-agendar boost para quando publicar */}
                                 {c.status !== 'publicado' && c.auto_publish && (
-                                  <div onClick={(e) => e.stopPropagation()} className="flex items-center justify-between px-2 py-1 rounded-md bg-orange-50/50 border border-orange-100 mt-1">
+                                  <div onClick={(e) => e.stopPropagation()} className="flex items-center justify-between px-2 py-1 rounded-md bg-orange-50/50 dark:bg-orange-500/10 border border-orange-100 dark:border-orange-500/20 mt-1">
                                     <span className={'text-[9px] font-semibold ' + (c.boost_enabled ? 'text-orange-600' : 'text-gray-400')}>
                                       {c.boost_enabled ? '🚀 Boost ao publicar' : '🚀 Impulsionar auto'}
                                     </span>
@@ -1392,13 +1392,13 @@ export default function MarketingTab({ eventoId }) {
         return (
           <Modal open={true} onClose={() => setShowPlanejamentoModal(false)} title="Novo Planejamento Semanal" size="lg">
             <div className="space-y-4">
-              <div className="bg-blue-50 rounded-lg p-3 text-center">
-                <span className="text-sm font-semibold text-blue-700">
+              <div className="bg-blue-50 dark:bg-blue-500/10 rounded-lg p-3 text-center">
+                <span className="text-sm font-semibold text-blue-700 dark:text-blue-400">
                   {new Date(week.inicio + 'T12:00').toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long'})}
                   {' até '}
                   {new Date(week.fim + 'T12:00').toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long'})}
                 </span>
-                <span className="block text-xs text-blue-500 mt-1">{postsInWeek.length} posts programados</span>
+                <span className="block text-xs text-blue-500 dark:text-blue-400 mt-1">{postsInWeek.length} posts programados</span>
               </div>
               <div className="space-y-2 max-h-60 overflow-y-auto">
                 {[0,1,2,3,4,5,6].map(offset => {
@@ -1456,9 +1456,9 @@ export default function MarketingTab({ eventoId }) {
                 </div>
               )}
               {plan.feedback && plan.status === 'revisao' && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                  <span className="text-[10px] font-semibold text-red-500 uppercase">Feedback Geral</span>
-                  <p className="text-sm text-red-700 mt-1 whitespace-pre-wrap">{plan.feedback}</p>
+                <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-lg p-3">
+                  <span className="text-[10px] font-semibold text-red-500 dark:text-red-400 uppercase">Feedback Geral</span>
+                  <p className="text-sm text-red-700 dark:text-red-400 mt-1 whitespace-pre-wrap">{plan.feedback}</p>
                 </div>
               )}
               <div className="space-y-3 max-h-[50vh] overflow-y-auto">
@@ -1489,7 +1489,7 @@ export default function MarketingTab({ eventoId }) {
                                   <button onClick={() => { setShowPlanejamentoDetalhe(null); setEditandoPost(c) }} className="text-gray-300 hover:text-blue-500 transition p-0.5"><Pencil size={11} /></button>
                                 </div>
                                 {c.conteudo && <p className="text-[10px] text-gray-500 line-clamp-3 whitespace-pre-wrap">{c.conteudo}</p>}
-                                {c.formato && <span className="inline-block text-[10px] font-medium text-blue-600 bg-violet-50 px-1.5 py-0.5 rounded">{c.formato}</span>}
+                                {c.formato && <span className="inline-block text-[10px] font-medium text-blue-600 dark:text-blue-400 bg-violet-50 dark:bg-violet-500/10 px-1.5 py-0.5 rounded">{c.formato}</span>}
                                 {(cronogramaArquivos[c.id] || []).length > 0 && (
                                   <div className="flex flex-wrap gap-1 mt-1">
                                     {(cronogramaArquivos[c.id] || []).map(arq => (
@@ -1507,9 +1507,9 @@ export default function MarketingTab({ eventoId }) {
                                 )}
                                 {/* Feedback existente do diretor */}
                                 {c.feedback && !canApprovePlan && (
-                                  <div className="bg-orange-50 border border-orange-200 rounded p-2 mt-1">
-                                    <span className="text-[9px] font-semibold text-orange-500 uppercase">Feedback</span>
-                                    <p className="text-[11px] text-orange-700 whitespace-pre-wrap">{c.feedback}</p>
+                                  <div className="bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/30 rounded p-2 mt-1">
+                                    <span className="text-[9px] font-semibold text-orange-500 dark:text-orange-400 uppercase">Feedback</span>
+                                    <p className="text-[11px] text-orange-700 dark:text-orange-400 whitespace-pre-wrap">{c.feedback}</p>
                                   </div>
                                 )}
                                 {/* Input de feedback para diretor */}
@@ -1524,9 +1524,9 @@ export default function MarketingTab({ eventoId }) {
                                 )}
                                 {/* Feedback visível para diretor quando já revisado */}
                                 {canApprovePlan && plan.status !== 'enviado' && c.feedback && (
-                                  <div className="bg-orange-50 border border-orange-200 rounded p-2 mt-1">
-                                    <span className="text-[9px] font-semibold text-orange-500 uppercase">Seu feedback</span>
-                                    <p className="text-[11px] text-orange-700 whitespace-pre-wrap">{c.feedback}</p>
+                                  <div className="bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/30 rounded p-2 mt-1">
+                                    <span className="text-[9px] font-semibold text-orange-500 dark:text-orange-400 uppercase">Seu feedback</span>
+                                    <p className="text-[11px] text-orange-700 dark:text-orange-400 whitespace-pre-wrap">{c.feedback}</p>
                                   </div>
                                 )}
                               </div>
@@ -1631,7 +1631,7 @@ export default function MarketingTab({ eventoId }) {
                 <div className="p-4 space-y-2">
                   <h4 className="font-bold text-gray-900">{c.titulo}</h4>
                   {c.conteudo && <p className="text-sm text-gray-600 whitespace-pre-wrap">{c.conteudo}</p>}
-                  {c.formato && <span className="inline-block text-xs font-medium text-blue-600 bg-violet-50 px-2 py-0.5 rounded">{c.formato}</span>}
+                  {c.formato && <span className="inline-block text-xs font-medium text-blue-600 dark:text-blue-400 bg-violet-50 dark:bg-violet-500/10 px-2 py-0.5 rounded">{c.formato}</span>}
                   {(cronogramaArquivos[c.id] || []).length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {(cronogramaArquivos[c.id] || []).map(arq => (
@@ -1686,8 +1686,8 @@ export default function MarketingTab({ eventoId }) {
             </div>
             {planejamentos.filter(p => p.status === 'enviado').length === 0 ? (
               <div className="p-8 text-center">
-                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
-                  <span className="text-green-500 text-xl">✓</span>
+                <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-500/20 flex items-center justify-center mx-auto mb-3">
+                  <span className="text-green-500 dark:text-green-400 text-xl">✓</span>
                 </div>
                 <p className="text-sm font-medium text-gray-500">Nenhum planejamento pendente de aprovação</p>
                 <p className="text-xs text-gray-400 mt-1">Quando o social media enviar um planejamento, ele aparecerá aqui</p>
@@ -1698,8 +1698,8 @@ export default function MarketingTab({ eventoId }) {
                   <div key={p.id} onClick={async () => { const detail = await carregarPlanejamentoDetalhe(p.id); if (detail) setShowPlanejamentoDetalhe(detail) }} className="p-4 hover:bg-orange-50/50 cursor-pointer transition">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-                          <Calendar size={18} className="text-orange-500" />
+                        <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-500/20 flex items-center justify-center">
+                          <Calendar size={18} className="text-orange-500 dark:text-orange-400" />
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-gray-900">{new Date(p.semana_inicio + 'T12:00').toLocaleDateString('pt-BR', {day:'numeric', month:'short'})} a {new Date(p.semana_fim + 'T12:00').toLocaleDateString('pt-BR', {day:'numeric', month:'short'})}</p>
@@ -1732,8 +1732,8 @@ export default function MarketingTab({ eventoId }) {
                   <div key={p.id} onClick={async () => { const detail = await carregarPlanejamentoDetalhe(p.id); if (detail) setShowPlanejamentoDetalhe(detail) }} className="p-4 hover:bg-gray-50 cursor-pointer transition">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className={'w-10 h-10 rounded-full flex items-center justify-center ' + (p.status === 'aprovado' ? 'bg-green-100' : 'bg-violet-100')}>
-                          {p.status === 'aprovado' ? <span className="text-green-500">✓</span> : <span className="text-blue-500">↺</span>}
+                        <div className={'w-10 h-10 rounded-full flex items-center justify-center ' + (p.status === 'aprovado' ? 'bg-green-100 dark:bg-green-500/20' : 'bg-violet-100 dark:bg-violet-500/20')}>
+                          {p.status === 'aprovado' ? <span className="text-green-500 dark:text-green-400">✓</span> : <span className="text-blue-500 dark:text-blue-400">↺</span>}
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-900">{new Date(p.semana_inicio + 'T12:00').toLocaleDateString('pt-BR', {day:'numeric', month:'short'})} a {new Date(p.semana_fim + 'T12:00').toLocaleDateString('pt-BR', {day:'numeric', month:'short'})}</p>
@@ -1761,8 +1761,8 @@ export default function MarketingTab({ eventoId }) {
           { num: 4, name: 'Urgência', icon: '🔥', color: 'red', desc: 'Últimos ingressos, escassez', days: '7-0 dias antes' },
         ]
         const colorMap = { blue: 'from-blue-500 to-blue-600', purple: 'from-blue-500 to-blue-600', orange: 'from-orange-500 to-orange-600', red: 'from-red-500 to-red-600' }
-        const bgMap = { blue: 'bg-blue-50 border-blue-200', purple: 'bg-violet-50 border-violet-200', orange: 'bg-orange-50 border-orange-200', red: 'bg-red-50 border-red-200' }
-        const textMap = { blue: 'text-blue-600', purple: 'text-blue-600', orange: 'text-orange-600', red: 'text-red-600' }
+        const bgMap = { blue: 'bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30', purple: 'bg-violet-50 dark:bg-violet-500/10 border-violet-200 dark:border-violet-500/30', orange: 'bg-orange-50 dark:bg-orange-500/10 border-orange-200 dark:border-orange-500/30', red: 'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/30' }
+        const textMap = { blue: 'text-blue-600 dark:text-blue-400', purple: 'text-blue-600 dark:text-blue-400', orange: 'text-orange-600 dark:text-orange-400', red: 'text-red-600 dark:text-red-400' }
 
         return (
         <div className="space-y-4">
@@ -1776,12 +1776,12 @@ export default function MarketingTab({ eventoId }) {
               <div className="flex items-center gap-2">
                 {funnel?.status === 'active' ? (
                   <>
-                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-xs font-bold"><span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" /> Ativo — Fase {funnel.current_phase}</span>
-                    <button onClick={pausarFunnel} className="px-3 py-1.5 bg-red-50 text-red-600 border border-red-200 rounded-lg text-xs font-bold hover:bg-red-100 transition">Pausar</button>
+                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 rounded-lg text-xs font-bold"><span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" /> Ativo — Fase {funnel.current_phase}</span>
+                    <button onClick={pausarFunnel} className="px-3 py-1.5 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/30 rounded-lg text-xs font-bold hover:bg-red-100 dark:hover:bg-red-500/20 transition">Pausar</button>
                   </>
                 ) : funnel?.status === 'paused' ? (
                   <>
-                    <span className="px-3 py-1.5 bg-yellow-100 text-yellow-700 rounded-lg text-xs font-bold">⏸ Pausado</span>
+                    <span className="px-3 py-1.5 bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 rounded-lg text-xs font-bold">⏸ Pausado</span>
                     <button onClick={ativarFunnel} className="px-3 py-1.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg text-xs font-bold shadow-sm">Reativar</button>
                   </>
                 ) : (
@@ -1914,30 +1914,30 @@ export default function MarketingTab({ eventoId }) {
                     const budgetUsed = metrics.total_budget ? ((totalSpend * 100 / metrics.total_budget) * 100).toFixed(0) : 0
                     return (
                       <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
-                        <div className="bg-blue-50 rounded-lg p-3 text-center border border-blue-100">
-                          <p className="text-lg font-bold text-blue-600">R$ {totalSpend.toFixed(2)}</p>
+                        <div className="bg-blue-50 dark:bg-blue-500/10 rounded-lg p-3 text-center border border-blue-100 dark:border-blue-500/25">
+                          <p className="text-lg font-bold text-blue-600 dark:text-blue-400">R$ {totalSpend.toFixed(2)}</p>
                           <p className="text-[9px] text-blue-400 font-semibold">Investido</p>
-                          <div className="mt-1 w-full bg-blue-200 rounded-full h-1"><div className="bg-blue-500 h-1 rounded-full" style={{width: Math.min(100, budgetUsed)+'%'}} /></div>
+                          <div className="mt-1 w-full bg-blue-200 dark:bg-blue-500/30 rounded-full h-1"><div className="bg-blue-500 h-1 rounded-full" style={{width: Math.min(100, budgetUsed)+'%'}} /></div>
                           <p className="text-[8px] text-blue-400 mt-0.5">{budgetUsed}% do orçamento</p>
                         </div>
-                        <div className="bg-green-50 rounded-lg p-3 text-center border border-green-100">
-                          <p className="text-lg font-bold text-green-600">{totalClicks.toLocaleString()}</p>
+                        <div className="bg-green-50 dark:bg-green-500/10 rounded-lg p-3 text-center border border-green-100 dark:border-green-500/25">
+                          <p className="text-lg font-bold text-green-600 dark:text-green-400">{totalClicks.toLocaleString()}</p>
                           <p className="text-[9px] text-green-400 font-semibold">Cliques</p>
                         </div>
-                        <div className="bg-violet-50 rounded-lg p-3 text-center border border-violet-100">
-                          <p className="text-lg font-bold text-blue-600">{totalImpressions.toLocaleString()}</p>
-                          <p className="text-[9px] text-violet-400 font-semibold">Impressões</p>
+                        <div className="bg-violet-50 dark:bg-violet-500/10 rounded-lg p-3 text-center border border-violet-100 dark:border-violet-500/25">
+                          <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{totalImpressions.toLocaleString()}</p>
+                          <p className="text-[9px] text-violet-400 dark:text-violet-400 font-semibold">Impressões</p>
                         </div>
-                        <div className="bg-orange-50 rounded-lg p-3 text-center border border-orange-100">
-                          <p className="text-lg font-bold text-orange-600">{totalReach.toLocaleString()}</p>
+                        <div className="bg-orange-50 dark:bg-orange-500/10 rounded-lg p-3 text-center border border-orange-100 dark:border-orange-500/25">
+                          <p className="text-lg font-bold text-orange-600 dark:text-orange-400">{totalReach.toLocaleString()}</p>
                           <p className="text-[9px] text-orange-400 font-semibold">Alcance</p>
                         </div>
-                        <div className="bg-blue-50 rounded-lg p-3 text-center border border-blue-100">
-                          <p className={'text-lg font-bold ' + (parseFloat(avgCtr) >= 2 ? 'text-green-600' : parseFloat(avgCtr) >= 1 ? 'text-yellow-600' : 'text-red-600')}>{avgCtr}%</p>
+                        <div className="bg-blue-50 dark:bg-blue-500/10 rounded-lg p-3 text-center border border-blue-100 dark:border-blue-500/25">
+                          <p className={'text-lg font-bold ' + (parseFloat(avgCtr) >= 2 ? 'text-green-600 dark:text-green-400' : parseFloat(avgCtr) >= 1 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400')}>{avgCtr}%</p>
                           <p className="text-[9px] text-blue-400 font-semibold">CTR Médio</p>
                         </div>
-                        <div className="bg-blue-50 rounded-lg p-3 text-center border border-blue-100">
-                          <p className={'text-lg font-bold ' + (parseFloat(avgCpc) <= 0.5 ? 'text-green-600' : parseFloat(avgCpc) <= 2 ? 'text-yellow-600' : 'text-red-600')}>R$ {avgCpc}</p>
+                        <div className="bg-blue-50 dark:bg-blue-500/10 rounded-lg p-3 text-center border border-blue-100 dark:border-blue-500/25">
+                          <p className={'text-lg font-bold ' + (parseFloat(avgCpc) <= 0.5 ? 'text-green-600 dark:text-green-400' : parseFloat(avgCpc) <= 2 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400')}>R$ {avgCpc}</p>
                           <p className="text-[9px] text-blue-400 font-semibold">CPC Médio</p>
                         </div>
                       </div>
@@ -1952,11 +1952,11 @@ export default function MarketingTab({ eventoId }) {
                     const statusMap = { ACTIVE: '🟢 Ativo', PAUSED: '⏸ Pausado', ARCHIVED: '📦 Arquivado', WITH_ISSUES: '⚠️ Problemas' }
                     return (
                       <div key={phase.phase} className={'rounded-xl border overflow-hidden ' + (isActive ? 'border-blue-300 ring-1 ring-blue-200' : 'border-gray-200')}>
-                        <div className={'px-4 py-2.5 flex items-center justify-between ' + (isActive ? 'bg-blue-50' : 'bg-gray-50')}>
+                        <div className={'px-4 py-2.5 flex items-center justify-between ' + (isActive ? 'bg-blue-50 dark:bg-blue-500/10' : 'bg-gray-50 dark:bg-white/[0.03]')}>
                           <div className="flex items-center gap-2">
                             <span className="text-sm">{['','📢','🤔','🎯','🔥'][phase.phase]}</span>
-                            <span className="font-bold text-sm text-gray-900">Fase {phase.phase}: {phase.name}</span>
-                            {isActive && <span className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-[9px] font-bold">ATIVA</span>}
+                            <span className="font-bold text-sm text-gray-900 dark:text-white/90">Fase {phase.phase}: {phase.name}</span>
+                            {isActive && <span className="px-1.5 py-0.5 bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 rounded text-[9px] font-bold">ATIVA</span>}
                           </div>
                           <span className="text-[10px] text-gray-500">{statusMap[phase.campaign_status] || phase.campaign_status}</span>
                         </div>

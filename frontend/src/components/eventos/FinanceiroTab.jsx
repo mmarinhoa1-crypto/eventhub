@@ -307,7 +307,7 @@ export default function FinanceiroTab({ eventoId }) {
 
       {/* === CARDS === */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="rounded-2xl p-5 text-white relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #2563eb, #60a5fa)' }}>
+        <div className="rounded-2xl p-5 text-white relative overflow-hidden" style={{ background: 'var(--gradient-info)' }}>
           <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full" style={{ background: 'rgba(255,255,255,0.1)' }} />
           <div className="absolute -bottom-5 right-10 w-16 h-16 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }} />
           <p className="text-xs font-bold uppercase tracking-wider opacity-80 mb-2">Despesas</p>
@@ -318,38 +318,38 @@ export default function FinanceiroTab({ eventoId }) {
           <p className="text-xs opacity-70 mt-1.5">{percentPago.toFixed(0)}% pago • {despesas.length} itens</p>
         </div>
 
-        <div className="bg-white rounded-2xl p-5 border border-green-200 relative overflow-hidden">
+        <div className="bg-white dark:bg-white/[0.05] rounded-2xl p-5 border border-green-200 dark:border-green-500/20 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-0.5" style={{ background: 'linear-gradient(90deg, #10b981, #34d399)' }} />
-          <p className="text-xs font-bold uppercase tracking-wider text-green-600 mb-2">Receitas</p>
-          <p className="text-2xl font-extrabold text-green-700">{fmt(totalReceitas)}</p>
-          <p className="text-xs text-green-400 mt-3 font-semibold">{receitas.length} itens</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-green-600 dark:text-green-400 mb-2">Receitas</p>
+          <p className="text-2xl font-extrabold text-green-700 dark:text-green-400">{fmt(totalReceitas)}</p>
+          <p className="text-xs text-green-400 dark:text-green-500 mt-3 font-semibold">{receitas.length} itens</p>
         </div>
 
-        <div className={'bg-white rounded-2xl p-5 border relative overflow-hidden ' + (saldo >= 0 ? 'border-blue-200' : 'border-red-200')}>
-          <div className="absolute top-0 left-0 w-full h-0.5" style={{ background: saldo >= 0 ? 'linear-gradient(90deg, #2563eb, #60a5fa)' : 'linear-gradient(90deg, #ef4444, #f87171)' }} />
-          <p className={'text-xs font-bold uppercase tracking-wider mb-2 ' + (saldo >= 0 ? 'text-blue-600' : 'text-red-600')}>Saldo</p>
-          <p className={'text-2xl font-extrabold ' + (saldo >= 0 ? 'text-blue-700' : 'text-red-600')}>{fmt(saldo)}</p>
-          <p className="text-xs text-gray-400 mt-3 font-semibold">receitas - despesas</p>
+        <div className={'bg-white dark:bg-white/[0.05] rounded-2xl p-5 border relative overflow-hidden ' + (saldo >= 0 ? 'border-blue-200 dark:border-blue-500/20' : 'border-red-200 dark:border-red-500/20')}>
+          <div className="absolute top-0 left-0 w-full h-0.5" style={{ background: saldo >= 0 ? 'var(--gradient-info)' : 'linear-gradient(90deg, var(--color-danger), #f87171)' }} />
+          <p className={'text-xs font-bold uppercase tracking-wider mb-2 ' + (saldo >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400')}>Saldo</p>
+          <p className={'text-2xl font-extrabold ' + (saldo >= 0 ? 'text-blue-700 dark:text-blue-400' : 'text-red-600 dark:text-red-400')}>{fmt(saldo)}</p>
+          <p className="text-xs text-gray-400 dark:text-white/40 mt-3 font-semibold">receitas - despesas</p>
         </div>
 
-        <div className="bg-white rounded-2xl p-5 border border-yellow-200 relative overflow-hidden">
+        <div className="bg-white dark:bg-white/[0.05] rounded-2xl p-5 border border-yellow-200 dark:border-yellow-500/20 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-0.5" style={{ background: 'linear-gradient(90deg, #f59e0b, #fbbf24)' }} />
-          <p className="text-xs font-bold uppercase tracking-wider text-yellow-600 mb-2">Recebido</p>
-          <p className="text-2xl font-extrabold text-yellow-700">{fmt(recebidas)}</p>
-          <p className="text-xs text-yellow-400 mt-3 font-semibold">de {fmt(totalReceitas)}</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-yellow-600 dark:text-yellow-400 mb-2">Recebido</p>
+          <p className="text-2xl font-extrabold text-yellow-700 dark:text-yellow-400">{fmt(recebidas)}</p>
+          <p className="text-xs text-yellow-400 dark:text-yellow-500 mt-3 font-semibold">de {fmt(totalReceitas)}</p>
         </div>
       </div>
 
       {/* === TAB SWITCH === */}
       <div className="flex items-center justify-between">
         <div className="flex gap-2">
-          <button onClick={() => setView('despesas')} className={'px-4 py-2 rounded-xl text-sm font-bold transition-all ' + (view === 'despesas' ? 'text-white shadow-lg' : 'bg-white text-blue-600 border border-blue-200 hover:bg-blue-50')} style={view === 'despesas' ? { background: 'linear-gradient(135deg, #2563eb, #60a5fa)', boxShadow: '0 4px 16px rgba(37,99,235,0.25)' } : {}}>
+          <button onClick={() => setView('despesas')} className={'px-4 py-2 rounded-xl text-sm font-bold transition-all ' + (view === 'despesas' ? 'text-white shadow-lg' : 'bg-white dark:bg-white/[0.05] text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 hover:bg-blue-50 dark:hover:bg-blue-500/10')} style={view === 'despesas' ? { background: 'var(--gradient-info)', boxShadow: '0 4px 16px rgba(37,99,235,0.25)' } : {}}>
             Pagamentos ({despesas.length})
           </button>
-          <button onClick={() => setView('receitas')} className={'px-4 py-2 rounded-xl text-sm font-bold transition-all ' + (view === 'receitas' ? 'text-white shadow-lg' : 'bg-white text-blue-600 border border-blue-200 hover:bg-blue-50')} style={view === 'receitas' ? { background: 'linear-gradient(135deg, #2563eb, #60a5fa)', boxShadow: '0 4px 16px rgba(37,99,235,0.25)' } : {}}>
+          <button onClick={() => setView('receitas')} className={'px-4 py-2 rounded-xl text-sm font-bold transition-all ' + (view === 'receitas' ? 'text-white shadow-lg' : 'bg-white dark:bg-white/[0.05] text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 hover:bg-blue-50 dark:hover:bg-blue-500/10')} style={view === 'receitas' ? { background: 'var(--gradient-info)', boxShadow: '0 4px 16px rgba(37,99,235,0.25)' } : {}}>
             Recebimentos ({receitas.length})
           </button>
-          <button onClick={() => setView('contas')} className={'px-4 py-2 rounded-xl text-sm font-bold transition-all ' + (view === 'contas' ? 'text-white shadow-lg' : 'bg-white text-blue-600 border border-blue-200 hover:bg-blue-50')} style={view === 'contas' ? { background: 'linear-gradient(135deg, #2563eb, #60a5fa)', boxShadow: '0 4px 16px rgba(37,99,235,0.25)' } : {}}>
+          <button onClick={() => setView('contas')} className={'px-4 py-2 rounded-xl text-sm font-bold transition-all ' + (view === 'contas' ? 'text-white shadow-lg' : 'bg-white dark:bg-white/[0.05] text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 hover:bg-blue-50 dark:hover:bg-blue-500/10')} style={view === 'contas' ? { background: 'var(--gradient-info)', boxShadow: '0 4px 16px rgba(37,99,235,0.25)' } : {}}>
             Contas ({contas.length})
           </button>
         </div>
@@ -401,7 +401,7 @@ export default function FinanceiroTab({ eventoId }) {
 
             <button onClick={() => setShowQuickAdd(!showQuickAdd)}
               className={'px-5 py-2.5 rounded-xl text-sm font-extrabold border-none cursor-pointer transition-all ' + (showQuickAdd ? 'bg-red-50 text-red-500' : 'text-white')}
-              style={!showQuickAdd ? { background: 'linear-gradient(135deg, #2563eb, #60a5fa)', boxShadow: '0 4px 16px rgba(37,99,235,0.25)' } : {}}>
+              style={!showQuickAdd ? { background: 'var(--gradient-info)', boxShadow: '0 4px 16px rgba(37,99,235,0.25)' } : {}}>
               {showQuickAdd ? '✕ Fechar' : '+ Adicionar'}
             </button>
           </div>
@@ -439,7 +439,7 @@ export default function FinanceiroTab({ eventoId }) {
                   )}
                   <button onClick={addQuickDespesa}
                     className={'px-6 py-2.5 rounded-xl text-sm font-extrabold border-none cursor-pointer transition-all ' + (quickForm.descricao ? 'text-white' : 'bg-gray-200 text-gray-400')}
-                    style={quickForm.descricao ? { background: 'linear-gradient(135deg, #2563eb, #60a5fa)', boxShadow: '0 4px 16px rgba(37,99,235,0.25)' } : {}}>
+                    style={quickForm.descricao ? { background: 'var(--gradient-info)', boxShadow: '0 4px 16px rgba(37,99,235,0.25)' } : {}}>
                     Salvar ↵
                   </button>
                 </div>
@@ -598,7 +598,7 @@ export default function FinanceiroTab({ eventoId }) {
               </div>
               <div className="flex gap-2 mt-3">
                 <button onClick={() => editarDespesa(selectedDespesa)} className="flex-1 py-2.5 rounded-xl text-xs font-extrabold text-white border-none cursor-pointer"
-                  style={{ background: 'linear-gradient(135deg, #2563eb, #60a5fa)', boxShadow: '0 4px 16px rgba(124,58,237,0.2)' }}>✏️ Editar</button>
+                  style={{ background: 'var(--gradient-info)', boxShadow: '0 4px 16px rgba(124,58,237,0.2)' }}>✏️ Editar</button>
                 <button onClick={() => toggleDespesaStatus(selectedDespesa.id)} className="py-2.5 px-5 rounded-xl text-xs font-extrabold border border-green-200 bg-green-50 text-green-700 cursor-pointer">
                   {selectedDespesa.situacao === 'pago' ? '↩ Marcar Pendente' : '✓ Marcar como Pago'}
                 </button>
@@ -609,7 +609,7 @@ export default function FinanceiroTab({ eventoId }) {
 
           {/* Total Bar */}
           <div className="rounded-2xl px-6 py-4 flex justify-between items-center text-white"
-            style={{ background: 'linear-gradient(135deg, #2563eb, #60a5fa)' }}>
+            style={{ background: 'var(--gradient-info)' }}>
             <span className="text-sm font-extrabold opacity-80">TOTAL GERAL • {despesas.length} itens</span>
             <span className="text-xl font-extrabold">{fmt(totalDespesas)}</span>
           </div>
@@ -623,7 +623,7 @@ export default function FinanceiroTab({ eventoId }) {
             <div className="p-4 border-b border-blue-100 flex items-center justify-between bg-blue-50">
               <h3 className="font-extrabold text-blue-700">Recebimentos</h3>
               <button onClick={() => setShowRecForm(true)} className="flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-bold text-white border-none cursor-pointer"
-                style={{ background: 'linear-gradient(135deg, #2563eb, #60a5fa)', boxShadow: '0 4px 16px rgba(37,99,235,0.25)' }}>
+                style={{ background: 'var(--gradient-info)', boxShadow: '0 4px 16px rgba(37,99,235,0.25)' }}>
                 <Plus size={14} /> Adicionar
               </button>
             </div>
@@ -666,7 +666,7 @@ export default function FinanceiroTab({ eventoId }) {
             <div className="p-4 border-b border-blue-100 flex items-center justify-between bg-blue-50">
               <h3 className="font-extrabold text-blue-700">Contas / Fontes de Pagamento</h3>
               <button onClick={() => setShowContaForm(!showContaForm)} className="flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-bold text-white border-none cursor-pointer"
-                style={{ background: 'linear-gradient(135deg, #2563eb, #60a5fa)', boxShadow: '0 4px 16px rgba(37,99,235,0.25)' }}>
+                style={{ background: 'var(--gradient-info)', boxShadow: '0 4px 16px rgba(37,99,235,0.25)' }}>
                 <Plus size={14} /> Adicionar Conta
               </button>
             </div>
@@ -686,7 +686,7 @@ export default function FinanceiroTab({ eventoId }) {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button type="submit" className="px-4 py-2 rounded-xl text-sm font-bold text-white border-none cursor-pointer" style={{ background: 'linear-gradient(135deg, #2563eb, #60a5fa)' }}>Salvar</button>
+                  <button type="submit" className="px-4 py-2 rounded-xl text-sm font-bold text-white border-none cursor-pointer" style={{ background: 'var(--gradient-info)' }}>Salvar</button>
                   <button type="button" onClick={() => setShowContaForm(false)} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-xl text-sm font-bold cursor-pointer border-none">Cancelar</button>
                 </div>
               </form>
@@ -741,7 +741,7 @@ export default function FinanceiroTab({ eventoId }) {
               <label className="block text-xs text-blue-400 mb-1 font-bold">Percentual (%)</label>
               <input type="number" step="0.01" min="0" max="100" value={editConta.percentual} onChange={e => setEditConta({ ...editConta, percentual: e.target.value })} className="w-full border-2 border-blue-100 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-400" />
             </div>
-            <button onClick={salvarEditConta} className="w-full px-4 py-2.5 rounded-xl text-sm font-bold text-white border-none cursor-pointer" style={{ background: 'linear-gradient(135deg, #2563eb, #60a5fa)' }}>Salvar</button>
+            <button onClick={salvarEditConta} className="w-full px-4 py-2.5 rounded-xl text-sm font-bold text-white border-none cursor-pointer" style={{ background: 'var(--gradient-info)' }}>Salvar</button>
           </div>
         </Modal>
       )}
@@ -785,7 +785,7 @@ export default function FinanceiroTab({ eventoId }) {
               </table>
             </div>
             <button onClick={exportarEncontro} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white border-none cursor-pointer"
-              style={{ background: 'linear-gradient(135deg, #2563eb, #60a5fa)' }}>
+              style={{ background: 'var(--gradient-info)' }}>
               <Download size={14} /> Exportar Encontro de Contas
             </button>
             <div className="bg-blue-50 rounded-xl p-3 border border-blue-200">
@@ -842,7 +842,7 @@ export default function FinanceiroTab({ eventoId }) {
               </div>
             </div>
             <input placeholder="Fornecedor" value={form.fornecedor} onChange={e => setForm({ ...form, fornecedor: e.target.value })} className="w-full border-2 border-blue-100 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-400" />
-            <button type="submit" className="w-full py-2.5 rounded-xl text-sm font-bold text-white border-none cursor-pointer" style={{ background: 'linear-gradient(135deg, #2563eb, #60a5fa)' }}>{editId ? 'Atualizar' : 'Adicionar'}</button>
+            <button type="submit" className="w-full py-2.5 rounded-xl text-sm font-bold text-white border-none cursor-pointer" style={{ background: 'var(--gradient-info)' }}>{editId ? 'Atualizar' : 'Adicionar'}</button>
           </form>
         </Modal>
       )}
@@ -874,7 +874,7 @@ export default function FinanceiroTab({ eventoId }) {
               </select>
               <input type="date" value={recForm.data_pagamento} onChange={e => setRecForm({ ...recForm, data_pagamento: e.target.value })} className="border-2 border-blue-100 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-400" />
             </div>
-            <button type="submit" className="w-full py-2.5 rounded-xl text-sm font-bold text-white border-none cursor-pointer" style={{ background: 'linear-gradient(135deg, #2563eb, #60a5fa)' }}>Adicionar Receita</button>
+            <button type="submit" className="w-full py-2.5 rounded-xl text-sm font-bold text-white border-none cursor-pointer" style={{ background: 'var(--gradient-info)' }}>Adicionar Receita</button>
           </form>
         </Modal>
       )}

@@ -63,8 +63,8 @@ export default function FinanceiroPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 rounded-xl">
-            <DollarSign size={24} className="text-blue-600" />
+          <div className="p-2 bg-blue-100 dark:bg-blue-500/20 rounded-xl">
+            <DollarSign size={24} className="text-blue-600 dark:text-blue-400" />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Financeiro</h1>
@@ -97,7 +97,7 @@ export default function FinanceiroPage() {
                   onClick={() => setActiveTab(tab.key)}
                   className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
                     activeTab === tab.key
-                      ? 'border-blue-600 text-blue-600'
+                      ? 'border-blue-600 text-blue-600 dark:text-blue-400'
                       : 'border-transparent text-gray-500 hover:text-gray-700'
                   }`}
                 >
@@ -130,17 +130,17 @@ export default function FinanceiroPage() {
                   return (
                     <>
                       <div className="p-4 grid grid-cols-3 gap-3">
-                        <div className="bg-green-50 rounded-xl px-3 py-2">
-                          <span className="text-[10px] text-green-600 font-semibold uppercase">Entradas</span>
-                          <p className="text-lg font-bold text-green-600">R$ {totalRec.toLocaleString('pt-BR',{minimumFractionDigits:2})}</p>
+                        <div className="bg-green-50 dark:bg-green-500/10 rounded-xl px-3 py-2">
+                          <span className="text-[10px] text-green-600 dark:text-green-400 font-semibold uppercase">Entradas</span>
+                          <p className="text-lg font-bold text-green-600 dark:text-green-400">R$ {totalRec.toLocaleString('pt-BR',{minimumFractionDigits:2})}</p>
                         </div>
-                        <div className="bg-red-50 rounded-xl px-3 py-2">
-                          <span className="text-[10px] text-red-600 font-semibold uppercase">Saídas</span>
-                          <p className="text-lg font-bold text-red-600">R$ {totalDesp.toLocaleString('pt-BR',{minimumFractionDigits:2})}</p>
+                        <div className="bg-red-50 dark:bg-red-500/10 rounded-xl px-3 py-2">
+                          <span className="text-[10px] text-red-600 dark:text-red-400 font-semibold uppercase">Saídas</span>
+                          <p className="text-lg font-bold text-red-600 dark:text-red-400">R$ {totalDesp.toLocaleString('pt-BR',{minimumFractionDigits:2})}</p>
                         </div>
-                        <div className={(saldo >= 0 ? 'bg-blue-50' : 'bg-orange-50') + ' rounded-xl px-3 py-2'}>
-                          <span className={'text-[10px] font-semibold uppercase ' + (saldo >= 0 ? 'text-blue-600' : 'text-orange-600')}>Saldo</span>
-                          <p className={'text-lg font-bold ' + (saldo >= 0 ? 'text-blue-600' : 'text-orange-600')}>R$ {saldo.toLocaleString('pt-BR',{minimumFractionDigits:2})}</p>
+                        <div className={(saldo >= 0 ? 'bg-blue-50 dark:bg-blue-500/10' : 'bg-orange-50 dark:bg-orange-500/10') + ' rounded-xl px-3 py-2'}>
+                          <span className={'text-[10px] font-semibold uppercase ' + (saldo >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400')}>Saldo</span>
+                          <p className={'text-lg font-bold ' + (saldo >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400')}>R$ {saldo.toLocaleString('pt-BR',{minimumFractionDigits:2})}</p>
                         </div>
                       </div>
                       <div className="overflow-x-auto">
@@ -157,17 +157,17 @@ export default function FinanceiroPage() {
                               <tr key={it._tipo+'-'+it.id} className="border-t border-gray-100 hover:bg-gray-50">
                                 <td className="px-4 py-2 text-gray-600">{it._data || '-'}</td>
                                 <td className="px-4 py-2">
-                                  <span className={'text-xs font-bold px-2 py-0.5 rounded-full ' + (it._tipo === 'receita' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700')}>
+                                  <span className={'text-xs font-bold px-2 py-0.5 rounded-full ' + (it._tipo === 'receita' ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400')}>
                                     {it._tipo === 'receita' ? '↑ Entrada' : '↓ Saída'}
                                   </span>
                                 </td>
                                 <td className="px-4 py-2 text-gray-900">{it.descricao || it.fornecedor || it.conta || '-'}</td>
-                                <td className={'px-4 py-2 text-right font-medium ' + (it._tipo === 'receita' ? 'text-green-600' : 'text-red-600')}>
+                                <td className={'px-4 py-2 text-right font-medium ' + (it._tipo === 'receita' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400')}>
                                   {it._tipo === 'receita' ? '+' : '-'} R$ {Number(it.valor||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}
                                 </td>
                                 <td className="px-4 py-2 text-center">
                                   {it.comprovante_url ? (
-                                    <button onClick={() => setPreviewComprovante(it)} className="text-blue-500 hover:text-blue-700 text-sm">📎</button>
+                                    <button onClick={() => setPreviewComprovante(it)} className="text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm">📎</button>
                                   ) : <span className="text-gray-200">-</span>}
                                 </td>
                               </tr>
@@ -201,7 +201,7 @@ export default function FinanceiroPage() {
                     </div>
                     <div className="p-4 border-t bg-gray-50 rounded-b-2xl grid grid-cols-2 gap-3 text-sm">
                       <div><span className="text-gray-400 text-xs uppercase font-semibold">Fornecedor</span><p className="font-medium text-gray-900">{previewComprovante.fornecedor || '-'}</p></div>
-                      <div><span className="text-gray-400 text-xs uppercase font-semibold">Valor</span><p className="font-medium text-red-600">R$ {Number(previewComprovante.valor||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</p></div>
+                      <div><span className="text-gray-400 text-xs uppercase font-semibold">Valor</span><p className="font-medium text-red-600 dark:text-red-400">R$ {Number(previewComprovante.valor||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</p></div>
                       <div><span className="text-gray-400 text-xs uppercase font-semibold">Centro de Custo</span><p className="font-medium text-gray-900">{previewComprovante.centro_custo || '-'}</p></div>
                       <div><span className="text-gray-400 text-xs uppercase font-semibold">Registrado por</span><p className="font-medium text-gray-900">{previewComprovante.registrado_por || '-'}</p></div>
                     </div>

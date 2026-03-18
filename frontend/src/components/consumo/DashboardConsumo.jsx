@@ -58,10 +58,10 @@ export default function DashboardConsumo() {
   }
 
   const cards = [
-    { label: 'Eventos Analisados', value: stats.total_eventos, icon: BarChart3, color: 'bg-blue-100 text-blue-600' },
-    { label: 'Produtos Cadastrados', value: stats.total_produtos, icon: Package, color: 'bg-green-100 text-green-600' },
-    { label: 'Pedidos Gerados', value: stats.total_pedidos, icon: ShoppingCart, color: 'bg-violet-100 text-violet-600' },
-    { label: 'Público Total', value: analise?.total_publico?.toLocaleString('pt-BR') || 0, icon: Users, color: 'bg-indigo-100 text-indigo-600' },
+    { label: 'Eventos Analisados', value: stats.total_eventos, icon: BarChart3, color: 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400' },
+    { label: 'Produtos Cadastrados', value: stats.total_produtos, icon: Package, color: 'bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400' },
+    { label: 'Pedidos Gerados', value: stats.total_pedidos, icon: ShoppingCart, color: 'bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400' },
+    { label: 'Público Total', value: analise?.total_publico?.toLocaleString('pt-BR') || 0, icon: Users, color: 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400' },
   ]
 
   return (
@@ -89,9 +89,9 @@ export default function DashboardConsumo() {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {stats.por_tipo.map((t, i) => (
-              <div key={i} className={`rounded-xl p-4 ${t.tipo === 'open' ? 'bg-green-50 border border-green-200' : 'bg-orange-50 border border-orange-200'}`}>
+              <div key={i} className={`rounded-xl p-4 ${t.tipo === 'open' ? 'bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/25' : 'bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/25'}`}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className={`text-sm font-semibold ${t.tipo === 'open' ? 'text-green-700' : 'text-orange-700'}`}>
+                  <span className={`text-sm font-semibold ${t.tipo === 'open' ? 'text-green-700 dark:text-green-400' : 'text-orange-700 dark:text-orange-400'}`}>
                     {t.tipo === 'open' ? 'Open Bar' : 'Bar Vendido'}
                   </span>
                   <span className="text-xs text-gray-500">{parseInt(t.total_publico).toLocaleString('pt-BR')} pessoas</span>
@@ -169,7 +169,7 @@ export default function DashboardConsumo() {
                 <button
                   key={f.value}
                   onClick={() => filtrar(f.value)}
-                  className={`px-3 py-1 text-xs rounded-lg transition ${filtroTipo === f.value ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                  className={`px-3 py-1 text-xs rounded-lg transition ${filtroTipo === f.value ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-white/60 hover:bg-gray-200 dark:hover:bg-white/10'}`}
                 >
                   {f.label}
                 </button>

@@ -14,16 +14,16 @@ const fmtK = v => {
 
 function KPICard({ icon, label, value, color, sub }) {
   const colors = {
-    emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-    red: 'bg-red-50 text-red-600 border-red-100',
-    blue: 'bg-blue-50 text-blue-600 border-blue-100',
-    violet: 'bg-violet-50 text-blue-600 border-violet-100',
+    emerald: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/25',
+    red: 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-100 dark:border-red-500/25',
+    blue: 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-500/25',
+    violet: 'bg-violet-50 dark:bg-violet-500/10 text-blue-600 dark:text-blue-400 border-violet-100 dark:border-violet-500/25',
   }
   const iconColors = {
-    emerald: 'bg-emerald-100 text-emerald-600',
-    red: 'bg-red-100 text-red-600',
-    blue: 'bg-blue-100 text-blue-600',
-    violet: 'bg-violet-100 text-blue-600',
+    emerald: 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400',
+    red: 'bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400',
+    blue: 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400',
+    violet: 'bg-violet-100 dark:bg-violet-500/20 text-blue-600 dark:text-blue-400',
   }
   return (
     <div className={`rounded-2xl p-4 border shadow-sm ${colors[color]||colors.blue}`}>
@@ -251,7 +251,7 @@ export default function DashboardFinanceiro({ eventoId }) {
                   <tr key={i} className="border-t border-gray-50 hover:bg-gray-50">
                     <td className="px-5 py-3 font-medium text-gray-800">{c.nome} <span className="text-gray-400 text-xs ml-1">{c.titular}</span></td>
                     <td className="px-5 py-3 text-right text-gray-600">{pct}%</td>
-                    <td className={'px-5 py-3 text-right font-bold ' + (parte>=0?'text-emerald-600':'text-red-600')}>{fmt(Math.abs(parte))}</td>
+                    <td className={'px-5 py-3 text-right font-bold ' + (parte>=0?'text-emerald-600 dark:text-emerald-400':'text-red-600 dark:text-red-400')}>{fmt(Math.abs(parte))}</td>
                   </tr>
                 )
               })}

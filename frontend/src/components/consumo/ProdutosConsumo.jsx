@@ -13,13 +13,13 @@ const UNIDADES = [
 ]
 
 const catColors = {
-  'Cerveja': 'bg-amber-100 text-amber-700',
-  'Destilados': 'bg-violet-100 text-violet-700',
-  'Energetico': 'bg-green-100 text-green-700',
-  'Agua': 'bg-blue-100 text-blue-700',
-  'Refrigerante': 'bg-red-100 text-red-700',
-  'Vinho': 'bg-rose-100 text-rose-700',
-  'Drinks': 'bg-indigo-100 text-indigo-700',
+  'Cerveja': 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400',
+  'Destilados': 'bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-400',
+  'Energetico': 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400',
+  'Agua': 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400',
+  'Refrigerante': 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400',
+  'Vinho': 'bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-400',
+  'Drinks': 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400',
   'Outros': 'bg-gray-100 text-gray-700',
 }
 
