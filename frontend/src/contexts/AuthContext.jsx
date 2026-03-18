@@ -16,7 +16,7 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const token = localStorage.getItem('token')
-    if (token) {
+    if (token && import.meta.env.PROD) {
       api.get('/auth/eu')
         .then(({ data }) => {
           const usr = data.usuario
@@ -42,6 +42,16 @@ export function AuthProvider({ children }) {
   }, [])
 
   async function entrar(email, senha) {
+    if (import.meta.env.DEV && email === 'dev@dev.com' && senha === 'dev') {
+      const usr = { id: 0, nome: 'Dev Admin', email: 'dev@dev.com', funcao: 'admin' }
+      const org = { id: 0, nome: '314 Produções', plano: 'pro' }
+      localStorage.setItem('token', 'dev')
+      localStorage.setItem('usuario', JSON.stringify(usr))
+      localStorage.setItem('organizacao', JSON.stringify(org))
+      setUsuario(usr)
+      setOrganizacao(org)
+      return
+    }
     const { data } = await api.post('/auth/entrar', { email, senha })
     localStorage.setItem('token', data.token)
     localStorage.setItem('usuario', JSON.stringify(data.usuario))

@@ -220,5 +220,22 @@ CREATE TABLE IF NOT EXISTS itens_pedido (
   criado_em TIMESTAMP DEFAULT NOW()
 );
 
+-- NOTIFICACOES
+CREATE TABLE IF NOT EXISTS notificacoes (
+  id SERIAL PRIMARY KEY,
+  org_id INTEGER REFERENCES organizacoes(id) ON DELETE CASCADE,
+  usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+  tipo VARCHAR(50) NOT NULL,
+  titulo VARCHAR(255) NOT NULL,
+  mensagem TEXT DEFAULT '',
+  link VARCHAR(255) DEFAULT '',
+  referencia_tipo VARCHAR(50) DEFAULT '',
+  referencia_id INTEGER,
+  lida BOOLEAN DEFAULT FALSE,
+  criado_em TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_notificacoes_usuario ON notificacoes(usuario_id, lida);
+
 -- INSERIR ORGANIZACAO PADRAO
 INSERT INTO organizacoes (nome, slug, instancia_whatsapp) VALUES ('EventHub Produções', 'eventhub', 'meuwhats') ON CONFLICT DO NOTHING;
+

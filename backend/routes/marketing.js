@@ -28,7 +28,20 @@ const b=req.body;const fields=[];const vals=[];let idx=1;
 fields.push('atualizado_em=NOW()');
 vals.push(parseInt(req.params.id));vals.push(req.user.org_id);
 const r=await pool.query('UPDATE briefings SET '+fields.join(',')+' WHERE id=$'+idx+' AND org_id=$'+(idx+1)+' RETURNING *',vals);
-res.json(r.rows[0])}catch(e){res.status(500).json({erro:e.message})}});
+const updated=r.rows[0];
+// Notificar gestores quando status muda para em_revisao
+if(b.status==='em_revisao'&&updated){
+  try{
+    const gestores=await pool.query("SELECT id FROM usuarios WHERE org_id=$1 AND funcao IN ('admin','diretor') AND id!=$2",[req.user.org_id,req.user.id]);
+    for(const g of gestores.rows){
+      await pool.query('INSERT INTO notificacoes(org_id,usuario_id,tipo,titulo,mensagem,link,referencia_tipo,referencia_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8)',
+        [req.user.org_id,g.id,'demanda_aprovacao','Demanda aguardando aprovação',
+         (req.user.nome||'Usuário')+' enviou "'+updated.titulo+'" para revisão',
+         '/demandas','briefing',updated.id]);
+    }
+  }catch(e2){console.error('Erro ao criar notificacoes de briefing:',e2.message)}
+}
+res.json(updated)}catch(e){res.status(500).json({erro:e.message})}});
 
 router.delete('/api/briefings/:id',auth,async(req,res)=>{try{
 const b=await pool.query('SELECT cronograma_id FROM briefings WHERE id=$1 AND org_id=$2',[req.params.id,req.user.org_id]);
@@ -62,7 +75,20 @@ const b=req.body;const fields=[];const vals=[];let idx=1;
 ['titulo','plataforma','data_publicacao','hora_publicacao','conteudo','hashtags','formato','status','feedback','auto_publish','boost_enabled','boost_budget','boost_duration','boost_age_min','boost_age_max','boost_cities','collaborators'].forEach(function(k){if(b[k]!==undefined){fields.push(k+'=$'+idx);vals.push(b[k]);idx++}});
 vals.push(parseInt(req.params.id));vals.push(req.user.org_id);
 const r=await pool.query('UPDATE cronograma_marketing SET '+fields.join(',')+' WHERE id=$'+idx+' AND org_id=$'+(idx+1)+' RETURNING *',vals);
-res.json(r.rows[0])}catch(e){res.status(500).json({erro:e.message})}});
+const updated=r.rows[0];
+// Notificar gestores quando status muda para em_revisao
+if(b.status==='em_revisao'&&updated){
+  try{
+    const gestores=await pool.query("SELECT id FROM usuarios WHERE org_id=$1 AND funcao IN ('admin','diretor') AND id!=$2",[req.user.org_id,req.user.id]);
+    for(const g of gestores.rows){
+      await pool.query('INSERT INTO notificacoes(org_id,usuario_id,tipo,titulo,mensagem,link,referencia_tipo,referencia_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8)',
+        [req.user.org_id,g.id,'demanda_aprovacao','Demanda aguardando aprovação',
+         (req.user.nome||'Usuário')+' enviou "'+updated.titulo+'" para revisão',
+         '/demandas','cronograma',updated.id]);
+    }
+  }catch(e2){console.error('Erro ao criar notificacoes de cronograma:',e2.message)}
+}
+res.json(updated)}catch(e){res.status(500).json({erro:e.message})}});
 
 router.delete('/api/cronograma/:id',auth,async(req,res)=>{try{
 await pool.query('DELETE FROM briefings WHERE cronograma_id=$1 AND org_id=$2',[req.params.id,req.user.org_id]);

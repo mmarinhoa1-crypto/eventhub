@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ClipboardList, Calendar, Clock, CheckCircle, AlertCircle, Image, FileText, Palette, Megaphone, ArrowRight, Music, Link2, Eye, Upload, Trash2, X as XIcon, Paperclip, ChevronLeft, ChevronRight, Plus, Users, Instagram, Send, FolderOpen, Download } from 'lucide-react'
+import { Calendar, Clock, CheckCircle, AlertCircle, FileText, Palette, Megaphone, ArrowRight, X as XIcon, Paperclip, ChevronLeft, ChevronRight, Plus, FolderOpen } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api/client'
 import toast from 'react-hot-toast'
@@ -42,6 +42,16 @@ const formatoConfig = {
   'REELS': { icon: '🎥', color: 'bg-rose-100 text-rose-700' },
 }
 
+const ETIQUETAS_PADRAO = [
+  { key: 'urgente',   label: 'Urgente',    emoji: '🔴', color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
+  { key: 'pausa',     label: 'Pausa',      emoji: '⏸️', color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
+  { key: 'em_foco',   label: 'Em Foco',    emoji: '🎯', color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
+  { key: 'revisao',   label: 'Revisão',    emoji: '💬', color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
+  { key: 'pronto',    label: 'Pronto',     emoji: '✅', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0' },
+  { key: 'feedback',  label: 'Feedback',   emoji: '📋', color: '#ea580c', bg: '#fff7ed', border: '#fed7aa' },
+  { key: 'aguardando',label: 'Aguardando', emoji: '⌛', color: '#6b7280', bg: '#f9fafb', border: '#e5e7eb' },
+]
+
 export default function MinhasDemandas() {
   const { usuario } = useAuth()
   const funcao = usuario?.funcao || 'viewer'
@@ -74,11 +84,16 @@ export default function MinhasDemandas() {
   const [adminEditForm, setAdminEditForm] = useState({})
   const [adminWeekOffset, setAdminWeekOffset] = useState(0)
   const [calendarDate, setCalendarDate] = useState(new Date())
-  const [calendarView, setCalendarView] = useState('week')
-  const [calendarFilter, setCalendarFilter] = useState('todos')
+  // eslint-disable-next-line no-unused-vars
+  const [_calendarFilter, setCalendarFilter] = useState('todos')
   const [cardArquivos, setCardArquivos] = useState({})
   const [previewArquivo, setPreviewArquivo] = useState(null)
   const [showNovoPost, setShowNovoPost] = useState(false)
+  const [draggedItem, setDraggedItem] = useState(null)
+  const [dragOverDay, setDragOverDay] = useState(null)
+  const [etiquetasStore, setEtiquetasStore] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('eventhub_etiquetas') || '{}') } catch { return {} }
+  })
   const [novoPostForm, setNovoPostForm] = useState({ titulo: '', plataforma: 'Instagram', data_publicacao: '', hora_publicacao: '', conteudo: '', tipo_conteudo: '', formato: '', descricao: '', referencia: '', musica: '', destino: 'social', status: 'pendente', collaborators: '', id_evento: '' })
   const [novoPostArquivos, setNovoPostArquivos] = useState([])
   const [criandoPost, setCriandoPost] = useState(false)
@@ -237,6 +252,45 @@ export default function MinhasDemandas() {
     finally { setLoading(false) }
   }
 
+  async function atualizarData(tipo, id, novaData) {
+    try {
+      if (tipo === 'briefing') {
+        await api.patch('/briefings/' + id, { data_vencimento: novaData })
+      } else {
+        await api.patch('/cronograma/' + id, { data_publicacao: novaData })
+      }
+      toast.success('Data atualizada!')
+      carregar()
+    } catch { toast.error('Erro ao atualizar data') }
+  }
+
+  function getEtiquetas(tipo, id) {
+    return etiquetasStore[(tipo || 'item') + '-' + id] || []
+  }
+
+  function saveEtiquetas(tipo, id, novas) {
+    const key = (tipo || 'item') + '-' + id
+    const novo = { ...etiquetasStore, [key]: novas }
+    setEtiquetasStore(novo)
+    try { localStorage.setItem('eventhub_etiquetas', JSON.stringify(novo)) } catch {}
+  }
+
+  function toggleEtiqueta(tipo, id, etiqueta) {
+    const atual = getEtiquetas(tipo, id)
+    saveEtiquetas(tipo, id, atual.includes(etiqueta) ? atual.filter(e => e !== etiqueta) : [...atual, etiqueta])
+  }
+
+  function addEtiquetaCustom(tipo, id, texto) {
+    const t = texto.trim()
+    if (!t) return
+    const atual = getEtiquetas(tipo, id)
+    if (!atual.includes(t)) saveEtiquetas(tipo, id, [...atual, t])
+  }
+
+  function removeEtiqueta(tipo, id, etiqueta) {
+    saveEtiquetas(tipo, id, getEtiquetas(tipo, id).filter(e => e !== etiqueta))
+  }
+
   async function criarNovoPost() {
     if (!novoPostForm.titulo.trim() || !novoPostForm.id_evento) {
       toast.error('Preencha o titulo e selecione um evento')
@@ -350,21 +404,12 @@ export default function MinhasDemandas() {
     return p[2] + ' ' + ms[parseInt(p[1])-1]
   }
 
-  function diasAte(d) {
-    if (!d) return null
-    const dt = new Date(d.slice(0,10) + 'T12:00')
-    const h = new Date(); h.setHours(12,0,0,0)
-    return Math.ceil((dt - h) / 86400000)
-  }
-
   const briefingsFiltrados = filtroEvento === 'todos' ? filtrarPorData(data.briefings, 'data_vencimento') : filtrarPorData(data.briefings, 'data_vencimento').filter(b => b.id_evento === Number(filtroEvento))
   const postsFiltrados = filtroEvento === 'todos' ? filtrarPorData(data.posts, 'data_publicacao') : filtrarPorData(data.posts, 'data_publicacao').filter(p => p.id_evento === Number(filtroEvento))
 
   const totalBriefings = data.briefings.length
   const totalPosts = data.posts.length
-  const pendentes = data.briefings.filter(b => ['pendente','em_andamento'].includes(b.status)).length
   const pendentesPost = data.posts.filter(p => ['pendente','em_andamento'].includes(p.status)).length
-  const atrasadosBriefing = data.briefings.filter(b => isAtrasado(b, 'data_vencimento')).length
   const atrasadosPost = data.posts.filter(p => isAtrasado(p, 'data_publicacao')).length
 
   if (loading) return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
@@ -531,99 +576,169 @@ export default function MinhasDemandas() {
                     {weekDays.map((day, idx) => {
                       const dayStr = day.toISOString().split('T')[0]
                       const isToday = dayStr === todayStr
-                      const dayItems = filteredItems.filter(d => d._data?.slice(0,10) === dayStr).sort((a, b) => (a.status === 'publicado' ? 0 : 1) - (b.status === 'publicado' ? 0 : 1))
-                      const adminPlataformaCores = { 'Instagram': 'bg-blue-500', 'Facebook': 'bg-blue-600', 'TikTok': 'bg-black', 'YouTube': 'bg-red-600', 'Twitter': 'bg-sky-500', 'LinkedIn': 'bg-blue-700' }
-                      const adminStatusDot = { pendente: 'bg-yellow-400', em_andamento: 'bg-blue-500', em_producao: 'bg-blue-500', em_revisao: 'bg-blue-500', aprovado: 'bg-green-500', publicado: 'bg-green-500', concluido: 'bg-green-500', cancelado: 'bg-red-400' }
+                      const dayItems = filteredItems.filter(d => d._data?.slice(0,10) === dayStr).sort((a, b) => (a.status === 'publicado' ? 1 : 0) - (b.status === 'publicado' ? 1 : 0))
+                      const plataformaColor = { 'Instagram': '#e1306c', 'Facebook': '#1877f2', 'TikTok': '#010101', 'YouTube': '#ff0000', 'Twitter': '#1da1f2', 'LinkedIn': '#0a66c2' }
+                      const statusAccent = { pendente: '#f59e0b', em_andamento: '#3b82f6', em_producao: '#3b82f6', em_revisao: '#8b5cf6', aprovado: '#10b981', publicado: '#10b981', concluido: '#10b981', cancelado: '#9ca3af' }
+                      const isDragTarget = dragOverDay === dayStr && draggedItem
                       return (
-                        <div key={idx} className={'min-h-[380px] ' + (isToday ? 'bg-blue-50/40' : '')} style={{minHeight:380}}>
-                          <div className={'text-center py-2 border-b ' + (isToday ? 'border-blue-200 bg-blue-50' : 'border-gray-100')}>
-                            <p className={'text-xs font-bold ' + (isToday ? 'text-blue-600' : 'text-gray-400')}>{diasNomes[idx]}</p>
-                            <span className={'text-sm font-bold w-8 h-8 flex items-center justify-center rounded-full mx-auto ' + (isToday ? 'bg-blue-600 text-white' : 'text-gray-700')}>{day.getDate()}</span>
+                        <div
+                          key={idx}
+                          onDragOver={e => { e.preventDefault(); setDragOverDay(dayStr) }}
+                          onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverDay(null) }}
+                          onDrop={e => {
+                            e.preventDefault()
+                            if (draggedItem && draggedItem._data?.slice(0,10) !== dayStr) {
+                              atualizarData(draggedItem._tipo, draggedItem.id, dayStr)
+                            }
+                            setDraggedItem(null)
+                            setDragOverDay(null)
+                          }}
+                          className={'transition-colors duration-150 ' + (isToday ? 'bg-blue-50/30' : 'bg-white') + (isDragTarget ? ' bg-blue-50 ring-2 ring-inset ring-blue-400' : '')}
+                          style={{minHeight: 480}}
+                        >
+                          {/* Day header */}
+                          <div className={'py-3 border-b text-center ' + (isToday ? 'bg-blue-50 border-blue-200' : 'border-gray-100')}>
+                            <p className={'text-[11px] font-bold uppercase tracking-wide mb-1 ' + (isToday ? 'text-blue-500' : 'text-gray-400')}>{diasNomes[idx]}</p>
+                            <span className={'w-8 h-8 flex items-center justify-center rounded-full mx-auto text-sm font-bold ' + (isToday ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-700')}>
+                              {day.getDate()}
+                            </span>
+                            {dayItems.length > 0 && (
+                              <span className={'mt-1 inline-flex items-center justify-center text-[10px] font-bold px-1.5 py-0.5 rounded-full ' + (isToday ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500')}>
+                                {dayItems.length}
+                              </span>
+                            )}
                           </div>
+
                           <div className="p-2 space-y-2">
-                            <div onClick={() => { setNovoPostForm(f => ({...f, id_evento: data.eventos.length === 1 ? String(data.eventos[0].id) : '', data_publicacao: dayStr})); setShowNovoPost(true) }}
-                              className="flex items-center justify-center py-1.5 rounded-lg border-2 border-dashed border-gray-200 text-gray-300 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50/50 transition cursor-pointer group">
-                              <Plus size={14} className="group-hover:scale-110 transition-transform" />
+                            {/* Add button */}
+                            <div
+                              onClick={() => { setNovoPostForm(f => ({...f, id_evento: data.eventos.length === 1 ? String(data.eventos[0].id) : '', data_publicacao: dayStr})); setShowNovoPost(true) }}
+                              className="flex items-center justify-center py-1.5 rounded-lg border-2 border-dashed border-gray-200 text-gray-300 hover:border-blue-400 hover:text-blue-400 hover:bg-blue-50/50 transition cursor-pointer group"
+                            >
+                              <Plus size={13} className="group-hover:scale-110 transition-transform" />
                             </div>
+
                             {dayItems.map(d => {
                               const atrasado = dayStr < todayStr && !['concluido','aprovado','publicado','cancelado'].includes(d.status)
-                              const barColor = d._tipo === 'briefing' ? 'bg-blue-500' : (adminPlataformaCores[d.plataforma] || 'bg-gray-500')
-                              const barLabel = d._tipo === 'briefing' ? 'Briefing' : (d.plataforma || 'Post')
                               const resp = getResponsavel(d)
+                              const accentColor = atrasado ? '#ef4444' : (d._tipo === 'briefing' ? '#8b5cf6' : (plataformaColor[d.plataforma] || '#6b7280'))
+                              const isDraggingThis = draggedItem && draggedItem.id === d.id && draggedItem._tipo === d._tipo
+                              const isSelected = adminDetalhe && adminDetalhe.id === d.id && adminDetalhe._tipo === d._tipo
+                              const arqs = cardArquivos[d._tipo + '-' + d.id] || []
+
                               return (
-                                <div key={d._tipo+'-'+d.id} onClick={(e) => { e.stopPropagation(); const next = adminDetalhe && adminDetalhe.id === d.id && adminDetalhe._tipo === d._tipo ? null : d; setAdminDetalhe(next); if(next) { setAdminArquivos([]); carregarAdminArqs(next) } }}
-                                  className={'rounded-lg border overflow-hidden hover:shadow-md transition-shadow cursor-pointer ' + (adminDetalhe && adminDetalhe.id === d.id && adminDetalhe._tipo === d._tipo ? 'ring-2 ring-blue-500 ' : '') + (d.status === 'publicado' ? 'bg-green-50 border-green-300 ring-1 ring-green-200' : atrasado ? 'bg-red-50 border-red-300 ring-1 ring-red-200' : d.status === 'pendente' ? 'bg-yellow-50 border-yellow-300 ring-1 ring-yellow-200' : 'bg-white border-gray-200')}>
-                                  <div className={barColor + ' px-2 py-1 flex items-center justify-between'}>
-                                    <span className="text-white text-[10px] font-bold">{barLabel}</span>
-                                    <span className={'w-2 h-2 rounded-full ' + (atrasado ? 'bg-red-400' : (adminStatusDot[d.status] || 'bg-gray-300'))} title={d.status} />
-                                  </div>
-                                  <div className="p-2 space-y-1">
-                                    <p className="text-xs font-semibold text-gray-900 line-clamp-2">{d.titulo || 'Sem titulo'}</p>
-                                    <p className="text-[10px] text-blue-500 font-medium truncate">{d.evento_nome}</p>
-                                    {d._tipo === 'post' && d.hora_publicacao && (
-                                      <div className="flex items-center gap-1 text-[10px] text-gray-500">
-                                        <Clock size={9} /> {d.hora_publicacao.slice(0,5)}
-                                      </div>
-                                    )}
-                                    {resp && (
-                                      <div className="flex items-center gap-1">
-                                        <span className="w-3 h-3 rounded-full flex items-center justify-center text-white font-bold bg-blue-400" style={{fontSize:6}}>{(resp.nome||'?').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}</span>
-                                        <span className="text-gray-400" style={{fontSize:8}}>{resp.nome?.split(' ')[0]}</span>
-                                      </div>
-                                    )}
-                                    {d.conteudo && <p className="text-[10px] text-gray-400 line-clamp-2">{d.conteudo}</p>}
-                                    {d.descricao && !d.conteudo && <p className="text-[10px] text-gray-400 line-clamp-2">{d.descricao}</p>}
-                                    <div className="flex items-center gap-1 flex-wrap">
-                                      {d.formato && <span className="text-[9px] font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">{d.formato}</span>}
-                                      {d.tipo_conteudo && <span className="text-[9px] font-medium text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">{d.tipo_conteudo}</span>}
-                                      {atrasado && <span className="text-[9px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">ATRASADO</span>}
+                                <div
+                                  key={d._tipo+'-'+d.id}
+                                  draggable
+                                  onDragStart={e => { e.stopPropagation(); setDraggedItem({...d}) }}
+                                  onDragEnd={() => { setDraggedItem(null); setDragOverDay(null) }}
+                                  onClick={e => { e.stopPropagation(); const next = isSelected ? null : d; setAdminDetalhe(next); if(next) { setAdminArquivos([]); carregarAdminArqs(next) } }}
+                                  className={'rounded-xl bg-white border border-gray-100 shadow-sm cursor-grab active:cursor-grabbing select-none transition-all duration-150 hover:shadow-md '
+                                    + (isDraggingThis ? 'opacity-40 scale-95 ' : '')
+                                    + (isSelected ? 'ring-2 ring-blue-500 shadow-md ' : '')}
+                                  style={{ borderLeft: `3px solid ${accentColor}` }}
+                                >
+                                  <div className="p-2.5 space-y-2">
+                                    {/* Type badge + status dot */}
+                                    <div className="flex items-center justify-between gap-1">
+                                      <span className={'text-[10px] font-bold px-1.5 py-0.5 rounded-md ' + (d._tipo === 'briefing' ? 'bg-violet-100 text-violet-700' : 'bg-pink-100 text-pink-700')}>
+                                        {d._tipo === 'briefing' ? '✏️ Briefing' : (d.plataforma || 'Post')}
+                                      </span>
+                                      {atrasado
+                                        ? <span className="text-[9px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded-full">Atrasado</span>
+                                        : <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: statusAccent[d.status] || '#9ca3af' }} />
+                                      }
                                     </div>
-                                    {(cardArquivos[d._tipo + '-' + d.id] || []).length > 0 && (
-                                      <div className="flex flex-wrap gap-1" onClick={e => e.stopPropagation()}>
-                                        {(cardArquivos[d._tipo + '-' + d.id] || []).map(arq => (
-                                          <div key={arq.id} className="relative group" onClick={() => setPreviewArquivo(arq)}>
-                                            {arq.tipo && arq.tipo.startsWith('image') ? (
-                                              <img src={'/api' + arq.url} className="w-10 h-10 rounded object-cover border border-gray-200 cursor-pointer hover:shadow-md transition" />
-                                            ) : arq.tipo && arq.tipo.startsWith('video') ? (
-                                              <div className="w-10 h-10 rounded bg-gray-100 border border-gray-200 flex items-center justify-center cursor-pointer hover:shadow-md transition"><span className="text-[10px]">🎬</span></div>
-                                            ) : (
-                                              <div className="w-10 h-10 rounded bg-gray-100 border border-gray-200 flex items-center justify-center cursor-pointer hover:shadow-md transition"><FileText size={10} className="text-gray-400" /></div>
-                                            )}
-                                          </div>
-                                        ))}
+
+                                    {/* Title */}
+                                    <p className="text-xs font-semibold text-gray-900 line-clamp-2 leading-snug">{d.titulo || 'Sem título'}</p>
+
+                                    {/* Event name */}
+                                    <p className="text-[10px] font-medium truncate" style={{ color: accentColor }}>{d.evento_nome}</p>
+
+                                    {/* Meta row */}
+                                    <div className="flex items-center gap-1 flex-wrap">
+                                      {d._tipo === 'post' && d.hora_publicacao && (
+                                        <span className="flex items-center gap-0.5 text-[10px] text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded-md border border-gray-100">
+                                          <Clock size={8} /> {d.hora_publicacao.slice(0,5)}
+                                        </span>
+                                      )}
+                                      {d.formato && <span className="text-[9px] font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md">{d.formato}</span>}
+                                      {d.tipo_conteudo && <span className="text-[9px] font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md">{d.tipo_conteudo.split(',')[0]}</span>}
+                                    </div>
+
+                                    {/* Responsável avatar */}
+                                    {resp && (
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="w-4 h-4 rounded-full flex items-center justify-center text-white font-bold bg-gradient-to-br from-blue-400 to-blue-600 flex-shrink-0" style={{fontSize:7}}>
+                                          {(resp.nome||'?').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}
+                                        </span>
+                                        <span className="text-[10px] text-gray-500 truncate">{resp.nome?.split(' ')[0]}</span>
                                       </div>
                                     )}
-                                    <div className="flex items-center justify-between pt-1 border-t border-gray-100 mt-1" onClick={e => e.stopPropagation()}>
-                                      <select value={d.status} onChange={e => { atualizarStatus(d._tipo, d.id, e.target.value) }} className="text-[10px] border border-gray-200 rounded px-1 py-0.5 outline-none focus:ring-1 focus:ring-blue-400 bg-white">
+
+                                    {/* Thumbnails */}
+                                    {arqs.length > 0 && (
+                                      <div className="flex gap-1 flex-wrap" onClick={e => e.stopPropagation()}>
+                                        {arqs.slice(0,3).map(arq => (
+                                          arq.tipo?.startsWith('image') ? (
+                                            <img key={arq.id} src={'/api' + arq.url} onClick={() => setPreviewArquivo(arq)}
+                                              className="w-8 h-8 rounded-lg object-cover border border-gray-100 cursor-pointer hover:opacity-80 transition" />
+                                          ) : (
+                                            <div key={arq.id} onClick={() => setPreviewArquivo(arq)} className="w-8 h-8 rounded-lg bg-gray-100 border border-gray-100 flex items-center justify-center cursor-pointer hover:bg-gray-200 transition">
+                                              <FileText size={10} className="text-gray-400" />
+                                            </div>
+                                          )
+                                        ))}
+                                        {arqs.length > 3 && <span className="text-[9px] text-gray-400 self-end">+{arqs.length - 3}</span>}
+                                      </div>
+                                    )}
+
+                                    {/* Etiquetas */}
+                                    {getEtiquetas(d._tipo, d.id).length > 0 && (
+                                      <div className="flex gap-1 flex-wrap" onClick={e => e.stopPropagation()}>
+                                        {getEtiquetas(d._tipo, d.id).slice(0, 2).map(e => {
+                                          const cfg = ETIQUETAS_PADRAO.find(c => c.key === e)
+                                          return cfg
+                                            ? <span key={e} className="text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none" style={{ color: cfg.color, backgroundColor: cfg.bg }}>{cfg.emoji} {cfg.label}</span>
+                                            : <span key={e} className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 leading-none">🏷️ {e}</span>
+                                        })}
+                                        {getEtiquetas(d._tipo, d.id).length > 2 && <span className="text-[9px] text-gray-400 self-center">+{getEtiquetas(d._tipo, d.id).length - 2}</span>}
+                                      </div>
+                                    )}
+
+                                    {/* Actions */}
+                                    <div className="flex items-center justify-between border-t border-gray-100 pt-1.5" onClick={e => e.stopPropagation()}>
+                                      <select value={d.status} onChange={e => atualizarStatus(d._tipo, d.id, e.target.value)}
+                                        className="text-[10px] bg-transparent border-0 text-gray-500 outline-none cursor-pointer flex-1 min-w-0">
                                         <option value="pendente">Pendente</option>
-                                        <option value="em_andamento">Em Producao</option>
-                                        <option value="em_revisao">Em Revisao</option>
+                                        <option value="em_andamento">Em Produção</option>
+                                        <option value="em_revisao">Em Revisão</option>
                                         <option value="aprovado">Aprovado</option>
                                         <option value="publicado">Publicado</option>
                                       </select>
-                                      <div className="relative">
-                                        <input type="file" accept="image/*,video/*,.pdf" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                      <label className="cursor-pointer flex-shrink-0 ml-1">
+                                        <input type="file" accept="image/*,video/*,.pdf" className="hidden"
                                           onChange={e => { const file = e.target.files[0]; if(file) uploadCardArquivo(d._tipo, d.id, file); e.target.value='' }} />
-                                        <Paperclip size={11} className="text-gray-300 hover:text-blue-500 transition cursor-pointer" />
-                                      </div>
+                                        <Paperclip size={11} className="text-gray-300 hover:text-blue-500 transition" />
+                                      </label>
                                     </div>
+
+                                    {/* Instagram publish (posts only) */}
                                     {d._tipo === 'post' && d.status !== 'publicado' && (
-                                      <div className="space-y-1 pt-1" onClick={e => e.stopPropagation()}>
-                                        <div className="flex items-center justify-between px-1.5 py-1 rounded-md bg-gray-50 border border-gray-100">
-                                          <div className="flex items-center gap-1">
-                                            <Clock size={9} className={d.auto_publish ? 'text-green-500' : 'text-gray-400'} />
-                                            <span className={'text-[9px] font-semibold ' + (d.auto_publish ? 'text-green-600' : 'text-gray-400')}>
-                                              {d.auto_publish ? 'Agendado' : 'Agendar'}{d.auto_publish && d.hora_publicacao ? ' ' + d.hora_publicacao.slice(0,5) : ''}
-                                            </span>
-                                          </div>
+                                      <div className="space-y-1.5" onClick={e => e.stopPropagation()}>
+                                        <div className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-gray-50 border border-gray-100">
+                                          <span className={'text-[10px] font-semibold ' + (d.auto_publish ? 'text-green-600' : 'text-gray-400')}>
+                                            {d.auto_publish ? `⏰ ${d.hora_publicacao ? d.hora_publicacao.slice(0,5) : 'Agendado'}` : 'Agendar'}
+                                          </span>
                                           <button onClick={() => toggleAutoPublish(d.id, d.auto_publish)}
-                                            className={'relative w-7 h-3.5 rounded-full transition-colors ' + (d.auto_publish ? 'bg-green-500' : 'bg-gray-300')}>
-                                            <span className={'absolute top-0.5 w-2.5 h-2.5 rounded-full bg-white shadow transition-transform ' + (d.auto_publish ? 'translate-x-3.5' : 'translate-x-0.5')} />
+                                            className={'relative w-8 h-4 rounded-full transition-colors ' + (d.auto_publish ? 'bg-green-500' : 'bg-gray-300')}>
+                                            <span className={'absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-transform ' + (d.auto_publish ? 'translate-x-4' : 'translate-x-0.5')} />
                                           </button>
                                         </div>
                                         <button onClick={() => publicarInstagram(d.id)}
-                                          className="w-full flex items-center justify-center gap-1 px-1.5 py-1 rounded-md bg-blue-500 hover:bg-blue-600 transition text-white text-[9px] font-bold">
-                                          <Instagram size={9} /> Publicar agora
+                                          className="w-full flex items-center justify-center gap-1 py-1.5 rounded-lg bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 hover:opacity-90 transition text-white text-[10px] font-bold shadow-sm">
+                                          📸 Publicar no Instagram
                                         </button>
                                       </div>
                                     )}
@@ -645,69 +760,285 @@ export default function MinhasDemandas() {
                   const st = stConfig[d.status] || stConfig.pendente
                   const resp = getResponsavel(d)
                   const atrasado = d._data?.slice(0,10) < todayCheck && !['concluido','aprovado','publicado','cancelado'].includes(d.status)
+                  const etqs = getEtiquetas(d._tipo, d.id)
+
+                  function toggleMultiAdmin(field, val) {
+                    const arr = (adminEditForm[field]||'').split(',').filter(Boolean)
+                    const idx = arr.indexOf(val)
+                    if (idx >= 0) arr.splice(idx, 1); else arr.push(val)
+                    setAdminEditForm({...adminEditForm, [field]: arr.join(',')})
+                  }
+
                   return (
                     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setAdminDetalhe(null)}>
-                      <div className="bg-white rounded-2xl max-w-lg w-full max-h-[85vh] overflow-auto shadow-2xl" onClick={e => e.stopPropagation()}>
+                      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-auto shadow-2xl" onClick={e => e.stopPropagation()}>
+
+                        {/* Header */}
                         <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between rounded-t-2xl z-10">
-                          <div className="flex items-center gap-3">
-                            <span className={'w-3 h-3 rounded-full ' + (atrasado ? 'bg-red-500' : st.dot)} />
-                            <h3 className="text-base font-extrabold text-gray-900">{d.titulo || 'Sem titulo'}</h3>
-                            <span className={'text-xs font-bold px-3 py-1 rounded-full border ' + (atrasado ? 'bg-red-50 text-red-600 border-red-200' : st.bg + ' ' + st.text + ' ' + st.border)}>{atrasado ? 'Atrasado' : st.label}</span>
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <span className={'w-2.5 h-2.5 rounded-full flex-shrink-0 ' + (atrasado ? 'bg-red-500' : st.dot)} />
+                            <div className="min-w-0">
+                              <h3 className="text-base font-extrabold text-gray-900 truncate">{d.titulo || 'Sem título'}</h3>
+                              <p className="text-xs text-blue-500 font-medium">{d.evento_nome}</p>
+                            </div>
+                            <span className={'text-xs font-bold px-2.5 py-1 rounded-full border flex-shrink-0 ' + (atrasado ? 'bg-red-50 text-red-600 border-red-200' : st.bg + ' ' + st.text + ' ' + st.border)}>
+                              {atrasado ? 'Atrasado' : st.label}
+                            </span>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <button onClick={() => { if(adminEditMode){setAdminEditMode(false);setAdminEditForm({})}else{setAdminEditMode(true);setAdminEditForm({titulo:d.titulo||'',descricao:d.descricao||'',conteudo:d.conteudo||'',referencia:d.referencia||'',musica:d.musica||'',data_vencimento:d.data_vencimento||'',data_publicacao:d.data_publicacao||'',hora_publicacao:d.hora_publicacao||'',collaborators:d.collaborators||''})} }} className={'text-xs px-3 py-1.5 rounded-lg font-bold ' + (adminEditMode ? 'bg-gray-200 text-gray-600' : 'bg-blue-100 text-blue-600 hover:bg-blue-200')}>
-                              {adminEditMode ? 'Cancelar' : 'Editar'}
+                          <div className="flex items-center gap-2 ml-3">
+                            <button
+                              onClick={() => {
+                                if (adminEditMode) { setAdminEditMode(false); setAdminEditForm({}) }
+                                else {
+                                  setAdminEditMode(true)
+                                  setAdminEditForm({
+                                    titulo: d.titulo||'', descricao: d.descricao||'', conteudo: d.conteudo||'',
+                                    referencia: d.referencia||'', musica: d.musica||'',
+                                    data_vencimento: d.data_vencimento||'', data_publicacao: d.data_publicacao||'',
+                                    hora_publicacao: d.hora_publicacao||'', collaborators: d.collaborators||'',
+                                    tipo_conteudo: d.tipo_conteudo||'', formato: d.formato||'',
+                                    plataforma: d.plataforma||'Instagram', status: d.status||'pendente',
+                                  })
+                                }
+                              }}
+                              className={'text-xs px-3 py-1.5 rounded-lg font-bold transition ' + (adminEditMode ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' : 'bg-blue-50 text-blue-600 hover:bg-blue-100')}
+                            >
+                              {adminEditMode ? 'Cancelar' : '✏️ Editar'}
                             </button>
-                            <button onClick={() => { setAdminDetalhe(null); setAdminEditMode(false); setAdminEditForm({}) }} className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition text-lg font-bold">&times;</button>
+                            <button onClick={() => { setAdminDetalhe(null); setAdminEditMode(false); setAdminEditForm({}) }}
+                              className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition font-bold">✕</button>
                           </div>
                         </div>
-                        <div className="p-5 space-y-4">
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+
+                        <div className="p-5 space-y-5">
+                          {/* Info grid */}
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
                             {[
-                              {l:'Evento',v:d.evento_nome||'-'},
-                              {l:'Tipo',v:d._tipo==='briefing'?'Briefing':'Post'},
-                              {l:'Responsavel',v:resp?.nome||'-'},
-                              {l:'Funcao',v:resp?.funcao==='designer'?'Designer':'Social Media'},
-                              {l:'Data',v:fmtData(d._data)},
-                              {l:'Status',v:atrasado?'Atrasado':st.label},
-                            ].map((item,i) => (
+                              { l: 'Tipo', v: d._tipo === 'briefing' ? '✏️ Briefing' : '📲 Post' },
+                              { l: 'Responsável', v: resp?.nome || '—' },
+                              { l: 'Função', v: resp?.funcao === 'designer' ? 'Designer' : 'Social Media' },
+                              { l: 'Data', v: fmtData(d._data) },
+                            ].map((item, i) => (
                               <div key={i} className="bg-gray-50 rounded-xl px-3 py-2.5">
                                 <p className="text-gray-400 font-bold uppercase mb-0.5" style={{fontSize:9,letterSpacing:1}}>{item.l}</p>
-                                <p className="text-sm font-bold text-gray-800">{item.v}</p>
+                                <p className="text-sm font-semibold text-gray-800">{item.v}</p>
                               </div>
                             ))}
                           </div>
-                          {adminEditMode ? (
-                            <div className="space-y-3">
-                              <div><span className="text-xs text-gray-400 uppercase font-semibold">Titulo</span><input value={adminEditForm.titulo||''} onChange={e => setAdminEditForm({...adminEditForm, titulo: e.target.value})} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1" /></div>
-                              <div><span className="text-xs text-gray-400 uppercase font-semibold">Descricao</span><textarea value={adminEditForm.descricao||''} onChange={e => setAdminEditForm({...adminEditForm, descricao: e.target.value})} rows={3} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1" /></div>
-                              {d._tipo === 'briefing' && <div><span className="text-xs text-gray-400 uppercase font-semibold">Referencia</span><input value={adminEditForm.referencia||''} onChange={e => setAdminEditForm({...adminEditForm, referencia: e.target.value})} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1" /></div>}
-                              {d._tipo === 'briefing' && <div><span className="text-xs text-gray-400 uppercase font-semibold">Musica</span><input value={adminEditForm.musica||''} onChange={e => setAdminEditForm({...adminEditForm, musica: e.target.value})} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1" /></div>}
-                              {d._tipo === 'briefing' && <div><span className="text-xs text-gray-400 uppercase font-semibold">Data de Vencimento</span><input type="date" value={adminEditForm.data_vencimento?.slice(0,10)||''} onChange={e => setAdminEditForm({...adminEditForm, data_vencimento: e.target.value})} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1" /></div>}
-                              {d._tipo === 'post' && <div><span className="text-xs text-gray-400 uppercase font-semibold">Conteudo</span><textarea value={adminEditForm.conteudo||''} onChange={e => setAdminEditForm({...adminEditForm, conteudo: e.target.value})} rows={3} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1" /></div>}
-                              {d._tipo === 'post' && <div><span className="text-xs text-gray-400 uppercase font-semibold">Data de Publicacao</span><input type="date" value={adminEditForm.data_publicacao?.slice(0,10)||''} onChange={e => setAdminEditForm({...adminEditForm, data_publicacao: e.target.value})} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1" /></div>}
-                              {d._tipo === 'post' && <div><span className="text-xs text-gray-400 uppercase font-semibold">Hora de Publicacao</span><input type="time" value={adminEditForm.hora_publicacao||''} onChange={e => setAdminEditForm({...adminEditForm, hora_publicacao: e.target.value})} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1" /></div>}
-                              {d._tipo === 'post' && <div><span className="text-xs text-gray-400 uppercase font-semibold">Collaborators</span><input value={adminEditForm.collaborators||''} onChange={e => setAdminEditForm({...adminEditForm, collaborators: e.target.value})} placeholder="@usuario1, @usuario2" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1" /></div>}
-                              <button onClick={adminSalvarEdicao} className="w-full px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-bold hover:bg-green-600 transition">Salvar</button>
+
+                          {/* Etiquetas */}
+                          <div className="space-y-2">
+                            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">Etiquetas</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {ETIQUETAS_PADRAO.map(et => {
+                                const ativa = etqs.includes(et.key)
+                                return (
+                                  <button key={et.key} onClick={() => toggleEtiqueta(d._tipo, d.id, et.key)}
+                                    className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border-2 transition-all"
+                                    style={ativa
+                                      ? { backgroundColor: et.bg, color: et.color, borderColor: et.border }
+                                      : { backgroundColor: '#f9fafb', color: '#9ca3af', borderColor: '#e5e7eb' }}>
+                                    <span>{et.emoji}</span> {et.label}
+                                  </button>
+                                )
+                              })}
                             </div>
-                          ) : (<>
-                          {d.descricao && <div className="bg-gray-50 rounded-xl px-4 py-3"><p className="text-gray-400 font-bold uppercase mb-1" style={{fontSize:9,letterSpacing:1}}>Descricao</p><p className="text-sm text-gray-700">{d.descricao}</p></div>}
-                          {d.conteudo && <div className="bg-gray-50 rounded-xl px-4 py-3"><p className="text-gray-400 font-bold uppercase mb-1" style={{fontSize:9,letterSpacing:1}}>Conteudo</p><p className="text-sm text-gray-700 whitespace-pre-wrap">{d.conteudo}</p></div>}
-                          </>)}
-                          {(d.tipo_conteudo || d.formato || d.plataforma) && (
-                            <div className="flex items-center gap-2 flex-wrap">
-                              {d.tipo_conteudo && <span className="text-xs font-bold px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">{d.tipo_conteudo}</span>}
-                              {d.formato && <span className="text-xs font-bold px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">{d.formato}</span>}
-                              {d.plataforma && <span className="text-xs font-bold px-3 py-1 rounded-full bg-pink-50 text-pink-700 border border-pink-200">{d.plataforma}</span>}
+                            {/* Etiqueta customizada */}
+                            {(() => {
+                              const customs = etqs.filter(e => !ETIQUETAS_PADRAO.find(p => p.key === e))
+                              return (
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  {customs.map(e => (
+                                    <span key={e} className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+                                      🏷️ {e}
+                                      <button onClick={() => removeEtiqueta(d._tipo, d.id, e)} className="text-gray-400 hover:text-red-500 ml-0.5 font-bold">✕</button>
+                                    </span>
+                                  ))}
+                                  <input
+                                    placeholder="+ nova etiqueta"
+                                    className="text-xs border border-dashed border-gray-300 rounded-full px-3 py-1 outline-none focus:border-blue-400 w-32 text-gray-500"
+                                    onKeyDown={e => { if (e.key === 'Enter') { addEtiquetaCustom(d._tipo, d.id, e.target.value); e.target.value = '' } }}
+                                  />
+                                </div>
+                              )
+                            })()}
+                          </div>
+
+                          {adminEditMode ? (
+                            <div className="space-y-4 border-t border-gray-100 pt-4">
+                              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">Editar Card</p>
+
+                              <div className="grid grid-cols-1 gap-3">
+                                <div>
+                                  <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Título</label>
+                                  <input value={adminEditForm.titulo||''} onChange={e => setAdminEditForm({...adminEditForm, titulo: e.target.value})}
+                                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                </div>
+
+                                <div>
+                                  <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Status</label>
+                                  <select value={adminEditForm.status||''} onChange={e => setAdminEditForm({...adminEditForm, status: e.target.value})}
+                                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="pendente">Pendente</option>
+                                    <option value="em_andamento">Em Produção</option>
+                                    <option value="em_revisao">Em Revisão</option>
+                                    <option value="aprovado">Aprovado</option>
+                                    <option value="publicado">Publicado</option>
+                                  </select>
+                                </div>
+
+                                {d._tipo === 'briefing' && (
+                                  <div>
+                                    <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Data de Vencimento</label>
+                                    <input type="date" value={adminEditForm.data_vencimento?.slice(0,10)||''} onChange={e => setAdminEditForm({...adminEditForm, data_vencimento: e.target.value})}
+                                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                  </div>
+                                )}
+
+                                {d._tipo === 'post' && (
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                      <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Plataforma</label>
+                                      <select value={adminEditForm.plataforma||'Instagram'} onChange={e => setAdminEditForm({...adminEditForm, plataforma: e.target.value})}
+                                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        {['Instagram','Facebook','TikTok','YouTube','Twitter','LinkedIn','WhatsApp'].map(p => <option key={p}>{p}</option>)}
+                                      </select>
+                                    </div>
+                                    <div>
+                                      <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Data de Publicação</label>
+                                      <input type="date" value={adminEditForm.data_publicacao?.slice(0,10)||''} onChange={e => setAdminEditForm({...adminEditForm, data_publicacao: e.target.value})}
+                                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                    </div>
+                                    <div>
+                                      <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Hora</label>
+                                      <input type="time" value={adminEditForm.hora_publicacao||''} onChange={e => setAdminEditForm({...adminEditForm, hora_publicacao: e.target.value})}
+                                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                    </div>
+                                    <div>
+                                      <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Collaborators</label>
+                                      <input value={adminEditForm.collaborators||''} onChange={e => setAdminEditForm({...adminEditForm, collaborators: e.target.value})}
+                                        placeholder="@usuario1, @usuario2"
+                                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Tipo de Conteúdo */}
+                                <div>
+                                  <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2 block">Tipo de Conteúdo</label>
+                                  <div className="flex gap-2 flex-wrap">
+                                    {['GIF','VIDEO','ESTATICA','FOTO ORGÂNICA','VÍDEO ORGÂNICO','INTERAÇÃO'].map(tc => {
+                                      const ativo = (adminEditForm.tipo_conteudo||'').split(',').includes(tc)
+                                      return (
+                                        <button key={tc} type="button" onClick={() => toggleMultiAdmin('tipo_conteudo', tc)}
+                                          className={'px-2.5 py-1 rounded-lg text-xs font-bold border-2 transition ' + (ativo ? 'border-amber-500 bg-amber-500 text-white' : 'border-gray-200 text-gray-500 hover:border-amber-300')}>
+                                          {tc}
+                                        </button>
+                                      )
+                                    })}
+                                  </div>
+                                </div>
+
+                                {/* Formato */}
+                                <div>
+                                  <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2 block">Formato</label>
+                                  <div className="flex gap-2 flex-wrap">
+                                    {['FEED','STORIES','CARROSSEL','REELS'].map(fm => {
+                                      const ativo = (adminEditForm.formato||'').split(',').includes(fm)
+                                      return (
+                                        <button key={fm} type="button" onClick={() => toggleMultiAdmin('formato', fm)}
+                                          className={'px-2.5 py-1 rounded-lg text-xs font-bold border-2 transition ' + (ativo ? 'border-blue-500 bg-blue-500 text-white' : 'border-gray-200 text-gray-500 hover:border-blue-300')}>
+                                          {fm === 'FEED' ? '📱' : fm === 'STORIES' ? '📲' : fm === 'CARROSSEL' ? '🔄' : '🎥'} {fm}
+                                        </button>
+                                      )
+                                    })}
+                                  </div>
+                                </div>
+
+                                {/* Briefing / Descrição */}
+                                <div>
+                                  <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">
+                                    {d._tipo === 'briefing' ? 'Briefing / Descrição' : 'Briefing para o Designer'}
+                                  </label>
+                                  <textarea value={adminEditForm.descricao||''} onChange={e => setAdminEditForm({...adminEditForm, descricao: e.target.value})}
+                                    rows={3} placeholder="Descreva o que precisa ser criado..."
+                                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                </div>
+
+                                {d._tipo === 'post' && (
+                                  <div>
+                                    <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Legenda / Conteúdo</label>
+                                    <textarea value={adminEditForm.conteudo||''} onChange={e => setAdminEditForm({...adminEditForm, conteudo: e.target.value})}
+                                      rows={3} placeholder="Legenda do post..."
+                                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                  </div>
+                                )}
+
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Referência</label>
+                                    <input value={adminEditForm.referencia||''} onChange={e => setAdminEditForm({...adminEditForm, referencia: e.target.value})}
+                                      placeholder="Link ou descrição"
+                                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                  </div>
+                                  <div>
+                                    <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Música</label>
+                                    <input value={adminEditForm.musica||''} onChange={e => setAdminEditForm({...adminEditForm, musica: e.target.value})}
+                                      placeholder="Nome ou link"
+                                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                  </div>
+                                </div>
+                              </div>
+
+                              <button onClick={adminSalvarEdicao}
+                                className="w-full px-4 py-2.5 bg-green-500 text-white rounded-xl text-sm font-bold hover:bg-green-600 transition">
+                                Salvar Alterações
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="space-y-3 border-t border-gray-100 pt-4">
+                              {/* View mode: todos os campos */}
+                              {(d.tipo_conteudo || d.formato || d.plataforma) && (
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  {d.plataforma && <span className="text-xs font-bold px-3 py-1 rounded-full bg-pink-50 text-pink-700 border border-pink-200">📲 {d.plataforma}</span>}
+                                  {(d.tipo_conteudo||'').split(',').filter(Boolean).map(tc => <span key={tc} className="text-xs font-bold px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">{tc}</span>)}
+                                  {(d.formato||'').split(',').filter(Boolean).map(fm => <span key={fm} className="text-xs font-bold px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">{fm}</span>)}
+                                </div>
+                              )}
+                              {d.descricao && (
+                                <div className="bg-gray-50 rounded-xl px-4 py-3">
+                                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1.5">Briefing</p>
+                                  <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{d.descricao}</p>
+                                </div>
+                              )}
+                              {d.conteudo && (
+                                <div className="bg-gray-50 rounded-xl px-4 py-3">
+                                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1.5">Legenda / Conteúdo</p>
+                                  <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{d.conteudo}</p>
+                                </div>
+                              )}
+                              {(d.referencia || d.musica) && (
+                                <div className="grid grid-cols-2 gap-3">
+                                  {d.referencia && <div className="bg-gray-50 rounded-xl px-3 py-2.5"><p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">Referência</p><p className="text-xs text-gray-700 break-all">{d.referencia}</p></div>}
+                                  {d.musica && <div className="bg-gray-50 rounded-xl px-3 py-2.5"><p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">Música</p><p className="text-xs text-gray-700">{d.musica}</p></div>}
+                                </div>
+                              )}
+                              {d.collaborators && (
+                                <div className="bg-gray-50 rounded-xl px-3 py-2.5">
+                                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">Collaborators</p>
+                                  <p className="text-xs text-blue-600 font-medium">{d.collaborators}</p>
+                                </div>
+                              )}
                             </div>
                           )}
+
                           {/* Arquivos */}
                           <div className="bg-gray-50 rounded-xl px-4 py-3">
-                            <p className="text-gray-400 font-bold uppercase mb-2" style={{fontSize:9,letterSpacing:1}}>Arquivos</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-2">Arquivos</p>
                             {adminLoadArqs ? (
                               <div className="flex items-center justify-center py-4"><div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div></div>
                             ) : adminArquivos.length === 0 ? (
-                              <p className="text-xs text-gray-400 py-2">Nenhum arquivo</p>
+                              <p className="text-xs text-gray-400 py-1">Nenhum arquivo</p>
                             ) : (
                               <div className="grid grid-cols-3 gap-2">
                                 {adminArquivos.map(arq => {
@@ -715,7 +1046,7 @@ export default function MinhasDemandas() {
                                   const isVideo = arq.tipo?.startsWith('video/') || /\.(mp4|mov|webm)$/i.test(arq.nome_original || arq.url || '')
                                   const fileUrl = arq.url?.startsWith('http') ? arq.url : '/api' + (arq.url?.startsWith('/') ? arq.url : '/uploads/' + (arq.nome_arquivo || arq.url))
                                   return (
-                                    <div key={arq.id} className="rounded-lg overflow-hidden border border-gray-200 bg-white">
+                                    <div key={arq.id} className="rounded-xl overflow-hidden border border-gray-200 bg-white hover:shadow-sm transition">
                                       {isImg && <img src={fileUrl} alt={arq.nome_original} className="w-full object-cover cursor-pointer hover:opacity-80" style={{height:80}} onClick={() => { const o=document.createElement('div'); o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer'; o.onclick=()=>o.remove(); const im=document.createElement('img'); im.src=fileUrl; im.style.cssText='max-width:90vw;max-height:90vh;border-radius:12px;object-fit:contain'; o.appendChild(im); document.body.appendChild(o) }} />}
                                       {isVideo && <video src={fileUrl} controls className="w-full" style={{height:80}} />}
                                       {!isImg && !isVideo && <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 text-xs font-semibold text-gray-600 hover:text-blue-600">📎 {arq.nome_original || 'Arquivo'}</a>}
@@ -725,7 +1056,11 @@ export default function MinhasDemandas() {
                               </div>
                             )}
                           </div>
-                          <button onClick={() => { setAdminDetalhe(null); navigate('/marketing?evento='+d.id_evento) }} className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition text-center">Abrir no Marketing</button>
+
+                          <button onClick={() => { setAdminDetalhe(null); navigate('/marketing?evento='+d.id_evento) }}
+                            className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition text-center">
+                            Abrir no Marketing
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -856,6 +1191,18 @@ export default function MinhasDemandas() {
                                     </div>
                                   ))}
                                   {arqs.length > 4 && <span className="text-[9px] text-gray-400 self-end">+{arqs.length - 4}</span>}
+                                </div>
+                              )}
+                              {/* Etiquetas */}
+                              {getEtiquetas('briefing', b.id).length > 0 && (
+                                <div className="flex gap-1 flex-wrap">
+                                  {getEtiquetas('briefing', b.id).slice(0, 2).map(e => {
+                                    const cfg = ETIQUETAS_PADRAO.find(c => c.key === e)
+                                    return cfg
+                                      ? <span key={e} className="text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none" style={{ color: cfg.color, backgroundColor: cfg.bg }}>{cfg.emoji} {cfg.label}</span>
+                                      : <span key={e} className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 leading-none">🏷️ {e}</span>
+                                  })}
+                                  {getEtiquetas('briefing', b.id).length > 2 && <span className="text-[9px] text-gray-400">+{getEtiquetas('briefing', b.id).length - 2}</span>}
                                 </div>
                               )}
                               <div className="flex items-center justify-between pt-1 border-t border-gray-100 mt-1" onClick={e => e.stopPropagation()}>
@@ -1059,9 +1406,6 @@ export default function MinhasDemandas() {
             ...briefingsFiltrados.map(b => ({...b, _tipo:'briefing', _data: b.data_vencimento})),
             ...postsFiltrados.filter(p => !linkedPostIds2.has(p.id)).map(p => ({...p, _tipo:'post', _data: p.data_publicacao}))
           ]
-          const statusDot = { pendente: 'bg-yellow-400', em_andamento: 'bg-blue-500', em_producao: 'bg-blue-500', em_revisao: 'bg-blue-500', aprovado: 'bg-green-500', publicado: 'bg-green-500', concluido: 'bg-green-500', cancelado: 'bg-red-400' }
-          const plataformaCores = { 'Instagram': 'bg-blue-500', 'Facebook': 'bg-blue-600', 'TikTok': 'bg-black', 'YouTube': 'bg-red-600', 'Twitter': 'bg-sky-500', 'LinkedIn': 'bg-blue-700' }
-          const tipoCores = { 'briefing': 'bg-blue-500' }
           return (
             <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
               <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50">
@@ -1081,90 +1425,156 @@ export default function MinhasDemandas() {
                 {weekDays.map((day, idx) => {
                   const dayStr = day.toISOString().split('T')[0]
                   const isToday = dayStr === todayStr
-                  const dayItems = allItems.filter(d => d._data?.slice(0,10) === dayStr).sort((a, b) => (a.status === 'publicado' ? 0 : 1) - (b.status === 'publicado' ? 0 : 1))
+                  const dayItems = allItems.filter(d => d._data?.slice(0,10) === dayStr).sort((a, b) => (a.status === 'publicado' ? 1 : 0) - (b.status === 'publicado' ? 1 : 0))
+                  const smPlataformaColor = { 'Instagram': '#e1306c', 'Facebook': '#1877f2', 'TikTok': '#010101', 'YouTube': '#ff0000', 'Twitter': '#1da1f2', 'LinkedIn': '#0a66c2' }
+                  const smStatusAccent = { pendente: '#f59e0b', em_andamento: '#3b82f6', em_producao: '#3b82f6', em_revisao: '#8b5cf6', aprovado: '#10b981', publicado: '#10b981', concluido: '#10b981', cancelado: '#9ca3af' }
+                  const isDragTarget = dragOverDay === dayStr && draggedItem
                   return (
-                    <div key={idx} className={'min-h-[380px] ' + (isToday ? 'bg-blue-50/40' : '')} style={{minHeight:380}}>
-                      <div className={'text-center py-2 border-b ' + (isToday ? 'border-blue-200 bg-blue-50' : 'border-gray-100')}>
-                        <p className={'text-xs font-bold ' + (isToday ? 'text-blue-600' : 'text-gray-400')}>{diasNomes[idx]}</p>
-                        <span className={'text-sm font-bold w-8 h-8 flex items-center justify-center rounded-full mx-auto ' + (isToday ? 'bg-blue-600 text-white' : 'text-gray-700')}>{day.getDate()}</span>
+                    <div
+                      key={idx}
+                      onDragOver={e => { e.preventDefault(); setDragOverDay(dayStr) }}
+                      onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverDay(null) }}
+                      onDrop={e => {
+                        e.preventDefault()
+                        if (draggedItem && draggedItem._data?.slice(0,10) !== dayStr) {
+                          atualizarData(draggedItem._tipo, draggedItem.id, dayStr)
+                        }
+                        setDraggedItem(null)
+                        setDragOverDay(null)
+                      }}
+                      className={'transition-colors duration-150 ' + (isToday ? 'bg-blue-50/30' : 'bg-white') + (isDragTarget ? ' bg-blue-50 ring-2 ring-inset ring-blue-400' : '')}
+                      style={{minHeight: 480}}
+                    >
+                      {/* Day header */}
+                      <div className={'py-3 border-b text-center ' + (isToday ? 'bg-blue-50 border-blue-200' : 'border-gray-100')}>
+                        <p className={'text-[11px] font-bold uppercase tracking-wide mb-1 ' + (isToday ? 'text-blue-500' : 'text-gray-400')}>{diasNomes[idx]}</p>
+                        <span className={'w-8 h-8 flex items-center justify-center rounded-full mx-auto text-sm font-bold ' + (isToday ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-700')}>
+                          {day.getDate()}
+                        </span>
+                        {dayItems.length > 0 && (
+                          <span className={'mt-1 inline-flex items-center justify-center text-[10px] font-bold px-1.5 py-0.5 rounded-full ' + (isToday ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500')}>
+                            {dayItems.length}
+                          </span>
+                        )}
                       </div>
+
                       <div className="p-2 space-y-2">
-                        <div onClick={() => { setNovoPostForm(f => ({...f, id_evento: data.eventos.length === 1 ? String(data.eventos[0].id) : '', data_publicacao: dayStr})); setShowNovoPost(true) }}
-                          className="flex items-center justify-center py-1.5 rounded-lg border-2 border-dashed border-gray-200 text-gray-300 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50/50 transition cursor-pointer group">
-                          <Plus size={14} className="group-hover:scale-110 transition-transform" />
+                        {/* Add button */}
+                        <div
+                          onClick={() => { setNovoPostForm(f => ({...f, id_evento: data.eventos.length === 1 ? String(data.eventos[0].id) : '', data_publicacao: dayStr})); setShowNovoPost(true) }}
+                          className="flex items-center justify-center py-1.5 rounded-lg border-2 border-dashed border-gray-200 text-gray-300 hover:border-blue-400 hover:text-blue-400 hover:bg-blue-50/50 transition cursor-pointer group"
+                        >
+                          <Plus size={13} className="group-hover:scale-110 transition-transform" />
                         </div>
+
                         {dayItems.map(d => {
                           const atrasado = dayStr < todayStr && !['concluido','aprovado','publicado','cancelado'].includes(d.status)
-                          const barColor = d._tipo === 'briefing' ? tipoCores.briefing : (plataformaCores[d.plataforma] || 'bg-gray-500')
-                          const barLabel = d._tipo === 'briefing' ? 'Briefing' : (d.plataforma || 'Post')
+                          const accentColor = atrasado ? '#ef4444' : (d._tipo === 'briefing' ? '#8b5cf6' : (smPlataformaColor[d.plataforma] || '#6b7280'))
+                          const isDraggingThis = draggedItem && draggedItem.id === d.id && draggedItem._tipo === d._tipo
+                          const arqs = cardArquivos[d._tipo + '-' + d.id] || []
+
                           return (
-                            <div key={d._tipo+'-'+d.id} onClick={() => { setDetalhe(d); if(d._tipo === 'briefing') carregarArquivos(d.id); else setArquivos([]); setEditMode(false); setEditForm({}) }}
-                              className={'rounded-lg border overflow-hidden hover:shadow-md transition-shadow cursor-pointer ' + (d.status === 'publicado' ? 'bg-green-50 border-green-300 ring-1 ring-green-200' : atrasado ? 'bg-red-50 border-red-300 ring-1 ring-red-200' : d.status === 'pendente' ? 'bg-yellow-50 border-yellow-300 ring-1 ring-yellow-200' : 'bg-white border-gray-200')}>
-                              <div className={barColor + ' px-2 py-1 flex items-center justify-between'}>
-                                <span className="text-white text-[10px] font-bold">{barLabel}</span>
-                                <span className={'w-2 h-2 rounded-full ' + (atrasado ? 'bg-red-400' : (statusDot[d.status] || 'bg-gray-300'))} title={d.status} />
-                              </div>
-                              <div className="p-2 space-y-1">
-                                <p className="text-xs font-semibold text-gray-900 line-clamp-2">{d.titulo || 'Sem titulo'}</p>
-                                <p className="text-[10px] text-blue-500 font-medium truncate">{d.evento_nome}</p>
-                                {d._tipo === 'post' && d.hora_publicacao && (
-                                  <div className="flex items-center gap-1 text-[10px] text-gray-500">
-                                    <Clock size={9} /> {d.hora_publicacao.slice(0,5)}
-                                  </div>
-                                )}
-                                {d.conteudo && <p className="text-[10px] text-gray-400 line-clamp-2">{d.conteudo}</p>}
-                                {d.descricao && !d.conteudo && <p className="text-[10px] text-gray-400 line-clamp-2">{d.descricao}</p>}
-                                <div className="flex items-center gap-1 flex-wrap">
-                                  {d.formato && <span className="text-[9px] font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">{d.formato}</span>}
-                                  {d.tipo_conteudo && <span className="text-[9px] font-medium text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">{d.tipo_conteudo}</span>}
-                                  {atrasado && <span className="text-[9px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">ATRASADO</span>}
+                            <div
+                              key={d._tipo+'-'+d.id}
+                              draggable
+                              onDragStart={e => { e.stopPropagation(); setDraggedItem({...d}) }}
+                              onDragEnd={() => { setDraggedItem(null); setDragOverDay(null) }}
+                              onClick={() => { setDetalhe({...d}); if(d._tipo === 'briefing') carregarArquivos(d.id); else setArquivos([]); setEditMode(false); setEditForm({}) }}
+                              className={'rounded-xl bg-white border border-gray-100 shadow-sm cursor-grab active:cursor-grabbing select-none transition-all duration-150 hover:shadow-md '
+                                + (isDraggingThis ? 'opacity-40 scale-95 ' : '')}
+                              style={{ borderLeft: `3px solid ${accentColor}` }}
+                            >
+                              <div className="p-2.5 space-y-2">
+                                {/* Type badge + status dot */}
+                                <div className="flex items-center justify-between gap-1">
+                                  <span className={'text-[10px] font-bold px-1.5 py-0.5 rounded-md ' + (d._tipo === 'briefing' ? 'bg-violet-100 text-violet-700' : 'bg-pink-100 text-pink-700')}>
+                                    {d._tipo === 'briefing' ? '✏️ Briefing' : (d.plataforma || 'Post')}
+                                  </span>
+                                  {atrasado
+                                    ? <span className="text-[9px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded-full">Atrasado</span>
+                                    : <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: smStatusAccent[d.status] || '#9ca3af' }} />
+                                  }
                                 </div>
-                                {(cardArquivos[d._tipo + '-' + d.id] || []).length > 0 && (
-                                  <div className="flex flex-wrap gap-1" onClick={e => e.stopPropagation()}>
-                                    {(cardArquivos[d._tipo + '-' + d.id] || []).map(arq => (
-                                      <div key={arq.id} className="relative group" onClick={() => setPreviewArquivo(arq)}>
-                                        {arq.tipo && arq.tipo.startsWith('image') ? (
-                                          <img src={'/api' + arq.url} className="w-10 h-10 rounded object-cover border border-gray-200 cursor-pointer hover:shadow-md transition" />
-                                        ) : arq.tipo && arq.tipo.startsWith('video') ? (
-                                          <div className="w-10 h-10 rounded bg-gray-100 border border-gray-200 flex items-center justify-center cursor-pointer hover:shadow-md transition"><span className="text-[10px]">🎬</span></div>
-                                        ) : (
-                                          <div className="w-10 h-10 rounded bg-gray-100 border border-gray-200 flex items-center justify-center cursor-pointer hover:shadow-md transition"><FileText size={10} className="text-gray-400" /></div>
-                                        )}
-                                      </div>
+
+                                {/* Title */}
+                                <p className="text-xs font-semibold text-gray-900 line-clamp-2 leading-snug">{d.titulo || 'Sem título'}</p>
+
+                                {/* Event name */}
+                                <p className="text-[10px] font-medium truncate" style={{ color: accentColor }}>{d.evento_nome}</p>
+
+                                {/* Meta row */}
+                                <div className="flex items-center gap-1 flex-wrap">
+                                  {d._tipo === 'post' && d.hora_publicacao && (
+                                    <span className="flex items-center gap-0.5 text-[10px] text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded-md border border-gray-100">
+                                      <Clock size={8} /> {d.hora_publicacao.slice(0,5)}
+                                    </span>
+                                  )}
+                                  {d.formato && <span className="text-[9px] font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md">{d.formato}</span>}
+                                  {d.tipo_conteudo && <span className="text-[9px] font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md">{d.tipo_conteudo.split(',')[0]}</span>}
+                                </div>
+
+                                {/* Thumbnails */}
+                                {arqs.length > 0 && (
+                                  <div className="flex gap-1 flex-wrap" onClick={e => e.stopPropagation()}>
+                                    {arqs.slice(0,3).map(arq => (
+                                      arq.tipo?.startsWith('image') ? (
+                                        <img key={arq.id} src={'/api' + arq.url} onClick={() => setPreviewArquivo(arq)}
+                                          className="w-8 h-8 rounded-lg object-cover border border-gray-100 cursor-pointer hover:opacity-80 transition" />
+                                      ) : (
+                                        <div key={arq.id} onClick={() => setPreviewArquivo(arq)} className="w-8 h-8 rounded-lg bg-gray-100 border border-gray-100 flex items-center justify-center cursor-pointer hover:bg-gray-200 transition">
+                                          <FileText size={10} className="text-gray-400" />
+                                        </div>
+                                      )
                                     ))}
+                                    {arqs.length > 3 && <span className="text-[9px] text-gray-400 self-end">+{arqs.length - 3}</span>}
                                   </div>
                                 )}
-                                <div className="flex items-center justify-between pt-1 border-t border-gray-100 mt-1" onClick={e => e.stopPropagation()}>
-                                  <select value={d.status} onChange={e => { atualizarStatus(d._tipo, d.id, e.target.value) }} className="text-[10px] border border-gray-200 rounded px-1 py-0.5 outline-none focus:ring-1 focus:ring-blue-400 bg-white">
+
+                                {/* Etiquetas */}
+                                {getEtiquetas(d._tipo, d.id).length > 0 && (
+                                  <div className="flex gap-1 flex-wrap" onClick={e => e.stopPropagation()}>
+                                    {getEtiquetas(d._tipo, d.id).slice(0, 2).map(e => {
+                                      const cfg = ETIQUETAS_PADRAO.find(c => c.key === e)
+                                      return cfg
+                                        ? <span key={e} className="text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none" style={{ color: cfg.color, backgroundColor: cfg.bg }}>{cfg.emoji} {cfg.label}</span>
+                                        : <span key={e} className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 leading-none">🏷️ {e}</span>
+                                    })}
+                                    {getEtiquetas(d._tipo, d.id).length > 2 && <span className="text-[9px] text-gray-400 self-center">+{getEtiquetas(d._tipo, d.id).length - 2}</span>}
+                                  </div>
+                                )}
+
+                                {/* Actions */}
+                                <div className="flex items-center justify-between border-t border-gray-100 pt-1.5" onClick={e => e.stopPropagation()}>
+                                  <select value={d.status} onChange={e => atualizarStatus(d._tipo, d.id, e.target.value)}
+                                    className="text-[10px] bg-transparent border-0 text-gray-500 outline-none cursor-pointer flex-1 min-w-0">
                                     <option value="pendente">Pendente</option>
-                                    <option value="em_andamento">Em Producao</option>
-                                    <option value="em_revisao">Em Revisao</option>
+                                    <option value="em_andamento">Em Produção</option>
+                                    <option value="em_revisao">Em Revisão</option>
                                     <option value="aprovado">Aprovado</option>
                                     <option value="publicado">Publicado</option>
                                   </select>
-                                  <div className="relative">
-                                    <input type="file" accept="image/*,video/*,.pdf" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                  <label className="cursor-pointer flex-shrink-0 ml-1">
+                                    <input type="file" accept="image/*,video/*,.pdf" className="hidden"
                                       onChange={e => { const file = e.target.files[0]; if(file) uploadCardArquivo(d._tipo, d.id, file); e.target.value='' }} />
-                                    <Paperclip size={11} className="text-gray-300 hover:text-blue-500 transition cursor-pointer" />
-                                  </div>
+                                    <Paperclip size={11} className="text-gray-300 hover:text-blue-500 transition" />
+                                  </label>
                                 </div>
+
+                                {/* Instagram publish */}
                                 {d._tipo === 'post' && d.status !== 'publicado' && (
-                                  <div className="space-y-1 pt-1" onClick={e => e.stopPropagation()}>
-                                    <div className="flex items-center justify-between px-1.5 py-1 rounded-md bg-gray-50 border border-gray-100">
-                                      <div className="flex items-center gap-1">
-                                        <Clock size={9} className={d.auto_publish ? 'text-green-500' : 'text-gray-400'} />
-                                        <span className={'text-[9px] font-semibold ' + (d.auto_publish ? 'text-green-600' : 'text-gray-400')}>
-                                          {d.auto_publish ? 'Agendado' : 'Agendar'}{d.auto_publish && d.hora_publicacao ? ' ' + d.hora_publicacao.slice(0,5) : ''}
-                                        </span>
-                                      </div>
+                                  <div className="space-y-1.5" onClick={e => e.stopPropagation()}>
+                                    <div className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-gray-50 border border-gray-100">
+                                      <span className={'text-[10px] font-semibold ' + (d.auto_publish ? 'text-green-600' : 'text-gray-400')}>
+                                        {d.auto_publish ? `⏰ ${d.hora_publicacao ? d.hora_publicacao.slice(0,5) : 'Agendado'}` : 'Agendar'}
+                                      </span>
                                       <button onClick={() => toggleAutoPublish(d.id, d.auto_publish)}
-                                        className={'relative w-7 h-3.5 rounded-full transition-colors ' + (d.auto_publish ? 'bg-green-500' : 'bg-gray-300')}>
-                                        <span className={'absolute top-0.5 w-2.5 h-2.5 rounded-full bg-white shadow transition-transform ' + (d.auto_publish ? 'translate-x-3.5' : 'translate-x-0.5')} />
+                                        className={'relative w-8 h-4 rounded-full transition-colors ' + (d.auto_publish ? 'bg-green-500' : 'bg-gray-300')}>
+                                        <span className={'absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-transform ' + (d.auto_publish ? 'translate-x-4' : 'translate-x-0.5')} />
                                       </button>
                                     </div>
                                     <button onClick={() => publicarInstagram(d.id)}
-                                      className="w-full flex items-center justify-center gap-1 px-1.5 py-1 rounded-md bg-blue-500 hover:bg-blue-600 transition text-white text-[9px] font-bold">
-                                      <Instagram size={9} /> Publicar agora
+                                      className="w-full flex items-center justify-center gap-1 py-1.5 rounded-lg bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 hover:opacity-90 transition text-white text-[10px] font-bold shadow-sm">
+                                      📸 Publicar no Instagram
                                     </button>
                                   </div>
                                 )}
@@ -1410,91 +1820,331 @@ export default function MinhasDemandas() {
         </div>
       )}
 
-      {/* ===== DETAIL MODAL (Designer/SocialMedia) ===== */}
-      {detalhe && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setDetalhe(null)}>
-          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-auto shadow-2xl" onClick={e => e.stopPropagation()}>
-            <div className="sticky top-0 bg-white border-b border-gray-100 p-4 flex items-center justify-between rounded-t-2xl z-10">
-              <div>
-                <h3 className="font-extrabold text-gray-900">{detalhe.titulo}</h3>
-                <p className="text-xs text-blue-500 font-medium mt-0.5">{detalhe.evento_nome}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button onClick={() => { if(editMode){setEditMode(false);setEditForm({})}else{setEditMode(true);setEditForm({titulo:detalhe.titulo||'',descricao:detalhe.descricao||'',conteudo:detalhe.conteudo||'',referencia:detalhe.referencia||'',musica:detalhe.musica||'',data_vencimento:detalhe.data_vencimento||'',data_publicacao:detalhe.data_publicacao||'',hora_publicacao:detalhe.hora_publicacao||'',collaborators:detalhe.collaborators||''})} }} className={'text-xs px-3 py-1.5 rounded-lg font-bold ' + (editMode ? 'bg-gray-200 text-gray-600' : 'bg-blue-100 text-blue-600 hover:bg-blue-200')}>
-                  {editMode ? 'Cancelar' : 'Editar'}
-                </button>
-                <button onClick={() => setDetalhe(null)} className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 text-lg font-bold">&times;</button>
-              </div>
-            </div>
-            <div className="p-4 space-y-3">
-              <div className="flex gap-2 flex-wrap">
-                <span className={'text-xs font-bold px-2 py-1 rounded-full border ' + (statusColors[detalhe.status] || 'bg-gray-100 text-gray-600 border-gray-200')}>{statusLabels[detalhe.status] || detalhe.status}</span>
-                {detalhe.plataforma && <span className="text-xs bg-pink-100 text-pink-700 px-2 py-1 rounded-full font-bold">{detalhe.plataforma}</span>}
-                {detalhe.formato && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-bold">{detalhe.formato}</span>}
-                {detalhe.tipo_conteudo && <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full font-bold">{detalhe.tipo_conteudo}</span>}
-              </div>
+      {/* ===== DETAIL MODAL (Designer/SocialMedia/Admin) ===== */}
+      {detalhe && (() => {
+        const d = detalhe
+        const etqs = getEtiquetas(d._tipo, d.id)
 
-              {editMode ? (
-                <div className="space-y-3">
-                  <div><span className="text-xs text-gray-400 uppercase font-semibold">Titulo</span><input value={editForm.titulo||''} onChange={e => setEditForm({...editForm, titulo: e.target.value})} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1" /></div>
-                  <div><span className="text-xs text-gray-400 uppercase font-semibold">Descricao</span><textarea value={editForm.descricao||''} onChange={e => setEditForm({...editForm, descricao: e.target.value})} rows={3} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1" /></div>
-                  {detalhe._tipo === 'briefing' && <div><span className="text-xs text-gray-400 uppercase font-semibold">Referencia</span><input value={editForm.referencia||''} onChange={e => setEditForm({...editForm, referencia: e.target.value})} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1" /></div>}
-                  {detalhe._tipo === 'briefing' && <div><span className="text-xs text-gray-400 uppercase font-semibold">Musica</span><input value={editForm.musica||''} onChange={e => setEditForm({...editForm, musica: e.target.value})} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1" /></div>}
-                  {detalhe._tipo === 'briefing' && <div><span className="text-xs text-gray-400 uppercase font-semibold">Data de Vencimento</span><input type="date" value={editForm.data_vencimento?.slice(0,10)||''} onChange={e => setEditForm({...editForm, data_vencimento: e.target.value})} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1" /></div>}
-                  {detalhe._tipo === 'post' && <div><span className="text-xs text-gray-400 uppercase font-semibold">Conteudo</span><textarea value={editForm.conteudo||''} onChange={e => setEditForm({...editForm, conteudo: e.target.value})} rows={3} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1" /></div>}
-                  {detalhe._tipo === 'post' && <div><span className="text-xs text-gray-400 uppercase font-semibold">Data de Publicacao</span><input type="date" value={editForm.data_publicacao?.slice(0,10)||''} onChange={e => setEditForm({...editForm, data_publicacao: e.target.value})} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1" /></div>}
-                  {detalhe._tipo === 'post' && <div><span className="text-xs text-gray-400 uppercase font-semibold">Hora de Publicacao</span><input type="time" value={editForm.hora_publicacao||''} onChange={e => setEditForm({...editForm, hora_publicacao: e.target.value})} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1" /></div>}
-                  {detalhe._tipo === 'post' && <div><span className="text-xs text-gray-400 uppercase font-semibold">Collaborators</span><input value={editForm.collaborators||''} onChange={e => setEditForm({...editForm, collaborators: e.target.value})} placeholder="@usuario1, @usuario2" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1" /></div>}
-                  <button onClick={salvarEdicao} className="w-full px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-bold hover:bg-green-600 transition">Salvar</button>
+        function toggleMultiEdit(field, val) {
+          const arr = (editForm[field]||'').split(',').filter(Boolean)
+          const idx = arr.indexOf(val)
+          if (idx >= 0) arr.splice(idx, 1); else arr.push(val)
+          setEditForm({...editForm, [field]: arr.join(',')})
+        }
+
+        return (
+          <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setDetalhe(null)}>
+            <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-auto shadow-2xl" onClick={e => e.stopPropagation()}>
+
+              {/* Header */}
+              <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between rounded-t-2xl z-10">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={'text-[11px] font-bold px-2.5 py-1 rounded-full border ' + (statusColors[d.status] || 'bg-gray-100 text-gray-600 border-gray-200')}>
+                      {statusLabels[d.status] || d.status}
+                    </span>
+                    <span className={'text-[11px] font-bold px-2.5 py-1 rounded-full ' + (d._tipo === 'briefing' ? 'bg-violet-100 text-violet-700' : 'bg-pink-100 text-pink-700')}>
+                      {d._tipo === 'briefing' ? '✏️ Briefing' : '📲 Post'}
+                    </span>
+                    {d.plataforma && d._tipo === 'post' && <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700">{d.plataforma}</span>}
+                  </div>
+                  <h3 className="font-extrabold text-gray-900 text-base mt-1.5 truncate">{d.titulo || 'Sem título'}</h3>
+                  <p className="text-xs text-blue-500 font-medium">{d.evento_nome}</p>
                 </div>
-              ) : (<>
-                {detalhe.descricao && <div><span className="text-xs text-gray-400 uppercase font-semibold">Descricao</span><p className="text-sm text-gray-700 mt-1">{detalhe.descricao}</p></div>}
-                {detalhe.conteudo && <div><span className="text-xs text-gray-400 uppercase font-semibold">Conteudo</span><p className="text-sm text-gray-700 mt-1 whitespace-pre-wrap">{detalhe.conteudo}</p></div>}
-                {detalhe.referencia && <div><span className="text-xs text-gray-400 uppercase font-semibold">Referencia</span><p className="text-sm text-gray-700 mt-1">{detalhe.referencia}</p></div>}
-                {detalhe.musica && <div><span className="text-xs text-gray-400 uppercase font-semibold">Musica</span><p className="text-sm text-gray-700 mt-1">{detalhe.musica}</p></div>}
-                {detalhe.collaborators && <div><span className="text-xs text-gray-400 uppercase font-semibold">Collaborators</span><p className="text-sm text-blue-600 mt-1">{detalhe.collaborators}</p></div>}
-              </>)}
+                <div className="flex items-center gap-2 ml-3 flex-shrink-0">
+                  <button
+                    onClick={() => {
+                      if (editMode) { setEditMode(false); setEditForm({}) }
+                      else {
+                        setEditMode(true)
+                        setEditForm({
+                          titulo: d.titulo||'', descricao: d.descricao||'', conteudo: d.conteudo||'',
+                          referencia: d.referencia||'', musica: d.musica||'',
+                          data_vencimento: d.data_vencimento||'', data_publicacao: d.data_publicacao||'',
+                          hora_publicacao: d.hora_publicacao||'', collaborators: d.collaborators||'',
+                          tipo_conteudo: d.tipo_conteudo||'', formato: d.formato||'',
+                          plataforma: d.plataforma||'Instagram', status: d.status||'pendente',
+                        })
+                      }
+                    }}
+                    className={'text-xs px-3 py-1.5 rounded-lg font-bold transition ' + (editMode ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' : 'bg-blue-50 text-blue-600 hover:bg-blue-100')}
+                  >
+                    {editMode ? 'Cancelar' : '✏️ Editar'}
+                  </button>
+                  <button onClick={() => setDetalhe(null)}
+                    className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition font-bold">✕</button>
+                </div>
+              </div>
 
-              {/* Arquivos */}
-              {detalhe._tipo === 'briefing' && (
-                <div className="pt-3 border-t">
+              <div className="p-5 space-y-5">
+                {/* Etiquetas */}
+                <div className="space-y-2">
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">Etiquetas</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {ETIQUETAS_PADRAO.map(et => {
+                      const ativa = etqs.includes(et.key)
+                      return (
+                        <button key={et.key} onClick={() => toggleEtiqueta(d._tipo, d.id, et.key)}
+                          className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border-2 transition-all"
+                          style={ativa
+                            ? { backgroundColor: et.bg, color: et.color, borderColor: et.border }
+                            : { backgroundColor: '#f9fafb', color: '#9ca3af', borderColor: '#e5e7eb' }}>
+                          {et.emoji} {et.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {(() => {
+                    const customs = etqs.filter(e => !ETIQUETAS_PADRAO.find(p => p.key === e))
+                    return (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {customs.map(e => (
+                          <span key={e} className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+                            🏷️ {e}
+                            <button onClick={() => removeEtiqueta(d._tipo, d.id, e)} className="text-gray-400 hover:text-red-500 font-bold ml-0.5">✕</button>
+                          </span>
+                        ))}
+                        <input
+                          placeholder="+ nova etiqueta"
+                          className="text-xs border border-dashed border-gray-300 rounded-full px-3 py-1 outline-none focus:border-blue-400 w-32 text-gray-500"
+                          onKeyDown={e => { if (e.key === 'Enter') { addEtiquetaCustom(d._tipo, d.id, e.target.value); e.target.value = '' } }}
+                        />
+                      </div>
+                    )
+                  })()}
+                </div>
+
+                {editMode ? (
+                  <div className="space-y-4 border-t border-gray-100 pt-4">
+                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">Editar Card</p>
+
+                    <div>
+                      <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Título</label>
+                      <input value={editForm.titulo||''} onChange={e => setEditForm({...editForm, titulo: e.target.value})}
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Status</label>
+                      <select value={editForm.status||''} onChange={e => setEditForm({...editForm, status: e.target.value})}
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="pendente">Pendente</option>
+                        <option value="em_andamento">Em Produção</option>
+                        <option value="em_revisao">Em Revisão</option>
+                        <option value="aprovado">Aprovado</option>
+                        <option value="publicado">Publicado</option>
+                      </select>
+                    </div>
+
+                    {d._tipo === 'briefing' && (
+                      <div>
+                        <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Data de Vencimento</label>
+                        <input type="date" value={editForm.data_vencimento?.slice(0,10)||''} onChange={e => setEditForm({...editForm, data_vencimento: e.target.value})}
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      </div>
+                    )}
+
+                    {d._tipo === 'post' && (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Plataforma</label>
+                          <select value={editForm.plataforma||'Instagram'} onChange={e => setEditForm({...editForm, plataforma: e.target.value})}
+                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            {['Instagram','Facebook','TikTok','YouTube','Twitter','LinkedIn','WhatsApp'].map(p => <option key={p}>{p}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Data de Publicação</label>
+                          <input type="date" value={editForm.data_publicacao?.slice(0,10)||''} onChange={e => setEditForm({...editForm, data_publicacao: e.target.value})}
+                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Hora</label>
+                          <input type="time" value={editForm.hora_publicacao||''} onChange={e => setEditForm({...editForm, hora_publicacao: e.target.value})}
+                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Collaborators</label>
+                          <input value={editForm.collaborators||''} onChange={e => setEditForm({...editForm, collaborators: e.target.value})}
+                            placeholder="@usuario1, @usuario2"
+                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Tipo de Conteúdo */}
+                    <div>
+                      <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2 block">Tipo de Conteúdo</label>
+                      <div className="flex gap-2 flex-wrap">
+                        {['GIF','VIDEO','ESTATICA','FOTO ORGÂNICA','VÍDEO ORGÂNICO','INTERAÇÃO'].map(tc => {
+                          const ativo = (editForm.tipo_conteudo||'').split(',').includes(tc)
+                          return (
+                            <button key={tc} type="button" onClick={() => toggleMultiEdit('tipo_conteudo', tc)}
+                              className={'px-2.5 py-1 rounded-lg text-xs font-bold border-2 transition ' + (ativo ? 'border-amber-500 bg-amber-500 text-white' : 'border-gray-200 text-gray-500 hover:border-amber-300')}>
+                              {tc}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Formato */}
+                    <div>
+                      <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2 block">Formato</label>
+                      <div className="flex gap-2 flex-wrap">
+                        {['FEED','STORIES','CARROSSEL','REELS'].map(fm => {
+                          const ativo = (editForm.formato||'').split(',').includes(fm)
+                          return (
+                            <button key={fm} type="button" onClick={() => toggleMultiEdit('formato', fm)}
+                              className={'px-2.5 py-1 rounded-lg text-xs font-bold border-2 transition ' + (ativo ? 'border-blue-500 bg-blue-500 text-white' : 'border-gray-200 text-gray-500 hover:border-blue-300')}>
+                              {fm === 'FEED' ? '📱' : fm === 'STORIES' ? '📲' : fm === 'CARROSSEL' ? '🔄' : '🎥'} {fm}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Briefing / Descrição */}
+                    <div>
+                      <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">
+                        {d._tipo === 'briefing' ? 'Briefing / Descrição' : 'Briefing para o Designer'}
+                      </label>
+                      <textarea value={editForm.descricao||''} onChange={e => setEditForm({...editForm, descricao: e.target.value})}
+                        rows={3} placeholder="Descreva o que precisa ser criado..."
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+
+                    {d._tipo === 'post' && (
+                      <div>
+                        <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Legenda / Conteúdo</label>
+                        <textarea value={editForm.conteudo||''} onChange={e => setEditForm({...editForm, conteudo: e.target.value})}
+                          rows={3} placeholder="Legenda do post..."
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Referência</label>
+                        <input value={editForm.referencia||''} onChange={e => setEditForm({...editForm, referencia: e.target.value})}
+                          placeholder="Link ou descrição"
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Música</label>
+                        <input value={editForm.musica||''} onChange={e => setEditForm({...editForm, musica: e.target.value})}
+                          placeholder="Nome ou link"
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      </div>
+                    </div>
+
+                    <button onClick={salvarEdicao}
+                      className="w-full px-4 py-2.5 bg-green-500 text-white rounded-xl text-sm font-bold hover:bg-green-600 transition">
+                      Salvar Alterações
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3 border-t border-gray-100 pt-4">
+                    {/* Badges de tipo/formato */}
+                    {(d.tipo_conteudo || d.formato || d.plataforma) && (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {d.plataforma && d._tipo === 'post' && <span className="text-xs font-bold px-3 py-1 rounded-full bg-pink-50 text-pink-700 border border-pink-200">📲 {d.plataforma}</span>}
+                        {(d.tipo_conteudo||'').split(',').filter(Boolean).map(tc => <span key={tc} className="text-xs font-bold px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">{tc}</span>)}
+                        {(d.formato||'').split(',').filter(Boolean).map(fm => <span key={fm} className="text-xs font-bold px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">{fm}</span>)}
+                      </div>
+                    )}
+
+                    {/* Data */}
+                    {(d.data_vencimento || d.data_publicacao) && (
+                      <div className="flex items-center gap-3 text-xs text-gray-500">
+                        <span className="flex items-center gap-1.5">
+                          <Calendar size={12} />
+                          {fmtData(d.data_vencimento || d.data_publicacao)}
+                          {d.hora_publicacao && <span className="flex items-center gap-1 ml-1"><Clock size={11} />{d.hora_publicacao.slice(0,5)}</span>}
+                        </span>
+                      </div>
+                    )}
+
+                    {d.descricao && (
+                      <div className="bg-gray-50 rounded-xl px-4 py-3">
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1.5">Briefing</p>
+                        <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{d.descricao}</p>
+                      </div>
+                    )}
+                    {d.conteudo && (
+                      <div className="bg-gray-50 rounded-xl px-4 py-3">
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1.5">Legenda / Conteúdo</p>
+                        <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{d.conteudo}</p>
+                      </div>
+                    )}
+                    {(d.referencia || d.musica) && (
+                      <div className="grid grid-cols-2 gap-3">
+                        {d.referencia && <div className="bg-gray-50 rounded-xl px-3 py-2.5"><p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">Referência</p><p className="text-xs text-gray-700 break-all">{d.referencia}</p></div>}
+                        {d.musica && <div className="bg-gray-50 rounded-xl px-3 py-2.5"><p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">Música</p><p className="text-xs text-gray-700">{d.musica}</p></div>}
+                      </div>
+                    )}
+                    {d.collaborators && (
+                      <div className="bg-gray-50 rounded-xl px-3 py-2.5">
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">Collaborators</p>
+                        <p className="text-xs text-blue-600 font-medium">{d.collaborators}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Arquivos */}
+                <div className="border-t border-gray-100 pt-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-gray-400 uppercase font-semibold">Arquivos ({arquivos.length})</span>
-                    <label className={'px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition ' + (uploading ? 'bg-gray-200 text-gray-400' : 'bg-blue-500 text-white hover:bg-blue-600')}>
-                      {uploading ? 'Enviando...' : 'Enviar Arquivo'}
-                      <input type="file" className="hidden" disabled={uploading} accept="image/*,video/*,.pdf,.psd,.ai,.zip" onChange={e => { if(e.target.files[0]) uploadArquivo(detalhe.id, e.target.files[0]); e.target.value='' }} />
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Arquivos ({arquivos.length})</p>
+                    <label className={'px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition ' + (uploading ? 'bg-gray-100 text-gray-400' : 'bg-blue-50 text-blue-600 hover:bg-blue-100')}>
+                      {uploading ? 'Enviando...' : '+ Enviar'}
+                      <input type="file" className="hidden" disabled={uploading} accept="image/*,video/*,.pdf,.psd,.ai,.zip"
+                        onChange={e => { if(e.target.files[0]) uploadArquivo(d.id, e.target.files[0]); e.target.value='' }} />
                     </label>
                   </div>
                   {arquivos.length > 0 && (
-                    <div className="space-y-1.5">
-                      {arquivos.map(a => (
-                        <div key={a.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
-                          <a href={'/api' + a.url} target="_blank" rel="noreferrer" className="text-xs text-blue-600 font-medium truncate hover:underline flex-1">{a.nome_original}</a>
-                          <button onClick={e => { e.stopPropagation(); deletarArquivo(a.id, detalhe.id) }} className="text-red-400 hover:text-red-600 text-xs ml-2">✕</button>
-                        </div>
-                      ))}
+                    <div className="grid grid-cols-3 gap-2">
+                      {arquivos.map(a => {
+                        const isImg = a.tipo?.startsWith('image') || /\.(jpg|jpeg|png|gif|webp)$/i.test(a.nome_original || '')
+                        const fileUrl = '/api' + a.url
+                        return (
+                          <div key={a.id} className="group relative rounded-xl overflow-hidden border border-gray-200 bg-gray-50 hover:shadow-sm transition">
+                            {isImg
+                              ? <img src={fileUrl} alt={a.nome_original} className="w-full h-20 object-cover cursor-pointer hover:opacity-80" onClick={() => setPreviewArquivo(a)} />
+                              : <a href={fileUrl} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center h-20 gap-1 text-gray-400 hover:text-blue-600"><FileText size={20} /><span className="text-[10px] font-medium px-2 truncate w-full text-center">{a.nome_original}</span></a>
+                            }
+                            <button onClick={e => { e.stopPropagation(); deletarArquivo(a.id, d.id) }}
+                              className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-xs font-bold">✕</button>
+                          </div>
+                        )
+                      })}
                     </div>
                   )}
                 </div>
-              )}
 
-              {/* Status update */}
-              <div className="pt-3 border-t">
-                <button onClick={() => { setDetalhe(null); navigate('/marketing?evento=' + detalhe.id_evento) }} className="w-full mb-3 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition">Abrir no Marketing</button>
-                <span className="text-xs text-gray-400 uppercase font-semibold">Atualizar Status</span>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {[{key:'pendente',label:'Pendente'},{key:'em_andamento',label:'Em Producao'},{key:'em_revisao',label:'Em Revisao'},{key:'aprovado',label:'Aprovado'},{key:'publicado',label:'Publicado'}].map(s => (
-                    <button key={s.key} onClick={() => { atualizarStatus(detalhe._tipo, detalhe.id, s.key); setDetalhe({...detalhe, status: s.key}) }}
-                      className={'px-3 py-1.5 rounded-lg text-xs font-bold transition ' + (detalhe.status === s.key ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200')}>
-                      {s.label}
-                    </button>
-                  ))}
+                {/* Footer actions */}
+                <div className="border-t border-gray-100 pt-4 space-y-3">
+                  <div>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-2">Atualizar Status</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[{key:'pendente',label:'Pendente'},{key:'em_andamento',label:'Em Produção'},{key:'em_revisao',label:'Em Revisão'},{key:'aprovado',label:'Aprovado'},{key:'publicado',label:'Publicado'}].map(s => (
+                        <button key={s.key} onClick={() => { atualizarStatus(d._tipo, d.id, s.key); setDetalhe({...d, status: s.key}) }}
+                          className={'px-3 py-1.5 rounded-lg text-xs font-bold transition ' + (d.status === s.key ? 'bg-blue-500 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200')}>
+                          {s.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <button onClick={() => { setDetalhe(null); navigate('/marketing?evento=' + d.id_evento) }}
+                    className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition">
+                    Abrir no Marketing
+                  </button>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
       {previewArquivo && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setPreviewArquivo(null)}>
           <div className="relative max-w-4xl max-h-[90vh]" onClick={e => e.stopPropagation()}>

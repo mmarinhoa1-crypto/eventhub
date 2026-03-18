@@ -89,7 +89,19 @@ router.post('/api/eventos',auth,async(req,res)=>{try{
 if(req.user.funcao==='designer'||req.user.funcao==='social_media')return res.status(403).json({erro:'Sem permissao'});
 const{nome,id_grupo,orcamento,data_evento,hora_evento,hora_abertura,local_evento,cidade,descricao,publico_alvo,capacidade,atracoes,tipo_evento,info_lotes,observacoes,data_abertura_vendas,hora_abertura_vendas,promo_abertura,pontos_venda,classificacao,instagram,designer,social_media,diretor,designer_id,social_media_id,diretor_id}=req.body;
 const r=await pool.query('INSERT INTO eventos(org_id,nome,id_grupo,orcamento,data_evento,hora_evento,hora_abertura,local_evento,cidade,descricao,publico_alvo,capacidade,atracoes,tipo_evento,info_lotes,observacoes,data_abertura_vendas,hora_abertura_vendas,promo_abertura,pontos_venda,classificacao,instagram,designer,social_media,diretor,designer_id,social_media_id,diretor_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28) RETURNING *',[req.user.org_id,nome,id_grupo||'',parseFloat(orcamento)||0,data_evento||'',hora_evento||'',hora_abertura||'',local_evento||'',cidade||'',descricao||'',publico_alvo||'',parseInt(capacidade)||0,atracoes||'',tipo_evento||'',info_lotes||'',observacoes||'',data_abertura_vendas||'',hora_abertura_vendas||'',promo_abertura||'',pontos_venda||'',classificacao||'',instagram||'',designer||'',social_media||'',diretor||'',designer_id?parseInt(designer_id):null,social_media_id?parseInt(social_media_id):null,diretor_id?parseInt(diretor_id):null]);
-res.json(r.rows[0])}catch(e){res.status(500).json({erro:e.message})}});
+const evento=r.rows[0];
+// Notificar todos os usuarios da org sobre o novo evento
+try{
+  const usuarios=await pool.query('SELECT id FROM usuarios WHERE org_id=$1 AND id!=$2',[req.user.org_id,req.user.id]);
+  const dataStr=data_evento?new Date(data_evento).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'}):'';
+  for(const u of usuarios.rows){
+    await pool.query('INSERT INTO notificacoes(org_id,usuario_id,tipo,titulo,mensagem,link,referencia_tipo,referencia_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8)',
+      [req.user.org_id,u.id,'novo_evento','Novo evento criado',
+       (req.user.nome||'Admin')+' criou o evento "'+nome+'"'+(dataStr?' para '+dataStr:''),
+       '/eventos','evento',evento.id]);
+  }
+}catch(e2){console.error('Erro ao criar notificacoes de evento:',e2.message)}
+res.json(evento)}catch(e){res.status(500).json({erro:e.message})}});
 
 router.post("/api/eventos/:id/despesas",auth,async(req,res)=>{try{const{descricao,quantidade,valor_unitario,valor,centro_custo,fonte_pagamento,situacao,data,fornecedor}=req.body;if(!descricao&&!fornecedor)return res.status(400).json({erro:"Descricao obrigatoria"});const r=await pool.query("INSERT INTO despesas(id_evento,org_id,valor,quantidade,valor_unitario,fornecedor,data,descricao,centro_custo,fonte_pagamento,situacao,registrado_por,fonte) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *",[req.params.id,req.user.org_id,parseFloat(valor)||0,parseFloat(quantidade)||1,parseFloat(valor_unitario)||0,fornecedor||"",data||new Date().toISOString().split("T")[0],descricao||"",centro_custo||"Outros",fonte_pagamento||"",situacao||"pendente",req.user.nome||"manual","manual"]);res.json(r.rows[0])}catch(e){console.error(e);res.status(500).json({erro:e.message})}});
 

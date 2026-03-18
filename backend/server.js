@@ -29,6 +29,7 @@ app.use(require('./routes/financeiro')({ pool, ExcelJS, auth }));
 app.use(require('./routes/vendas')({ pool, axios, auth }));
 app.use(require('./routes/consumo')({ pool, auth }));
 app.use(require('./routes/anuncios')({ pool, auth, CLAUDE }));
+app.use(require('./routes/notificacoes')({ pool, auth }));
 app.use(require('./routes/legacy')({ pool, axios, bcrypt, auth, upload, multer, path, CLAUDE, EVO, KEY, INST }));
 
 app.listen(PORT,()=>console.log('EventHub rodando na porta '+PORT));

@@ -33,7 +33,26 @@ res.json({sucesso:true})}catch(e){res.status(500).json({erro:e.message})}});
 
 router.patch('/api/equipe/:id',auth,async(req,res)=>{try{
 if(req.user.role!=='admin'&&req.user.role!=='diretor')return res.status(403).json({erro:'Sem permissao'});
-const{funcao}=req.body;
+const{funcao,nome,email}=req.body;
+
+// Alterar nome/email: somente admin
+if((nome!==undefined||email!==undefined)&&req.user.role!=='admin')return res.status(403).json({erro:'Apenas admin pode alterar nome e email'});
+
+if(nome!==undefined||email!==undefined){
+  if(nome!==undefined&&!nome.trim())return res.status(400).json({erro:'Nome nao pode ser vazio'});
+  if(email!==undefined&&!email.trim())return res.status(400).json({erro:'Email nao pode ser vazio'});
+  if(email!==undefined){
+    const existe=await pool.query('SELECT id FROM usuarios WHERE email=$1 AND id!=$2',[email.trim(),req.params.id]);
+    if(existe.rows.length)return res.status(400).json({erro:'Email ja cadastrado para outro usuario'});
+  }
+  const sets=[];const vals=[];let idx=1;
+  if(nome!==undefined){sets.push(`nome=$${idx++}`);vals.push(nome.trim());}
+  if(email!==undefined){sets.push(`email=$${idx++}`);vals.push(email.trim());}
+  vals.push(req.params.id);vals.push(req.user.org_id);
+  const r=await pool.query(`UPDATE usuarios SET ${sets.join(',')} WHERE id=$${idx} AND org_id=$${idx+1} RETURNING id,nome,email,funcao`,vals);
+  return res.json(r.rows[0]);
+}
+
 const funcoesValidas=['admin','agent','designer','social_media','diretor','viewer'];
 if(!funcoesValidas.includes(funcao))return res.status(400).json({erro:'Funcao invalida'});
 // Diretor nao pode alterar admin

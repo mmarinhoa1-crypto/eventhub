@@ -2,6 +2,111 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===== VARIÁVEIS DE TEMA ===== */
+:root {
+  --bg-main: #f8f8f7;
+  --bg-surface: #ffffff;
+  --bg-subtle: #f1f1ef;
+  --text-primary: #1a1a1a;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  --border: #e5e7eb;
+  --border-subtle: #f3f4f6;
+  --accent: #f80d52;
+}
+
+html.dark {
+  --bg-main: #131316;
+  --bg-surface: rgba(255, 255, 255, 0.04);
+  --bg-subtle: rgba(255, 255, 255, 0.02);
+  --text-primary: #f0f0ee;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-subtle: rgba(255, 255, 255, 0.04);
+  --accent: #f80d52;
+}
+
+/* ===== FUNDO GLOBAL — LIGHT E DARK ===== */
+body {
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ===== DARK MODE — OVERRIDES GLOBAIS ===== */
+
+/* Backgrounds */
+html.dark .bg-white {
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+}
+
+html.dark .bg-gray-50 {
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+
+html.dark .bg-gray-100 {
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+html.dark .bg-gray-200 {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+html.dark .bg-slate-50\/80,
+html.dark .bg-slate-50 {
+  background-color: #131316 !important;
+}
+
+/* Text */
+html.dark .text-gray-900 { color: #f0f0ee !important; }
+html.dark .text-gray-800 { color: #e4e4e2 !important; }
+html.dark .text-gray-700 { color: #d1d1ce !important; }
+html.dark .text-gray-600 { color: #a1a1aa !important; }
+html.dark .text-gray-500 { color: #8b8b95 !important; }
+html.dark .text-gray-400 { color: #6b6b78 !important; }
+
+/* Borders */
+html.dark .border-gray-100 { border-color: rgba(255, 255, 255, 0.06) !important; }
+html.dark .border-gray-200 { border-color: rgba(255, 255, 255, 0.09) !important; }
+html.dark .border-gray-300 { border-color: rgba(255, 255, 255, 0.12) !important; }
+
+html.dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Inputs / Textareas / Selects */
+html.dark input:not([type='checkbox']):not([type='radio']):not([type='range']),
+html.dark textarea,
+html.dark select {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #f0f0ee !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #6b6b78 !important;
+}
+
+/* Hover states */
+html.dark .hover\:bg-gray-50:hover { background: rgba(255, 255, 255, 0.04) !important; }
+html.dark .hover\:bg-gray-100:hover { background: rgba(255, 255, 255, 0.08) !important; }
+
+/* Header */
+html.dark header {
+  background: rgba(19, 19, 22, 0.85) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Scrollbar dark */
+html.dark ::-webkit-scrollbar-thumb { background: #3f3f46; }
+html.dark ::-webkit-scrollbar-thumb:hover { background: #52525b; }
+
 /* ===== PALETA AZUL - CLEAN MODERN ===== */
 
 .bg-gradient-sidebar {
