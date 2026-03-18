@@ -46,7 +46,7 @@ export default function RegistrarPage() {
           </form>
           <p className="mt-4 text-center text-sm text-gray-500">
             Já tem conta?{' '}
-            <Link to="/entrar" className="text-indigo-600 hover:text-indigo-700 font-medium">Entrar</Link>
+            <Link to="/entrar" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-400 font-medium">Entrar</Link>
           </p>
         </div>
       </div>

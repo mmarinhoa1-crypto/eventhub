@@ -8,15 +8,15 @@ const categorias = [
 ]
 
 const catColors = {
-  'Artistico': 'bg-blue-50 text-blue-700',
-  'Logistica/Camarim': 'bg-blue-50 text-blue-700',
-  'Estrutura do Evento': 'bg-blue-50 text-blue-700',
-  'Divulgacao e Midia': 'bg-blue-50 text-blue-700',
-  'Documentacao e Taxas': 'bg-blue-50 text-blue-700',
-  'Operacional': 'bg-blue-50 text-blue-700',
-  'Bar': 'bg-blue-50 text-blue-700',
-  'Alimentacao': 'bg-blue-50 text-blue-700',
-  'Outros': 'bg-blue-50 text-blue-700',
+  'Artistico': 'bg-blue-50 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400',
+  'Logistica/Camarim': 'bg-blue-50 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400',
+  'Estrutura do Evento': 'bg-blue-50 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400',
+  'Divulgacao e Midia': 'bg-blue-50 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400',
+  'Documentacao e Taxas': 'bg-blue-50 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400',
+  'Operacional': 'bg-blue-50 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400',
+  'Bar': 'bg-blue-50 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400',
+  'Alimentacao': 'bg-blue-50 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400',
+  'Outros': 'bg-blue-50 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400',
 }
 
 export default function DespesaRow({ despesa, onUpdate }) {

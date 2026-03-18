@@ -376,8 +376,8 @@ export default function MarketingPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 rounded-xl">
-            <Megaphone size={24} className="text-blue-600" />
+          <div className="p-2 bg-blue-100 dark:bg-blue-500/20 rounded-xl">
+            <Megaphone size={24} className="text-blue-600 dark:text-blue-400" />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Marketing</h1>
@@ -410,15 +410,15 @@ export default function MarketingPage() {
               <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
                 <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-orange-50 to-yellow-50">
                   <div className="flex items-center gap-2">
-                    <Clock size={18} className="text-orange-500" />
-                    <h3 className="font-bold text-gray-900">Aguardando Aprovação</h3>
+                    <Clock size={18} className="text-orange-500 dark:text-orange-400" />
+                    <h3 className="font-bold text-gray-900 dark:text-white/90">Aguardando Aprovação</h3>
                   </div>
-                  <span className="bg-orange-100 text-orange-700 text-xs font-bold px-3 py-1 rounded-full">{allPlanejamentos.filter(p => p.status === 'enviado').length}</span>
+                  <span className="bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400 text-xs font-bold px-3 py-1 rounded-full">{allPlanejamentos.filter(p => p.status === 'enviado').length}</span>
                 </div>
                 {allPlanejamentos.filter(p => p.status === 'enviado').length === 0 ? (
                   <div className="p-10 text-center">
-                    <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
-                      <CheckCircle size={24} className="text-green-500" />
+                    <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-500/20 flex items-center justify-center mx-auto mb-3">
+                      <CheckCircle size={24} className="text-green-500 dark:text-green-400" />
                     </div>
                     <p className="text-sm font-semibold text-gray-600">Tudo aprovado!</p>
                     <p className="text-xs text-gray-400 mt-1">Nenhum planejamento pendente de aprovação</p>
@@ -426,7 +426,7 @@ export default function MarketingPage() {
                 ) : (
                   <div className="divide-y divide-gray-100">
                     {allPlanejamentos.filter(p => p.status === 'enviado').map(p => (
-                      <div key={p.id} onClick={() => setEventoAberto(p.evento_id)} className="p-4 hover:bg-orange-50/50 cursor-pointer transition group">
+                      <div key={p.id} onClick={() => setEventoAberto(p.evento_id)} className="p-4 hover:bg-orange-50/50 dark:hover:bg-orange-500/10 cursor-pointer transition group">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-orange-400 to-blue-500 flex items-center justify-center shadow-sm">
@@ -439,7 +439,7 @@ export default function MarketingPage() {
                           </div>
                           <div className="flex items-center gap-3">
                             {p.criado_por_nome && <span className="text-xs text-gray-400">por {p.criado_por_nome}</span>}
-                            <span className="bg-yellow-100 text-yellow-700 text-[11px] font-bold px-2.5 py-1 rounded-full">Aguardando</span>
+                            <span className="bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 text-[11px] font-bold px-2.5 py-1 rounded-full">Aguardando</span>
                             <ArrowRight size={16} className="text-gray-300 group-hover:text-blue-500 transition" />
                           </div>
                         </div>
@@ -489,14 +489,14 @@ export default function MarketingPage() {
                 <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
                   <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-green-50 to-emerald-50">
                     <div className="flex items-center gap-2">
-                      <CheckCircle size={18} className="text-green-500" />
-                      <h3 className="font-bold text-gray-900">Aprovados</h3>
+                      <CheckCircle size={18} className="text-green-500 dark:text-green-400" />
+                      <h3 className="font-bold text-gray-900 dark:text-white/90">Aprovados</h3>
                     </div>
-                    <span className="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">{allPlanejamentos.filter(p => p.status === 'aprovado').length}</span>
+                    <span className="bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 text-xs font-bold px-3 py-1 rounded-full">{allPlanejamentos.filter(p => p.status === 'aprovado').length}</span>
                   </div>
                   <div className="divide-y divide-gray-100">
                     {allPlanejamentos.filter(p => p.status === 'aprovado').map(p => (
-                      <div key={p.id} onClick={() => setEventoAberto(p.evento_id)} className="p-4 hover:bg-green-50/50 cursor-pointer transition group">
+                      <div key={p.id} onClick={() => setEventoAberto(p.evento_id)} className="p-4 hover:bg-green-50/50 dark:hover:bg-green-500/10 cursor-pointer transition group">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-sm">
@@ -508,7 +508,7 @@ export default function MarketingPage() {
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
-                            <span className="bg-green-100 text-green-700 text-[11px] font-bold px-2.5 py-1 rounded-full">Aprovado</span>
+                            <span className="bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 text-[11px] font-bold px-2.5 py-1 rounded-full">Aprovado</span>
                             <ArrowRight size={16} className="text-gray-300 group-hover:text-blue-500 transition" />
                           </div>
                         </div>
@@ -556,8 +556,8 @@ export default function MarketingPage() {
           return (
             <div key={ev.id} className={'bg-white rounded-2xl border overflow-hidden transition-all ' + (isPast ? 'border-gray-100 opacity-60' : 'border-gray-200 hover:shadow-md hover:border-blue-200')}>
               {confirmDelete === ev.id && (
-                <div className="bg-red-50 border-b border-red-200 px-4 py-2.5 flex items-center justify-between" onClick={e => e.stopPropagation()}>
-                  <span className="text-xs text-red-700 font-medium">Excluir evento e todos os dados?</span>
+                <div className="bg-red-50 dark:bg-red-500/10 border-b border-red-200 dark:border-red-500/30 px-4 py-2.5 flex items-center justify-between" onClick={e => e.stopPropagation()}>
+                  <span className="text-xs text-red-700 dark:text-red-400 font-medium">Excluir evento e todos os dados?</span>
                   <div className="flex gap-2">
                     <button onClick={(e) => excluirEvento(ev.id, e)} className="px-2.5 py-1 bg-red-500 text-white rounded-lg text-[10px] font-semibold hover:bg-red-600 transition">Confirmar</button>
                     <button onClick={(e) => {e.stopPropagation(); setConfirmDelete(null)}} className="px-2.5 py-1 bg-gray-100 text-gray-600 rounded-lg text-[10px] font-semibold hover:bg-gray-200 transition">Cancelar</button>
@@ -596,7 +596,7 @@ export default function MarketingPage() {
                           {getNome(ev.designer_id, designers) && <span className="flex items-center gap-1 text-xs text-gray-400"><Palette size={12} className="text-violet-400" /> {getNome(ev.designer_id, designers)}</span>}
                           {getNome(ev.social_media_id, socialMedias) && <span className="flex items-center gap-1 text-xs text-gray-400"><Users size={12} className="text-blue-400" /> {getNome(ev.social_media_id, socialMedias)}</span>}
                           {!isPast && dias && (
-                            <span className={'text-xs font-bold px-2.5 py-0.5 rounded-full ' + (dias === 'Hoje' ? 'bg-red-50 text-red-600 border border-red-200' : dias === 'Amanha' ? 'bg-orange-50 text-orange-600 border border-orange-200' : 'bg-blue-50 text-blue-600 border border-blue-100')}>
+                            <span className={'text-xs font-bold px-2.5 py-0.5 rounded-full ' + (dias === 'Hoje' ? 'bg-red-50 dark:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/30' : dias === 'Amanha' ? 'bg-orange-50 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-500/30' : 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-500/30')}>
                               {dias === 'Hoje' || dias === 'Amanha' ? dias : 'Faltam ' + dias}
                             </span>
                           )}
@@ -605,9 +605,9 @@ export default function MarketingPage() {
                     </div>
                     <div className="flex items-center gap-3 flex-shrink-0 ml-4">
                       {!isPast && !igConnections[ev.id] && (
-                        <button onClick={(e) => { e.stopPropagation(); setIgConnectEvento(ev.id) }} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-purple-50 border border-purple-200 hover:bg-purple-100 transition" title="Conectar Instagram">
-                          <Instagram size={12} className="text-purple-500" />
-                          <span className="text-[10px] font-bold text-purple-600 hidden lg:inline">Conectar</span>
+                        <button onClick={(e) => { e.stopPropagation(); setIgConnectEvento(ev.id) }} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-purple-50 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/30 hover:bg-purple-100 dark:hover:bg-purple-500/20 transition" title="Conectar Instagram">
+                          <Instagram size={12} className="text-purple-500 dark:text-purple-400" />
+                          <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400 hidden lg:inline">Conectar</span>
                         </button>
                       )}
                       {canCreateEvent && (
@@ -633,8 +633,8 @@ export default function MarketingPage() {
                   Passados <span className={'ml-1 text-xs font-bold px-1.5 py-0.5 rounded-full ' + (showPast ? 'bg-white/20' : 'bg-gray-100 text-gray-500')}>{passados.length}</span>
                 </button>
               )}
-              <button onClick={() => setShowPast(false)} className={'px-4 py-2 rounded-xl text-sm font-bold transition-all ' + (!showPast ? 'bg-blue-600 text-white shadow' : 'bg-white text-gray-500 border border-gray-200 hover:text-gray-700')}>
-                Proximos Eventos <span className={'ml-1 text-xs font-bold px-1.5 py-0.5 rounded-full ' + (!showPast ? 'bg-white/20' : 'bg-blue-50 text-blue-600')}>{futuros.length}</span>
+              <button onClick={() => setShowPast(false)} className={'px-4 py-2 rounded-xl text-sm font-bold transition-all ' + (!showPast ? 'bg-blue-600 text-white shadow' : 'bg-white dark:bg-white/[0.05] text-gray-500 dark:text-white/50 border border-gray-200 dark:border-white/[0.08] hover:text-gray-700 dark:hover:text-white/80')}>
+                Proximos Eventos <span className={'ml-1 text-xs font-bold px-1.5 py-0.5 rounded-full ' + (!showPast ? 'bg-white/20' : 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400')}>{futuros.length}</span>
               </button>
             </div>
             {!showPast ? (
@@ -659,11 +659,11 @@ export default function MarketingPage() {
     {/* Modal Conectar Instagram */}
     {igConnectEvento && (
       <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => { setIgConnectEvento(null); setIgTokenInput('') }}>
-        <div className="bg-white rounded-2xl max-w-sm w-full max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
-          <div className="p-4 border-b bg-gradient-to-r from-violet-50 to-violet-50 flex items-center justify-between rounded-t-2xl">
+        <div className="bg-white dark:bg-[rgba(19,19,22,0.98)] rounded-2xl max-w-sm w-full max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
+          <div className="p-4 border-b dark:border-white/[0.08] bg-gradient-to-r from-violet-50 to-violet-50 dark:from-violet-500/10 dark:to-violet-500/10 flex items-center justify-between rounded-t-2xl">
             <div className="flex items-center gap-2">
-              <Instagram size={18} className="text-blue-500" />
-              <h3 className="font-bold text-gray-900 text-sm">Conectar Instagram</h3>
+              <Instagram size={18} className="text-blue-500 dark:text-blue-400" />
+              <h3 className="font-bold text-gray-900 dark:text-white/90 text-sm">Conectar Instagram</h3>
             </div>
             <button onClick={() => { setIgConnectEvento(null); setIgTokenInput('') }} className="w-7 h-7 rounded-full bg-white/80 hover:bg-white flex items-center justify-center text-gray-400 hover:text-gray-600"><X size={14} /></button>
           </div>

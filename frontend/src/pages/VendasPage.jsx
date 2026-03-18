@@ -97,7 +97,7 @@ export default function VendasPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 rounded-xl"><BarChart3 size={24} className="text-blue-600" /></div>
+          <div className="p-2 bg-blue-100 dark:bg-blue-500/20 rounded-xl"><BarChart3 size={24} className="text-blue-600 dark:text-blue-400" /></div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Vendas por Dia</h1>
             <p className="text-sm text-gray-500">Acompanhe as vendas do BaladaAPP</p>
@@ -106,7 +106,7 @@ export default function VendasPage() {
         <div className="flex items-center gap-3">
           <button onClick={() => { if(!eventoId)return; toast.loading('Sincronizando...'); api.post('/eventos/'+eventoId+'/baladapp/sync-vendas').then(r => { toast.dismiss(); toast.success('Sync: '+r.data.inseridos+' pedidos importados'); setTimeout(()=>window.location.reload(),1000) }).catch(e => { toast.dismiss(); toast.error(e.response?.data?.erro||'Erro no sync') }) }} className="px-3 py-1.5 bg-blue-500 text-white rounded-lg text-xs font-semibold hover:bg-blue-600 transition">Sync Vendas</button>
           {ultimaSync && (
-            <span className="flex items-center gap-1.5 text-xs font-medium text-green-600 bg-green-50 px-3 py-1.5 rounded-full border border-green-100">
+            <span className="flex items-center gap-1.5 text-xs font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10 px-3 py-1.5 rounded-full border border-green-100 dark:border-green-500/20">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
               Sync ativo
             </span>
@@ -129,11 +129,11 @@ export default function VendasPage() {
           {/* Cards */}
           <div className="grid grid-cols-5 gap-3">
             {[
-              { label: 'Receita Total', value: fmt(totalVendas), sub: porDia.length + ' dias', color: 'text-green-600', icon: <TrendingUp size={18} className="text-green-500" /> },
-              { label: 'Pedidos', value: totalPedidos.toLocaleString('pt-BR'), sub: totalIngressos + ' ingressos', color: 'text-blue-600', icon: <Ticket size={18} className="text-blue-500" /> },
-              { label: 'Ticket Medio', value: fmt(ticketMedio), sub: 'por ingresso', color: 'text-blue-600', icon: <BarChart3 size={18} className="text-blue-500" /> },
-              { label: 'Melhor Dia', value: melhorDia ? fmt(parseFloat(melhorDia.total)) : '-', sub: melhorDia ? new Date(melhorDia.dia + 'T12:00:00').toLocaleDateString('pt-BR') : '', color: 'text-amber-600', icon: <Trophy size={18} className="text-amber-500" /> },
-              { label: 'Media/Dia', value: fmt(totalVendas / porDia.length), sub: Math.round(totalPedidos / porDia.length) + ' pedidos/dia', color: 'text-cyan-600', icon: <CalendarDays size={18} className="text-cyan-500" /> },
+              { label: 'Receita Total', value: fmt(totalVendas), sub: porDia.length + ' dias', color: 'text-green-600 dark:text-green-400', icon: <TrendingUp size={18} className="text-green-500 dark:text-green-400" /> },
+              { label: 'Pedidos', value: totalPedidos.toLocaleString('pt-BR'), sub: totalIngressos + ' ingressos', color: 'text-blue-600 dark:text-blue-400', icon: <Ticket size={18} className="text-blue-500 dark:text-blue-400" /> },
+              { label: 'Ticket Medio', value: fmt(ticketMedio), sub: 'por ingresso', color: 'text-blue-600 dark:text-blue-400', icon: <BarChart3 size={18} className="text-blue-500 dark:text-blue-400" /> },
+              { label: 'Melhor Dia', value: melhorDia ? fmt(parseFloat(melhorDia.total)) : '-', sub: melhorDia ? new Date(melhorDia.dia + 'T12:00:00').toLocaleDateString('pt-BR') : '', color: 'text-amber-600 dark:text-amber-400', icon: <Trophy size={18} className="text-amber-500 dark:text-amber-400" /> },
+              { label: 'Media/Dia', value: fmt(totalVendas / porDia.length), sub: Math.round(totalPedidos / porDia.length) + ' pedidos/dia', color: 'text-cyan-600 dark:text-cyan-400', icon: <CalendarDays size={18} className="text-cyan-500 dark:text-cyan-400" /> },
             ].map((c, i) => (
               <div key={i} className="bg-white rounded-xl border border-gray-200 p-4">
                 <div className="flex items-center gap-2 mb-2">
@@ -201,7 +201,7 @@ export default function VendasPage() {
             {/* Tipo de Ingresso */}
             <div className="bg-white rounded-xl border border-gray-200 p-5">
               <div className="flex items-center gap-2 mb-4">
-                <Tag size={16} className="text-blue-500" />
+                <Tag size={16} className="text-blue-500 dark:text-blue-400" />
                 <h3 className="font-bold text-gray-900 text-sm">Vendas por Tipo de Ingresso</h3>
               </div>
               {porTipo.length > 0 ? (
@@ -240,7 +240,7 @@ export default function VendasPage() {
             <div className="bg-white rounded-xl border border-gray-200 p-5">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  {subViewDir === 'cidade' ? <MapPin size={16} className="text-rose-500" /> : <Users size={16} className="text-blue-500" />}
+                  {subViewDir === 'cidade' ? <MapPin size={16} className="text-rose-500 dark:text-rose-400" /> : <Users size={16} className="text-blue-500 dark:text-blue-400" />}
                   <h3 className="font-bold text-gray-900 text-sm">{subViewDir === 'cidade' ? 'Vendas por Cidade' : 'Vendas por Comissario'}</h3>
                 </div>
                 <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
@@ -345,16 +345,16 @@ export default function VendasPage() {
                     const isTop = melhorDia && d.dia === melhorDia.dia
                     const tm = ing > 0 ? val / ing : 0
                     return (
-                      <tr key={i} className={'border-t border-gray-50 transition-colors ' + (isTop ? 'bg-amber-50/40' : 'hover:bg-gray-50')}>
+                      <tr key={i} className={'border-t border-gray-50 transition-colors ' + (isTop ? 'bg-amber-50/40 dark:bg-amber-500/10' : 'hover:bg-gray-50')}>
                         <td className="px-5 py-2.5 text-sm">
                           <span className="font-medium text-gray-900">
                             {d.dia ? new Date(d.dia.substring(0,10) + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' }) : '-'}
                           </span>
-                          {isTop && <span className="ml-2 text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-semibold">MELHOR DIA</span>}
+                          {isTop && <span className="ml-2 text-[10px] bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded font-semibold">MELHOR DIA</span>}
                         </td>
                         <td className="px-5 py-2.5 text-sm text-center text-gray-600 font-medium">{qtd}</td>
                         <td className="px-5 py-2.5 text-sm text-center text-gray-500">{ing}</td>
-                        <td className="px-5 py-2.5 text-sm text-right font-semibold text-green-600">{fmt(val)}</td>
+                        <td className="px-5 py-2.5 text-sm text-right font-semibold text-green-600 dark:text-green-400">{fmt(val)}</td>
                         <td className="px-5 py-2.5 text-sm text-right text-gray-500">{fmt(tm)}</td>
                         <td className="px-5 py-2.5">
                           <div className="flex items-center gap-2">
@@ -373,7 +373,7 @@ export default function VendasPage() {
                     <td className="px-5 py-3 text-sm font-bold text-gray-600 uppercase tracking-wide">Total</td>
                     <td className="px-5 py-3 text-sm text-center font-bold text-gray-900">{totalPedidos.toLocaleString('pt-BR')}</td>
                     <td className="px-5 py-3 text-sm text-center font-bold text-gray-900">{totalIngressos.toLocaleString('pt-BR')}</td>
-                    <td className="px-5 py-3 text-sm text-right font-bold text-green-600 text-base">{fmt(totalVendas)}</td>
+                    <td className="px-5 py-3 text-sm text-right font-bold text-green-600 dark:text-green-400 text-base">{fmt(totalVendas)}</td>
                     <td className="px-5 py-3 text-sm text-right font-bold text-gray-600">{fmt(ticketMedio)}</td>
                     <td className="px-5 py-3" />
                   </tr>

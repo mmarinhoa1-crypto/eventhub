@@ -45,7 +45,7 @@ export default function EventoCard({ evento, onClick, onDelete }) {
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0 pr-2">
-            <h4 className="font-bold text-gray-900 text-sm leading-snug truncate group-hover:text-blue-700 transition-colors">
+            <h4 className="font-bold text-gray-900 dark:text-white/90 text-sm leading-snug truncate group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors">
               {evento.nome}
             </h4>
             <div className="flex flex-wrap items-center gap-2 mt-1.5">
@@ -63,7 +63,7 @@ export default function EventoCard({ evento, onClick, onDelete }) {
               )}
             </div>
           </div>
-          <div className="p-1.5 rounded-xl bg-blue-50 text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all flex-shrink-0">
+          <div className="p-1.5 rounded-xl bg-blue-50 dark:bg-blue-500/20 text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all flex-shrink-0">
             <ArrowRight size={14} />
           </div>
         </div>
@@ -75,14 +75,14 @@ export default function EventoCard({ evento, onClick, onDelete }) {
             <p className="text-sm font-bold text-gray-800 mt-0.5">{fmtV(gasto)}</p>
           </div>
           {receita > 0 ? (
-            <div className="bg-emerald-50 rounded-xl px-3 py-2">
-              <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-wider">Receita</p>
-              <p className="text-sm font-bold text-emerald-700 mt-0.5">{fmtV(receita)}</p>
+            <div className="bg-emerald-50 dark:bg-emerald-500/10 rounded-xl px-3 py-2">
+              <p className="text-[9px] font-bold text-emerald-500 dark:text-emerald-400 uppercase tracking-wider">Receita</p>
+              <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">{fmtV(receita)}</p>
             </div>
           ) : (
-            <div className="bg-blue-50 rounded-xl px-3 py-2">
+            <div className="bg-blue-50 dark:bg-blue-500/10 rounded-xl px-3 py-2">
               <p className="text-[9px] font-bold text-blue-400 uppercase tracking-wider">Orçamento</p>
-              <p className="text-sm font-bold text-blue-700 mt-0.5">
+              <p className="text-sm font-bold text-blue-700 dark:text-blue-400 mt-0.5">
                 {orcamento > 0 ? fmtV(orcamento) : '—'}
               </p>
             </div>

@@ -4,12 +4,12 @@ import api from '../api/client'
 import toast from 'react-hot-toast'
 
 const statusColors = {
-  ACTIVE: 'bg-green-100 text-green-700',
-  PAUSED: 'bg-yellow-100 text-yellow-700',
-  DELETED: 'bg-gray-100 text-gray-500',
-  ARCHIVED: 'bg-gray-100 text-gray-500',
-  WITH_ISSUES: 'bg-red-100 text-red-700',
-  IN_PROCESS: 'bg-blue-100 text-blue-700',
+  ACTIVE:      'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400',
+  PAUSED:      'bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400',
+  DELETED:     'bg-gray-100 text-gray-500',
+  ARCHIVED:    'bg-gray-100 text-gray-500',
+  WITH_ISSUES: 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400',
+  IN_PROCESS:  'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400',
 }
 
 const statusDot = {
@@ -293,24 +293,24 @@ export default function AnunciosPage() {
   }, [campanhasFiltradas, filtroStatusCamp])
 
   const cardsGerais = resumoExibido ? [
-    { label: 'Investido', value: fmtMoney(resumoExibido.spend), icon: DollarSign, color: 'text-green-600', bg: 'bg-green-50' },
-    { label: 'Impressoes', value: fmtNum(resumoExibido.impressions), icon: Eye, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Alcance', value: fmtNum(resumoExibido.reach), icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Cliques', value: fmtNum(resumoExibido.clicks), icon: MousePointerClick, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'CTR', value: fmtPct(resumoExibido.ctr), icon: TrendingUp, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'CPC', value: fmtMoney(resumoExibido.cpc), icon: Target, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { label: 'CPM', value: fmtMoney(resumoExibido.cpm), icon: Layers, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { label: 'Frequencia', value: resumoExibido.frequency, icon: RefreshCw, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Investido', value: fmtMoney(resumoExibido.spend), icon: DollarSign, color: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-500/10' },
+    { label: 'Impressoes', value: fmtNum(resumoExibido.impressions), icon: Eye, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-500/10' },
+    { label: 'Alcance', value: fmtNum(resumoExibido.reach), icon: Users, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-500/10' },
+    { label: 'Cliques', value: fmtNum(resumoExibido.clicks), icon: MousePointerClick, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-500/10' },
+    { label: 'CTR', value: fmtPct(resumoExibido.ctr), icon: TrendingUp, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-500/10' },
+    { label: 'CPC', value: fmtMoney(resumoExibido.cpc), icon: Target, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-500/10' },
+    { label: 'CPM', value: fmtMoney(resumoExibido.cpm), icon: Layers, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-500/10' },
+    { label: 'Frequencia', value: resumoExibido.frequency, icon: RefreshCw, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-500/10' },
   ] : []
 
   const cardsConversao = resumoExibido ? [
-    { label: 'Conversoes', value: fmtNum(resumoExibido.conversions), icon: Target, color: 'text-green-600', bg: 'bg-green-50' },
-    { label: 'Valor Conv.', value: fmtMoney(resumoExibido.conversion_value || 0), icon: DollarSign, color: 'text-green-600', bg: 'bg-green-50' },
-    { label: 'Compras', value: fmtNum(resumoExibido.purchases || 0), icon: ShoppingCart, color: 'text-purple-600', bg: 'bg-purple-50' },
-    { label: 'Leads', value: fmtNum(resumoExibido.leads || 0), icon: UserPlus, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-    { label: 'ROAS', value: parseFloat(resumoExibido.roas || 0).toFixed(2) + 'x', icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'CPA', value: fmtMoney(resumoExibido.cpa || 0), icon: DollarSign, color: 'text-red-600', bg: 'bg-red-50' },
-    { label: 'Taxa Conv.', value: fmtPct(resumoExibido.conversion_rate || 0), icon: Percent, color: 'text-violet-600', bg: 'bg-violet-50' },
+    { label: 'Conversoes', value: fmtNum(resumoExibido.conversions), icon: Target, color: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-500/10' },
+    { label: 'Valor Conv.', value: fmtMoney(resumoExibido.conversion_value || 0), icon: DollarSign, color: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-500/10' },
+    { label: 'Compras', value: fmtNum(resumoExibido.purchases || 0), icon: ShoppingCart, color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-500/10' },
+    { label: 'Leads', value: fmtNum(resumoExibido.leads || 0), icon: UserPlus, color: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-50 dark:bg-indigo-500/10' },
+    { label: 'ROAS', value: parseFloat(resumoExibido.roas || 0).toFixed(2) + 'x', icon: TrendingUp, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-500/10' },
+    { label: 'CPA', value: fmtMoney(resumoExibido.cpa || 0), icon: DollarSign, color: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-500/10' },
+    { label: 'Taxa Conv.', value: fmtPct(resumoExibido.conversion_rate || 0), icon: Percent, color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-50 dark:bg-violet-500/10' },
   ] : []
 
   return (
@@ -318,11 +318,11 @@ export default function AnunciosPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-blue-100">
-            <BarChart3 size={24} className="text-blue-600" />
+          <div className="p-2.5 rounded-xl bg-blue-100 dark:bg-blue-500/20">
+            <BarChart3 size={24} className="text-blue-600 dark:text-blue-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Anuncios</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white/90">Anuncios</h1>
             <p className="text-sm text-gray-400">Meta Ads - Todas as contas</p>
           </div>
         </div>
@@ -624,12 +624,12 @@ export default function AnunciosPage() {
         {/* Painel Analise IA */}
         {showAnalise && (
           <div className="border-b border-gray-100">
-            <div className="px-5 py-3 flex items-center justify-between bg-blue-50/50">
+            <div className="px-5 py-3 flex items-center justify-between bg-blue-50/50 dark:bg-blue-500/10">
               <div className="flex items-center gap-2">
-                <Sparkles size={16} className="text-blue-600" />
-                <span className="text-sm font-bold text-blue-900">Analise IA dos Criativos</span>
+                <Sparkles size={16} className="text-blue-600 dark:text-blue-400" />
+                <span className="text-sm font-bold text-blue-900 dark:text-blue-300">Analise IA dos Criativos</span>
               </div>
-              <button onClick={() => setShowAnalise(false)} className="p-1 rounded-lg hover:bg-blue-100 transition">
+              <button onClick={() => setShowAnalise(false)} className="p-1 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-500/10 transition">
                 <X size={14} className="text-blue-400" />
               </button>
             </div>

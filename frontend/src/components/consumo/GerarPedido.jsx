@@ -137,7 +137,7 @@ export default function GerarPedido() {
                   <td className="py-1.5 px-2 text-gray-700">{item.produto_nome}</td>
                   <td className="py-1.5 px-2 text-right text-gray-500">{parseFloat(item.media_por_pessoa).toFixed(2)}</td>
                   <td className="py-1.5 px-2 text-right text-gray-500">{parseFloat(item.quantidade_base).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</td>
-                  <td className="py-1.5 px-2 text-right font-semibold text-indigo-600">
+                  <td className="py-1.5 px-2 text-right font-semibold text-indigo-600 dark:text-indigo-400">
                     {Math.ceil(parseFloat(item.quantidade_manual || item.quantidade_final)).toLocaleString('pt-BR')}
                   </td>
                 </tr>
@@ -164,11 +164,11 @@ export default function GerarPedido() {
         <h3 className="text-sm font-semibold text-gray-700 mb-4">Gerar Pedido Automático</h3>
 
         {analise && analise.total_eventos > 0 && (
-          <div className="bg-blue-50 rounded-lg p-3 mb-4 text-xs text-blue-700">
+          <div className="bg-blue-50 dark:bg-blue-500/10 rounded-lg p-3 mb-4 text-xs text-blue-700 dark:text-blue-400">
             <Calculator size={14} className="inline mr-1" />
             Base de cálculo: <strong>{analise.total_eventos} evento(s)</strong> analisados.
             O sistema calcula a média de consumo por pessoa <strong>separadamente</strong> para setores Open Bar e Bar Vendido.
-            Fórmula: <code className="bg-blue-100 px-1 rounded">média/pessoa(tipo) × público(tipo) × margem</code>
+            Fórmula: <code className="bg-blue-100 dark:bg-blue-500/20 px-1 rounded">média/pessoa(tipo) × público(tipo) × margem</code>
           </div>
         )}
 
@@ -263,10 +263,10 @@ export default function GerarPedido() {
 
       {/* Pedido gerado */}
       {pedidoGerado && (
-        <div className="bg-white rounded-xl border border-green-200 p-5">
+        <div className="bg-white rounded-xl border border-green-200 dark:border-green-500/30 p-5">
           <div className="flex items-center gap-2 mb-4">
-            <div className="p-1.5 bg-green-100 rounded-lg">
-              <FileText size={16} className="text-green-600" />
+            <div className="p-1.5 bg-green-100 dark:bg-green-500/20 rounded-lg">
+              <FileText size={16} className="text-green-600 dark:text-green-400" />
             </div>
             <div>
               <h3 className="text-sm font-semibold text-gray-700">Pedido Gerado: {pedidoGerado.pedido.nome || 'Sem nome'}</h3>
@@ -282,8 +282,8 @@ export default function GerarPedido() {
           {pedidoGerado.detalhes_setores && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
               {Object.entries(pedidoGerado.detalhes_setores).map(([tipo, info]) => (
-                <div key={tipo} className={`rounded-lg p-3 text-sm ${tipo === 'open' ? 'bg-green-50' : 'bg-orange-50'}`}>
-                  <span className={`font-semibold ${tipo === 'open' ? 'text-green-700' : 'text-orange-700'}`}>
+                <div key={tipo} className={`rounded-lg p-3 text-sm ${tipo === 'open' ? 'bg-green-50 dark:bg-green-500/10' : 'bg-orange-50 dark:bg-orange-500/10'}`}>
+                  <span className={`font-semibold ${tipo === 'open' ? 'text-green-700 dark:text-green-400' : 'text-orange-700 dark:text-orange-400'}`}>
                     {tipo === 'open' ? 'Open Bar' : 'Bar Vendido'}
                   </span>
                   <span className="text-gray-500 ml-2">{info.publico_estimado.toLocaleString('pt-BR')} pessoas</span>
@@ -299,11 +299,11 @@ export default function GerarPedido() {
 
       {/* Detalhe do pedido selecionado */}
       {pedidoDetalhe && !pedidoGerado && (
-        <div className="bg-white rounded-xl border border-blue-200 p-5">
+        <div className="bg-white rounded-xl border border-blue-200 dark:border-blue-500/30 p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-blue-100 rounded-lg">
-                <FileText size={16} className="text-blue-600" />
+              <div className="p-1.5 bg-blue-100 dark:bg-blue-500/20 rounded-lg">
+                <FileText size={16} className="text-blue-600 dark:text-blue-400" />
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-gray-700">{pedidoDetalhe.nome || 'Pedido #' + pedidoDetalhe.id}</h3>

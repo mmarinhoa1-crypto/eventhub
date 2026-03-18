@@ -157,7 +157,7 @@ export default function EventosPage() {
                 {key === '__sem_data__' ? 'Sem data definida' : getMonthLabel(key)}
               </h2>
             </div>
-            <span className="text-xs font-bold text-blue-600 bg-blue-50 border border-blue-100 px-2.5 py-0.5 rounded-full">
+            <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 px-2.5 py-0.5 rounded-full">
               {evs.length} evento{evs.length !== 1 ? 's' : ''}
             </span>
             <div className="flex-1 h-px bg-gray-100" />

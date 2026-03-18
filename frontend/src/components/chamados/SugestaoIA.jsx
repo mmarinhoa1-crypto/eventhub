@@ -26,11 +26,11 @@ export default function SugestaoIA({ chamadoId, onUsar }) {
         Sugestão IA
       </Button>
       {sugestao && (
-        <div className="bg-violet-50 border border-violet-200 rounded-lg p-3">
-          <p className="text-sm text-purple-900 whitespace-pre-wrap">{sugestao}</p>
+        <div className="bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/30 rounded-lg p-3">
+          <p className="text-sm text-purple-900 dark:text-purple-300 whitespace-pre-wrap">{sugestao}</p>
           <button
             onClick={() => onUsar(sugestao)}
-            className="mt-2 text-xs text-violet-700 hover:text-purple-900 font-medium"
+            className="mt-2 text-xs text-violet-600 dark:text-violet-400 hover:text-purple-900 dark:hover:text-purple-300 font-medium"
           >
             Usar esta resposta
           </button>
