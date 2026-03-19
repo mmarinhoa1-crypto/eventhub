@@ -514,7 +514,7 @@ export default function MinhasDemandas() {
             <div className="flex gap-2 items-center flex-wrap">
               <div className="flex gap-1 bg-white rounded-lg p-0.5 border border-gray-200">
                 {[{id:'todos',l:'Todos'},{id:'designer',l:'Designers'},{id:'social_media',l:'Social Media'}].map(f => (
-                  <button key={f.id} onClick={() => {setFiltroFuncao(f.id);setFiltroMembro('todos')}} className={'px-3 py-1.5 rounded-md text-xs font-bold transition-all ' + (filtroFuncao === f.id ? 'bg-blue-600 text-white' : 'text-gray-500 hover:text-gray-700')}>{f.l}</button>
+                  <button key={f.id} onClick={() => {setFiltroFuncao(f.id);setFiltroMembro('todos')}} className={'px-3 py-1.5 rounded-md text-xs font-bold transition-all ' + (filtroFuncao === f.id ? 'bg-accent text-white' : 'text-gray-500 hover:text-gray-700')}>{f.l}</button>
                 ))}
               </div>
               <div className="relative" style={{width:240}}>
@@ -543,7 +543,7 @@ export default function MinhasDemandas() {
               </div>
               <div className="flex gap-1 bg-white rounded-lg p-0.5 border border-gray-200">
                 {[{id:'todos',l:'Todos'},{id:'pendente',l:'Pendentes'},{id:'producao',l:'Producao'},{id:'atrasado',l:'Atrasados'},{id:'entregue',l:'Entregues'}].map(f => (
-                  <button key={f.id} onClick={() => setFiltroStatusAdmin(f.id)} className={'px-3 py-1.5 rounded-md text-xs font-bold transition-all ' + (filtroStatusAdmin === f.id ? (f.id === 'atrasado' ? 'bg-red-500 text-white' : 'bg-blue-600 text-white') : (f.id === 'atrasado' ? 'text-red-500' : 'text-gray-500 hover:text-gray-700'))}>{f.l}</button>
+                  <button key={f.id} onClick={() => setFiltroStatusAdmin(f.id)} className={'px-3 py-1.5 rounded-md text-xs font-bold transition-all ' + (filtroStatusAdmin === f.id ? (f.id === 'atrasado' ? 'bg-red-500 text-white' : 'bg-accent text-white') : (f.id === 'atrasado' ? 'text-red-500' : 'text-gray-500 hover:text-gray-700'))}>{f.l}</button>
                 ))}
               </div>
             </div>
@@ -554,7 +554,7 @@ export default function MinhasDemandas() {
                 const stats = getStats(m.id)
                 const isActive = filtroMembro === String(m.id)
                 return (
-                  <div key={m.id} onClick={() => setFiltroMembro(isActive ? 'todos' : String(m.id))} className={'rounded-2xl p-3.5 cursor-pointer transition-all border-2 ' + (isActive ? 'bg-blue-50 border-blue-500' : 'bg-white border-gray-200 hover:border-blue-200')}>
+                  <div key={m.id} onClick={() => setFiltroMembro(isActive ? 'todos' : String(m.id))} className={'rounded-2xl p-3.5 cursor-pointer transition-all border-2 ' + (isActive ? 'bg-accent/10 border-accent' : 'bg-white border-gray-200 hover:border-accent/40')}>
                     <div className="flex items-center gap-2.5 mb-2.5">
                       <div className={'w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold ' + (m.funcao === 'designer' ? 'bg-gradient-to-br from-blue-500 to-blue-600' : 'bg-gradient-to-br from-blue-500 to-blue-600')}>
                         {(m.nome||'?').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}
@@ -590,21 +590,21 @@ export default function MinhasDemandas() {
 
               return (
                 <>
-                <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-                  <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50">
-                    <button onClick={() => setAdminMonthDate(new Date(year, month - 1, 1))} className="p-1.5 hover:bg-gray-200 rounded-lg transition"><ChevronLeft size={16} className="text-gray-500" /></button>
+                <div className="bg-white dark:bg-white/[0.04] rounded-2xl border border-gray-200 dark:border-white/[0.08] overflow-hidden">
+                  <div className="px-5 py-3 border-b border-gray-100 dark:border-white/[0.08] flex items-center justify-between bg-gray-50 dark:bg-white/[0.03]">
+                    <button onClick={() => setAdminMonthDate(new Date(year, month - 1, 1))} className="p-1.5 hover:bg-gray-200 dark:hover:bg-white/10 rounded-lg transition"><ChevronLeft size={16} className="text-gray-500 dark:text-white/50" /></button>
                     <div className="text-center">
-                      <h3 className="font-extrabold text-gray-900 text-sm">
+                      <h3 className="font-extrabold text-gray-900 dark:text-white/90 text-sm">
                         {mesesNomes[month]} {year}
                       </h3>
-                      <span className="text-xs text-gray-400">{filteredItems.length} demandas · {daysInMonth} dias</span>
+                      <span className="text-xs text-gray-400 dark:text-white/40">{filteredItems.length} demandas · {daysInMonth} dias</span>
                     </div>
                     <div className="flex items-center gap-1">
                       {!isCurrentMonth && <button onClick={() => { const n = new Date(); setAdminMonthDate(new Date(n.getFullYear(), n.getMonth(), 1)) }} className="px-2 py-1 text-xs font-bold text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition">Hoje</button>}
-                      <button onClick={() => setAdminMonthDate(new Date(year, month + 1, 1))} className="p-1.5 hover:bg-gray-200 rounded-lg transition"><ChevronRight size={16} className="text-gray-500" /></button>
+                      <button onClick={() => setAdminMonthDate(new Date(year, month + 1, 1))} className="p-1.5 hover:bg-gray-200 dark:hover:bg-white/10 rounded-lg transition"><ChevronRight size={16} className="text-gray-500 dark:text-white/50" /></button>
                     </div>
                   </div>
-                  <div ref={calendarScrollRef} className="flex overflow-x-auto gap-4 p-4 bg-gray-50/60" style={{ scrollSnapType: 'x mandatory', scrollBehavior: 'smooth' }}>
+                  <div ref={calendarScrollRef} className="flex overflow-x-auto gap-4 p-4 bg-gray-50/60 dark:bg-transparent" style={{ scrollSnapType: 'x mandatory', scrollBehavior: 'smooth' }}>
                     {monthDays.map((day) => {
                       const dayStr = day.toISOString().split('T')[0]
                       const isToday = dayStr === todayStr
@@ -625,17 +625,17 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                             setDraggedItem(null)
                             setDragOverDay(null)
                           }}
-                          className={'flex-shrink-0 rounded-2xl border shadow-sm overflow-hidden transition-colors duration-150 ' + (isToday ? 'bg-blue-50/40 border-blue-100' : 'bg-white border-gray-100') + (isDragTarget ? ' ring-2 ring-inset ring-blue-400' : '')}
+                          className={'flex-shrink-0 rounded-2xl border shadow-sm overflow-hidden transition-colors duration-150 ' + (isToday ? 'bg-blue-50/40 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/30' : 'bg-white dark:bg-white/[0.04] border-gray-100 dark:border-white/[0.08]') + (isDragTarget ? ' ring-2 ring-inset ring-blue-400' : '')}
                           style={{ minWidth: 285, minHeight: 520, scrollSnapAlign: 'start' }}
                         >
                           {/* Day header */}
-                          <div className={'flex items-center gap-2 px-4 py-3 border-b ' + (isToday ? 'bg-blue-50 border-blue-200' : 'border-gray-100 bg-white')}>
-                            <span className={'text-[10px] font-extrabold uppercase tracking-widest ' + (isToday ? 'text-blue-500' : 'text-gray-400')}>{diasNomes[day.getDay()]}</span>
-                            <span className={'text-sm font-extrabold flex items-center justify-center flex-shrink-0 ' + (isToday ? 'w-7 h-7 rounded-full bg-blue-600 text-white shadow-sm' : 'text-gray-800')}>
+                          <div className={'flex items-center gap-2 px-4 py-3 border-b ' + (isToday ? 'bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30' : 'border-gray-100 dark:border-white/[0.08] bg-white dark:bg-white/[0.03]')}>
+                            <span className={'text-[10px] font-extrabold uppercase tracking-widest ' + (isToday ? 'text-blue-500' : 'text-gray-400 dark:text-white/40')}>{diasNomes[day.getDay()]}</span>
+                            <span className={'text-sm font-extrabold flex items-center justify-center flex-shrink-0 ' + (isToday ? 'w-7 h-7 rounded-full bg-blue-600 text-white shadow-sm' : 'text-gray-800 dark:text-white/80')}>
                               {day.getDate()}
                             </span>
                             {dayItems.length > 0 && (
-                              <span className={'ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full ' + (isToday ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500')}>
+                              <span className={'ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full ' + (isToday ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 dark:bg-white/[0.08] text-gray-500 dark:text-white/50')}>
                                 {dayItems.length}
                               </span>
                             )}
@@ -645,7 +645,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                             {/* Add button */}
                             <div
                               onClick={() => { setNovoPostForm(f => ({...f, id_evento: data.eventos.length === 1 ? String(data.eventos[0].id) : '', data_publicacao: dayStr})); setShowNovoPost(true) }}
-                              className="flex items-center justify-center py-1.5 rounded-lg border-2 border-dashed border-gray-200 text-gray-300 hover:border-blue-400 hover:text-blue-400 hover:bg-blue-50/50 transition cursor-pointer group"
+                              className="flex items-center justify-center py-1.5 rounded-lg border-2 border-dashed border-gray-200 dark:border-white/[0.10] text-gray-300 dark:text-white/20 hover:border-blue-400 hover:text-blue-400 hover:bg-blue-50/50 transition cursor-pointer group"
                             >
                               <Plus size={13} className="group-hover:scale-110 transition-transform" />
                             </div>
@@ -676,9 +676,9 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                   onDragStart={e => { e.stopPropagation(); setDraggedItem({...d}) }}
                                   onDragEnd={() => { setDraggedItem(null); setDragOverDay(null) }}
                                   onClick={e => { e.stopPropagation(); const next = isSelected ? null : d; setAdminDetalhe(next); if(next) { setAdminArquivos([]); carregarAdminArqs(next) } }}
-                                  className={'rounded-xl bg-white border cursor-pointer select-none transition-all duration-150 hover:shadow-md '
+                                  className={'rounded-xl bg-white dark:bg-white/[0.06] border cursor-pointer select-none transition-all duration-150 hover:shadow-md '
                                     + (isDraggingThis ? 'opacity-40 scale-95 ' : '')
-                                    + (isSelected ? 'ring-2 ring-blue-500 shadow-md border-blue-200 ' : 'border-gray-100 shadow-sm ')}
+                                    + (isSelected ? 'ring-2 ring-blue-500 shadow-md border-blue-200 ' : 'border-gray-100 dark:border-white/[0.08] shadow-sm ')}
                                   style={{ borderLeft: `4px solid ${accentColor}` }}
                                 >
                                   <div className="px-3 py-2.5 space-y-2">
@@ -690,7 +690,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                     </div>
 
                                     {/* Título */}
-                                    <p className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug">{d.titulo || 'Sem título'}</p>
+                                    <p className="text-sm font-semibold text-gray-900 dark:text-white/90 line-clamp-2 leading-snug">{d.titulo || 'Sem título'}</p>
 
                                     {/* Nome do evento */}
                                     <p className="text-xs font-medium truncate" style={{ color: accentColor }}>{d.evento_nome}</p>
@@ -736,10 +736,10 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
 
                   return (
                     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setAdminDetalhe(null)}>
-                      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-auto shadow-2xl" onClick={e => e.stopPropagation()}>
+                      <div className="bg-white dark:bg-[#1c1c24] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-auto shadow-2xl" onClick={e => e.stopPropagation()}>
 
                         {/* Header */}
-                        <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between rounded-t-2xl z-10">
+                        <div className="sticky top-0 bg-white dark:bg-[#1c1c24] border-b border-gray-100 dark:border-white/[0.08] px-5 py-4 flex items-center justify-between rounded-t-2xl z-10">
                           <div className="flex items-center gap-3 min-w-0 flex-1">
                             <span className={'w-2.5 h-2.5 rounded-full flex-shrink-0 ' + (atrasado ? 'bg-red-500' : st.dot)} />
                             <div className="min-w-0">
@@ -840,13 +840,13 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                 <div>
                                   <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Título</label>
                                   <input value={adminEditForm.titulo||''} onChange={e => setAdminEditForm({...adminEditForm, titulo: e.target.value})}
-                                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                                 </div>
 
                                 <div>
                                   <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Status</label>
                                   <select value={adminEditForm.status||''} onChange={e => setAdminEditForm({...adminEditForm, status: e.target.value})}
-                                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
                                     <option value="pendente">Pendente</option>
                                     <option value="em_andamento">Em Produção</option>
                                     <option value="em_revisao">Em Revisão</option>
@@ -860,7 +860,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                   <div>
                                     <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Plataforma</label>
                                     <select value={adminEditForm.plataforma||'Instagram'} onChange={e => setAdminEditForm({...adminEditForm, plataforma: e.target.value})}
-                                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
                                       {['Instagram','Facebook','TikTok','YouTube','Twitter','LinkedIn','WhatsApp'].map(p => <option key={p}>{p}</option>)}
                                     </select>
                                   </div>
@@ -871,18 +871,18 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                       onChange={e => d._tipo === 'post'
                                         ? setAdminEditForm({...adminEditForm, data_publicacao: e.target.value})
                                         : setAdminEditForm({...adminEditForm, data_vencimento: e.target.value})}
-                                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                                   </div>
                                   <div>
                                     <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Hora</label>
                                     <input type="time" value={adminEditForm.hora_publicacao||''} onChange={e => setAdminEditForm({...adminEditForm, hora_publicacao: e.target.value})}
-                                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                                   </div>
                                   <div>
                                     <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Collaborators</label>
                                     <input value={adminEditForm.collaborators||''} onChange={e => setAdminEditForm({...adminEditForm, collaborators: e.target.value})}
                                       placeholder="@usuario1, @usuario2"
-                                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                                   </div>
                                 </div>
 
@@ -923,7 +923,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                   <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Briefing para o Designer</label>
                                   <textarea value={adminEditForm.descricao||''} onChange={e => setAdminEditForm({...adminEditForm, descricao: e.target.value})}
                                     rows={3} placeholder="Descreva o que o designer precisa criar..."
-                                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                                 </div>
 
                                 {/* Legenda / Conteúdo — para todos os tipos */}
@@ -935,7 +935,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                       ? setAdminEditForm({...adminEditForm, conteudo: e.target.value})
                                       : setAdminEditForm({...adminEditForm, legenda: e.target.value})}
                                     rows={3} placeholder="Legenda do post..."
-                                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-3">
@@ -943,13 +943,13 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                     <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Referência</label>
                                     <input value={adminEditForm.referencia||''} onChange={e => setAdminEditForm({...adminEditForm, referencia: e.target.value})}
                                       placeholder="Link ou descrição"
-                                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                                   </div>
                                   <div>
                                     <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Música</label>
                                     <input value={adminEditForm.musica||''} onChange={e => setAdminEditForm({...adminEditForm, musica: e.target.value})}
                                       placeholder="Nome ou link"
-                                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                                   </div>
                                 </div>
 
@@ -1118,19 +1118,19 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                 concluido:    { label: 'Concluído',   cls: 'bg-green-100 text-green-700' },
               }
               return (
-                <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-                  <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50">
-                    <button onClick={() => setAdminMonthDate(new Date(year, month - 1, 1))} className="p-1.5 hover:bg-gray-200 rounded-lg transition"><ChevronLeft size={16} className="text-gray-500" /></button>
+                <div className="bg-white dark:bg-white/[0.04] rounded-2xl border border-gray-200 dark:border-white/[0.08] overflow-hidden">
+                  <div className="px-5 py-3 border-b border-gray-100 dark:border-white/[0.08] flex items-center justify-between bg-gray-50 dark:bg-white/[0.03]">
+                    <button onClick={() => setAdminMonthDate(new Date(year, month - 1, 1))} className="p-1.5 hover:bg-gray-200 dark:hover:bg-white/10 rounded-lg transition"><ChevronLeft size={16} className="text-gray-500 dark:text-white/50" /></button>
                     <div className="text-center">
-                      <h3 className="font-extrabold text-gray-900 text-sm">{mesesNomes[month]} {year}</h3>
-                      <span className="text-xs text-gray-400">{allItems.length} demandas · {daysInMonth} dias</span>
+                      <h3 className="font-extrabold text-gray-900 dark:text-white/90 text-sm">{mesesNomes[month]} {year}</h3>
+                      <span className="text-xs text-gray-400 dark:text-white/40">{allItems.length} demandas · {daysInMonth} dias</span>
                     </div>
                     <div className="flex items-center gap-1">
                       {!isCurrentMonth && <button onClick={() => { const n = new Date(); setAdminMonthDate(new Date(n.getFullYear(), n.getMonth(), 1)) }} className="px-2 py-1 text-xs font-bold text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition">Hoje</button>}
-                      <button onClick={() => setAdminMonthDate(new Date(year, month + 1, 1))} className="p-1.5 hover:bg-gray-200 rounded-lg transition"><ChevronRight size={16} className="text-gray-500" /></button>
+                      <button onClick={() => setAdminMonthDate(new Date(year, month + 1, 1))} className="p-1.5 hover:bg-gray-200 dark:hover:bg-white/10 rounded-lg transition"><ChevronRight size={16} className="text-gray-500 dark:text-white/50" /></button>
                     </div>
                   </div>
-                  <div ref={calendarScrollRef} className="flex overflow-x-auto gap-4 p-4 bg-gray-50/60" style={{ scrollSnapType: 'x mandatory', scrollBehavior: 'smooth' }}>
+                  <div ref={calendarScrollRef} className="flex overflow-x-auto gap-4 p-4 bg-gray-50/60 dark:bg-transparent" style={{ scrollSnapType: 'x mandatory', scrollBehavior: 'smooth' }}>
                     {monthDays.map((day) => {
                       const dayStr = day.toISOString().split('T')[0]
                       const isToday = dayStr === todayStr
@@ -1139,16 +1139,16 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                         <div
                           key={dayStr}
                           data-day={dayStr}
-                          className={'flex-shrink-0 rounded-2xl border shadow-sm overflow-hidden transition-colors duration-150 ' + (isToday ? 'bg-blue-50/40 border-blue-100' : 'bg-white border-gray-100')}
+                          className={'flex-shrink-0 rounded-2xl border shadow-sm overflow-hidden transition-colors duration-150 ' + (isToday ? 'bg-blue-50/40 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/30' : 'bg-white dark:bg-white/[0.04] border-gray-100 dark:border-white/[0.08]')}
                           style={{ minWidth: 285, minHeight: 520, scrollSnapAlign: 'start' }}
                         >
-                          <div className={'flex items-center gap-2 px-4 py-3 border-b ' + (isToday ? 'bg-blue-50 border-blue-200' : 'border-gray-100 bg-white')}>
-                            <span className={'text-[10px] font-extrabold uppercase tracking-widest ' + (isToday ? 'text-blue-500' : 'text-gray-400')}>{diasNomes[day.getDay()]}</span>
-                            <span className={'text-sm font-extrabold flex items-center justify-center flex-shrink-0 ' + (isToday ? 'w-7 h-7 rounded-full bg-blue-600 text-white shadow-sm' : 'text-gray-800')}>
+                          <div className={'flex items-center gap-2 px-4 py-3 border-b ' + (isToday ? 'bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30' : 'border-gray-100 dark:border-white/[0.08] bg-white dark:bg-white/[0.03]')}>
+                            <span className={'text-[10px] font-extrabold uppercase tracking-widest ' + (isToday ? 'text-blue-500' : 'text-gray-400 dark:text-white/40')}>{diasNomes[day.getDay()]}</span>
+                            <span className={'text-sm font-extrabold flex items-center justify-center flex-shrink-0 ' + (isToday ? 'w-7 h-7 rounded-full bg-blue-600 text-white shadow-sm' : 'text-gray-800 dark:text-white/80')}>
                               {day.getDate()}
                             </span>
                             {dayItems.length > 0 && (
-                              <span className={'ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full ' + (isToday ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500')}>
+                              <span className={'ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full ' + (isToday ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 dark:bg-white/[0.08] text-gray-500 dark:text-white/50')}>
                                 {dayItems.length}
                               </span>
                             )}
@@ -1164,7 +1164,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                   <div
                                     key={'briefing-'+d.id}
                                     onClick={() => { setDetalhe({...d}); carregarArquivos(d.id); setEditMode(false); setEditForm({}) }}
-                                    className={'rounded-xl bg-white border cursor-pointer select-none transition-all duration-150 hover:shadow-md border-gray-100 shadow-sm'}
+                                    className={'rounded-xl bg-white dark:bg-white/[0.06] border border-gray-100 dark:border-white/[0.08] cursor-pointer select-none transition-all duration-150 hover:shadow-md shadow-sm'}
                                     style={{ borderLeft: '4px solid #8b5cf6' }}
                                   >
                                     <div className="px-3 py-2.5 space-y-2">
@@ -1173,7 +1173,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                           {stConf.label}
                                         </span>
                                       </div>
-                                      <p className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug">{d.titulo || 'Sem título'}</p>
+                                      <p className="text-sm font-semibold text-gray-900 dark:text-white/90 line-clamp-2 leading-snug">{d.titulo || 'Sem título'}</p>
                                       <p className="text-xs font-medium truncate text-violet-600">{d.evento_nome}</p>
                                       {(d.formato || d.tipo_conteudo) && (
                                         <div className="flex gap-1 flex-wrap">
@@ -1445,7 +1445,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                       {stConf.label}
                                     </span>
                                   </div>
-                                  <p className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug">{d.titulo || 'Sem título'}</p>
+                                  <p className="text-sm font-semibold text-gray-900 dark:text-white/90 line-clamp-2 leading-snug">{d.titulo || 'Sem título'}</p>
                                   <p className="text-xs font-medium truncate" style={{ color: accentColor }}>{d.evento_nome}</p>
                                   {(d.formato || d.tipo_conteudo) && (
                                     <div className="flex gap-1 flex-wrap">
@@ -1544,8 +1544,8 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
       {/* ===== NOVO POST MODAL ===== */}
       {showNovoPost && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowNovoPost(false)}>
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-auto shadow-2xl" onClick={e => e.stopPropagation()}>
-            <div className="sticky top-0 bg-white border-b border-gray-100 p-4 flex items-center justify-between rounded-t-2xl z-10">
+          <div className="bg-white dark:bg-[#1c1c24] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-auto shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="sticky top-0 bg-white dark:bg-[#1c1c24] border-b border-gray-100 dark:border-white/[0.08] p-4 flex items-center justify-between rounded-t-2xl z-10">
               <div>
                 <h3 className="font-extrabold text-gray-900">Novo Post</h3>
                 <p className="text-xs text-gray-400">Criar novo post no cronograma</p>
@@ -1557,7 +1557,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
               <div>
                 <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Evento *</label>
                 <select value={novoPostForm.id_evento} onChange={e => setNovoPostForm({...novoPostForm, id_evento: e.target.value})}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
                   <option value="">Selecione um evento</option>
                   {data.eventos.map(ev => <option key={ev.id} value={ev.id}>{ev.nome}</option>)}
                 </select>
@@ -1571,7 +1571,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                 <button
                   type="button"
                   onClick={() => setNovoPostForm(f => ({...f, destino: f.destino === 'design' ? 'social' : 'design'}))}
-                  className={'relative w-11 h-6 rounded-full overflow-hidden transition-colors flex-shrink-0 ' + (novoPostForm.destino === 'design' ? 'bg-blue-600' : 'bg-gray-300')}
+                  className={'relative w-11 h-6 rounded-full overflow-hidden transition-colors flex-shrink-0 ' + (novoPostForm.destino === 'design' ? 'bg-accent' : 'bg-gray-300')}
                 >
                   <span className={'absolute left-0.5 top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ' + (novoPostForm.destino === 'design' ? 'translate-x-5' : 'translate-x-0')} />
                 </button>
@@ -1581,24 +1581,24 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                 <div>
                   <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Titulo *</label>
                   <input placeholder="Titulo do post" value={novoPostForm.titulo} onChange={e => setNovoPostForm({...novoPostForm, titulo: e.target.value})}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                 </div>
                 <div>
                   <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Plataforma</label>
                   <select value={novoPostForm.plataforma} onChange={e => setNovoPostForm({...novoPostForm, plataforma: e.target.value})}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
                     {['Instagram','Facebook','TikTok','YouTube','Twitter','LinkedIn','WhatsApp'].map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Data Publicacao</label>
                   <input type="date" value={novoPostForm.data_publicacao} onChange={e => setNovoPostForm({...novoPostForm, data_publicacao: e.target.value})}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                 </div>
                 <div>
                   <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Hora</label>
                   <input type="time" value={novoPostForm.hora_publicacao} onChange={e => setNovoPostForm({...novoPostForm, hora_publicacao: e.target.value})}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                 </div>
               </div>
               {/* Tipo de Conteudo */}
@@ -1629,32 +1629,32 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
               <div>
                 <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Conteudo / Legenda</label>
                 <textarea placeholder="Conteudo ou legenda do post" value={novoPostForm.conteudo} onChange={e => setNovoPostForm({...novoPostForm, conteudo: e.target.value})}
-                  rows={2} className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  rows={2} className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
               </div>
               {/* Briefing / Descricao */}
               <div>
                 <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Briefing</label>
                 <textarea placeholder="Descreva o que o designer precisa criar..." value={novoPostForm.descricao} onChange={e => setNovoPostForm({...novoPostForm, descricao: e.target.value})}
-                  rows={2} className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  rows={2} className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
               </div>
               {/* Referencia e Musica */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Referencia</label>
                   <input placeholder="Link ou descricao" value={novoPostForm.referencia} onChange={e => setNovoPostForm({...novoPostForm, referencia: e.target.value})}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                 </div>
                 <div>
                   <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Musica</label>
                   <input placeholder="Nome ou link" value={novoPostForm.musica} onChange={e => setNovoPostForm({...novoPostForm, musica: e.target.value})}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                 </div>
               </div>
               {/* Collaborators */}
               <div>
                 <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Collaborators Instagram</label>
                 <input placeholder="@usuario1, @usuario2 (até 5 contas)" value={novoPostForm.collaborators} onChange={e => setNovoPostForm({...novoPostForm, collaborators: e.target.value})}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                 <p className="text-[10px] text-gray-400 mt-0.5">Convite de collab enviado ao publicar. Contas precisam ser públicas.</p>
               </div>
               {/* Arquivos */}
@@ -1693,7 +1693,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
               <div className="flex gap-3 pt-2">
                 <button onClick={() => setShowNovoPost(false)} className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-bold hover:bg-gray-200 transition">Cancelar</button>
                 <button onClick={criarNovoPost} disabled={criandoPost}
-                  className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center gap-2">
+                  className="flex-1 px-4 py-2.5 bg-accent text-white rounded-xl text-sm font-bold hover:bg-accent/90 transition disabled:opacity-50 flex items-center justify-center gap-2">
                   {criandoPost ? <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> Criando...</> : <><Plus size={16} /> Criar Post</>}
                 </button>
               </div>
@@ -1716,10 +1716,10 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
 
         return (
           <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setDetalhe(null)}>
-            <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-auto shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="bg-white dark:bg-[#1c1c24] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-auto shadow-2xl" onClick={e => e.stopPropagation()}>
 
               {/* Header */}
-              <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between rounded-t-2xl z-10">
+              <div className="sticky top-0 bg-white dark:bg-[#1c1c24] border-b border-gray-100 dark:border-white/[0.08] px-5 py-4 flex items-center justify-between rounded-t-2xl z-10">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className={'text-[11px] font-bold px-2.5 py-1 rounded-full border ' + (statusColors[d.status] || 'bg-gray-100 text-gray-600 border-gray-200')}>
@@ -1728,7 +1728,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                     <span className={'text-[11px] font-bold px-2.5 py-1 rounded-full ' + (d._tipo === 'briefing' ? 'bg-violet-100 text-violet-700' : 'bg-pink-100 text-pink-700')}>
                       {d._tipo === 'briefing' ? '✏️ Briefing' : '📲 Post'}
                     </span>
-                    {d.plataforma && d._tipo === 'post' && <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700">{d.plataforma}</span>}
+                    {d.plataforma && d._tipo === 'post' && <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-accent/10 text-accent">{d.plataforma}</span>}
                   </div>
                   <h3 className="font-extrabold text-gray-900 text-base mt-1.5 truncate">{d.titulo || 'Sem título'}</h3>
                   <p className="text-xs text-blue-500 font-medium">{d.evento_nome}</p>
@@ -1806,13 +1806,13 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                     <div>
                       <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Título</label>
                       <input value={editForm.titulo||''} onChange={e => setEditForm({...editForm, titulo: e.target.value})}
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                     </div>
 
                     <div>
                       <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Status</label>
                       <select value={editForm.status||''} onChange={e => setEditForm({...editForm, status: e.target.value})}
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
                         <option value="pendente">Pendente</option>
                         <option value="em_andamento">Em Produção</option>
                         <option value="em_revisao">Em Revisão</option>
@@ -1825,7 +1825,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                       <div>
                         <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Data de Vencimento</label>
                         <input type="date" value={editForm.data_vencimento?.slice(0,10)||''} onChange={e => setEditForm({...editForm, data_vencimento: e.target.value})}
-                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                       </div>
                     )}
 
@@ -1834,25 +1834,25 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                         <div>
                           <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Plataforma</label>
                           <select value={editForm.plataforma||'Instagram'} onChange={e => setEditForm({...editForm, plataforma: e.target.value})}
-                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
                             {['Instagram','Facebook','TikTok','YouTube','Twitter','LinkedIn','WhatsApp'].map(p => <option key={p}>{p}</option>)}
                           </select>
                         </div>
                         <div>
                           <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Data de Publicação</label>
                           <input type="date" value={editForm.data_publicacao?.slice(0,10)||''} onChange={e => setEditForm({...editForm, data_publicacao: e.target.value})}
-                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                         </div>
                         <div>
                           <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Hora</label>
                           <input type="time" value={editForm.hora_publicacao||''} onChange={e => setEditForm({...editForm, hora_publicacao: e.target.value})}
-                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                         </div>
                         <div>
                           <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Collaborators</label>
                           <input value={editForm.collaborators||''} onChange={e => setEditForm({...editForm, collaborators: e.target.value})}
                             placeholder="@usuario1, @usuario2"
-                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                         </div>
                       </div>
                     )}
@@ -1896,7 +1896,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                       </label>
                       <textarea value={editForm.descricao||''} onChange={e => setEditForm({...editForm, descricao: e.target.value})}
                         rows={3} placeholder="Descreva o que precisa ser criado..."
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                     </div>
 
                     {d._tipo === 'post' && (
@@ -1904,7 +1904,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                         <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Legenda / Conteúdo</label>
                         <textarea value={editForm.conteudo||''} onChange={e => setEditForm({...editForm, conteudo: e.target.value})}
                           rows={3} placeholder="Legenda do post..."
-                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                       </div>
                     )}
 
@@ -1913,13 +1913,13 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                         <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Referência</label>
                         <input value={editForm.referencia||''} onChange={e => setEditForm({...editForm, referencia: e.target.value})}
                           placeholder="Link ou descrição"
-                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                       </div>
                       <div>
                         <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Música</label>
                         <input value={editForm.musica||''} onChange={e => setEditForm({...editForm, musica: e.target.value})}
                           placeholder="Nome ou link"
-                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                       </div>
                     </div>
 

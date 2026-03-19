@@ -94,7 +94,7 @@ export default function NovoEventoModal({ open, onClose, onCreated }) {
           <Input label="Nome do evento *" value={form.nome} onChange={e=>set('nome',e.target.value)} placeholder="Ex: Lavras Rodeo Festival 2026" required />
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de evento</label>
-            <select value={form.tipo_evento} onChange={e=>set('tipo_evento',e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select value={form.tipo_evento} onChange={e=>set('tipo_evento',e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
               <option value="">Selecione</option>
               {tiposEvento.map(t=><option key={t} value={t}>{t}</option>)}
             </select>
@@ -109,10 +109,10 @@ export default function NovoEventoModal({ open, onClose, onCreated }) {
           <Input label="Local" value={form.local_evento} onChange={e=>set('local_evento',e.target.value)} placeholder="Ex: Expolavras" />
           <Input label="Cidade" value={form.cidade} onChange={e=>set('cidade',e.target.value)} placeholder="Ex: Lavras - MG" />
         </div>
-        <textarea placeholder="Descricao do evento (o que e, como sera, diferencial...)" value={form.descricao} onChange={e=>set('descricao',e.target.value)} rows={3} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <textarea placeholder="Descricao do evento (o que e, como sera, diferencial...)" value={form.descricao} onChange={e=>set('descricao',e.target.value)} rows={3} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
 
         <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide border-b pb-1">Atracoes e publico</h3>
-        <textarea placeholder="Atracoes (separar por virgula). Ex: Matue, Hungria, Rodeio Profissional" value={form.atracoes} onChange={e=>set('atracoes',e.target.value)} rows={2} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <textarea placeholder="Atracoes (separar por virgula). Ex: Matue, Hungria, Rodeio Profissional" value={form.atracoes} onChange={e=>set('atracoes',e.target.value)} rows={2} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <Input label="Publico-alvo" value={form.publico_alvo} onChange={e=>set('publico_alvo',e.target.value)} placeholder="Ex: Jovens 18-30, universitarios" />
           <Input label="Capacidade" type="number" value={form.capacidade} onChange={e=>set('capacidade',e.target.value)} placeholder="Ex: 5000" />
@@ -124,29 +124,29 @@ export default function NovoEventoModal({ open, onClose, onCreated }) {
           <Input label="Data abertura vendas" type="date" value={form.data_abertura_vendas} onChange={e=>set('data_abertura_vendas',e.target.value)} />
           <Input label="Horario abertura vendas" type="time" value={form.hora_abertura_vendas} onChange={e=>set('hora_abertura_vendas',e.target.value)} />
         </div>
-        <textarea placeholder="Promocao de abertura (ex: primeiros 100 ingressos com 50% OFF)" value={form.promo_abertura} onChange={e=>set('promo_abertura',e.target.value)} rows={2} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-        <textarea placeholder="Informacoes de lotes (ex: 1o lote R$50, 2o lote R$80, VIP R$150)" value={form.info_lotes} onChange={e=>set('info_lotes',e.target.value)} rows={2} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-        <textarea placeholder="Pontos de venda fisicos (ex: Loja X no centro, Banca Y na praca)" value={form.pontos_venda} onChange={e=>set('pontos_venda',e.target.value)} rows={2} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <textarea placeholder="Promocao de abertura (ex: primeiros 100 ingressos com 50% OFF)" value={form.promo_abertura} onChange={e=>set('promo_abertura',e.target.value)} rows={2} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+        <textarea placeholder="Informacoes de lotes (ex: 1o lote R$50, 2o lote R$80, VIP R$150)" value={form.info_lotes} onChange={e=>set('info_lotes',e.target.value)} rows={2} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+        <textarea placeholder="Pontos de venda fisicos (ex: Loja X no centro, Banca Y na praca)" value={form.pontos_venda} onChange={e=>set('pontos_venda',e.target.value)} rows={2} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
 
         <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide border-b pb-1">Equipe</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Designer</label>
-            <select value={form.designer_id} onChange={e=>set('designer_id',e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select value={form.designer_id} onChange={e=>set('designer_id',e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
               <option value="">Nenhum</option>
               {designers.map(d=><option key={d.id} value={d.id}>{d.nome}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Social Media</label>
-            <select value={form.social_media_id} onChange={e=>set('social_media_id',e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select value={form.social_media_id} onChange={e=>set('social_media_id',e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
               <option value="">Nenhum</option>
               {socialMedias.map(d=><option key={d.id} value={d.id}>{d.nome}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Diretor</label>
-            <select value={form.diretor_id} onChange={e=>set('diretor_id',e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select value={form.diretor_id} onChange={e=>set('diretor_id',e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
               <option value="">Nenhum</option>
               {diretores.map(d=><option key={d.id} value={d.id}>{d.nome}</option>)}
             </select>
@@ -165,10 +165,10 @@ export default function NovoEventoModal({ open, onClose, onCreated }) {
             <button type="button" onClick={carregarGrupos} className="px-3 py-2 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600 whitespace-nowrap">
               {loadGrupos ? 'Buscando...' : 'Buscar Grupos'}
             </button>
-            {grupos.length > 0 && <input value={filtroGrupo} onChange={e=>setFiltroGrupo(e.target.value)} placeholder="Filtrar grupos..." className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />}
+            {grupos.length > 0 && <input value={filtroGrupo} onChange={e=>setFiltroGrupo(e.target.value)} placeholder="Filtrar grupos..." className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />}
           </div>
           {grupos.length > 0 && (
-            <select value={form.id_grupo} onChange={e=>set('id_grupo',e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" size={Math.min(grupos.filter(g=>!filtroGrupo||g.nome.toLowerCase().includes(filtroGrupo.toLowerCase())).length+1,6)}>
+            <select value={form.id_grupo} onChange={e=>set('id_grupo',e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" size={Math.min(grupos.filter(g=>!filtroGrupo||g.nome.toLowerCase().includes(filtroGrupo.toLowerCase())).length+1,6)}>
               <option value="">Nenhum grupo selecionado</option>
               {grupos.filter(g=>!filtroGrupo||g.nome.toLowerCase().includes(filtroGrupo.toLowerCase())).map(g=><option key={g.id} value={g.id}>{g.nome} ({g.participantes} membros)</option>)}
             </select>
@@ -176,7 +176,7 @@ export default function NovoEventoModal({ open, onClose, onCreated }) {
           {form.id_grupo && <p className="text-xs text-green-600 dark:text-green-400 mt-1">Grupo vinculado!</p>}
         </div>
 
-        <textarea placeholder="Observacoes gerais (qualquer info extra para a IA usar)" value={form.observacoes} onChange={e=>set('observacoes',e.target.value)} rows={2} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <textarea placeholder="Observacoes gerais (qualquer info extra para a IA usar)" value={form.observacoes} onChange={e=>set('observacoes',e.target.value)} rows={2} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
 
         <div className="flex justify-end gap-2 pt-2 border-t">
           <Button variant="secondary" type="button" onClick={onClose}>Cancelar</Button>

@@ -175,15 +175,15 @@ html.dark .bg-gradient-sidebar {
 }
 
 .sidebar-active {
-  background: #eff6ff;
-  color: #2563eb;
-  border: 1px solid #dbeafe;
+  background: rgba(248, 13, 82, 0.08);
+  color: #f80d52;
+  border: 1px solid rgba(248, 13, 82, 0.20);
 }
 
 html.dark .sidebar-active {
-  background: rgba(37, 99, 235, 0.20);
-  color: #93c5fd;
-  border: 1px solid rgba(59, 130, 246, 0.30);
+  background: rgba(248, 13, 82, 0.15);
+  color: #f80d52;
+  border: 1px solid rgba(248, 13, 82, 0.30);
 }
 
 .sidebar-link {
@@ -206,15 +206,15 @@ html.dark .sidebar-link:hover {
 }
 
 .logo-gradient {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  background: linear-gradient(135deg, #f80d52, #ff6b9d);
 }
 
 .btn-gradient {
-  background: var(--gradient-info);
+  background: var(--gradient-primary);
 }
 
 .btn-gradient:hover {
-  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+  background: linear-gradient(135deg, #d4004a, #f80d52);
 }
 
 .glass-card {

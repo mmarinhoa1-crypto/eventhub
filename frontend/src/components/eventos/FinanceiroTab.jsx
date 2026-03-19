@@ -296,7 +296,7 @@ export default function FinanceiroTab({ eventoId }) {
               </div>
             </div>
             <div className="flex gap-2">
-              <button onClick={vincularBaladapp} disabled={vinculando} className="flex items-center gap-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50">
+              <button onClick={vincularBaladapp} disabled={vinculando} className="flex items-center gap-1 px-4 py-2 bg-accent text-white rounded-lg text-sm hover:bg-accent/90 disabled:opacity-50">
                 <Link2 size={14} /> {vinculando ? 'Vinculando...' : 'Vincular e Sincronizar'}
               </button>
               <button onClick={() => setBaladappPreview(null)} className="px-3 py-2 bg-gray-200 text-gray-600 rounded-lg text-sm hover:bg-gray-300">Cancelar</button>

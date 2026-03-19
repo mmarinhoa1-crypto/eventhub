@@ -119,7 +119,7 @@ export default function EventosPage() {
           value={busca}
           onChange={e => setBusca(e.target.value)}
           placeholder="Buscar por evento ou artista..."
-          className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
+          className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition"
         />
         {busca && (
           <button

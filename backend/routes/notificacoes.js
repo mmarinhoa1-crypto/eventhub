@@ -13,23 +13,23 @@ router.get('/api/notificacoes', auth, async (req, res) => {
   } catch (e) { res.status(500).json({ erro: e.message }); }
 });
 
-// Marcar uma notificacao como lida
-router.patch('/api/notificacoes/:id/lida', auth, async (req, res) => {
-  try {
-    await pool.query(
-      'UPDATE notificacoes SET lida=TRUE WHERE id=$1 AND usuario_id=$2',
-      [req.params.id, req.user.id]
-    );
-    res.json({ sucesso: true });
-  } catch (e) { res.status(500).json({ erro: e.message }); }
-});
-
 // Marcar todas como lidas
 router.patch('/api/notificacoes/todas/lida', auth, async (req, res) => {
   try {
     await pool.query(
       'UPDATE notificacoes SET lida=TRUE WHERE usuario_id=$1',
       [req.user.id]
+    );
+    res.json({ sucesso: true });
+  } catch (e) { res.status(500).json({ erro: e.message }); }
+});
+
+// Marcar uma notificacao como lida
+router.patch('/api/notificacoes/:id/lida', auth, async (req, res) => {
+  try {
+    await pool.query(
+      'UPDATE notificacoes SET lida=TRUE WHERE id=$1 AND usuario_id=$2',
+      [req.params.id, req.user.id]
     );
     res.json({ sucesso: true });
   } catch (e) { res.status(500).json({ erro: e.message }); }
