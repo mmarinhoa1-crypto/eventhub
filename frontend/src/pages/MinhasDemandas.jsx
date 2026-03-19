@@ -135,11 +135,11 @@ export default function MinhasDemandas() {
     const todayStr = new Date().toISOString().split('T')[0]
     const todayEl = calendarScrollRef.current.querySelector(`[data-day="${todayStr}"]`)
     if (todayEl) {
-      setTimeout(() => todayEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' }), 80)
+      setTimeout(() => todayEl.scrollIntoView({ behavior: 'instant', block: 'nearest', inline: 'start' }), 80)
     } else {
       calendarScrollRef.current.scrollLeft = 0
     }
-  }, [adminMonthDate])
+  }, [adminMonthDate, loading, view])
 
   async function carregarArquivos(briefingId) {
     try {
@@ -455,12 +455,12 @@ export default function MinhasDemandas() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className={'p-2.5 rounded-xl ' + (isDesigner ? 'bg-blue-100' : 'bg-blue-100')}>
+          <div className={'p-2.5 rounded-xl bg-blue-100 dark:bg-blue-500/20'}>
             {isDesigner ? <Palette size={24} className="text-blue-600" /> : <Megaphone size={24} className="text-blue-600" />}
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Minhas Demandas</h1>
-            <p className="text-sm text-gray-500">{isDesigner ? 'Briefings e artes para criar' : isSocialMedia ? 'Posts e conteudos para publicar' : 'Acompanhe as entregas da equipe'}</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white/90">Minhas Demandas</h1>
+            <p className="text-sm text-gray-500 dark:text-white/50">{isDesigner ? 'Briefings e artes para criar' : isSocialMedia ? 'Posts e conteudos para publicar' : 'Acompanhe as entregas da equipe'}</p>
           </div>
         </div>
       </div>
@@ -625,7 +625,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                             setDraggedItem(null)
                             setDragOverDay(null)
                           }}
-                          className={'flex-shrink-0 rounded-2xl border shadow-sm overflow-hidden transition-colors duration-150 ' + (isToday ? 'bg-blue-50/40 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/30' : 'bg-white dark:bg-white/[0.04] border-gray-100 dark:border-white/[0.08]') + (isDragTarget ? ' ring-2 ring-inset ring-blue-400' : '')}
+                          className={'flex-shrink-0 flex flex-col rounded-2xl border shadow-sm overflow-hidden transition-colors duration-150 ' + (isToday ? 'bg-blue-50/40 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/30' : 'bg-white dark:bg-white/[0.04] border-gray-100 dark:border-white/[0.08]') + (isDragTarget ? ' ring-2 ring-inset ring-blue-400' : '')}
                           style={{ minWidth: 285, minHeight: 520, scrollSnapAlign: 'start' }}
                         >
                           {/* Day header */}
@@ -641,7 +641,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                             )}
                           </div>
 
-                          <div className="p-2 space-y-2">
+                          <div className="p-2 space-y-2 flex-1 flex flex-col">
                             {/* Add button */}
                             <div
                               onClick={() => { setNovoPostForm(f => ({...f, id_evento: data.eventos.length === 1 ? String(data.eventos[0].id) : '', data_publicacao: dayStr})); setShowNovoPost(true) }}
@@ -650,7 +650,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                               <Plus size={13} className="group-hover:scale-110 transition-transform" />
                             </div>
 
-                            <div className="overflow-y-auto space-y-2" style={{ maxHeight: 300 }}>
+                            <div className="overflow-y-auto space-y-2 flex-1">
                             {dayItems.map(d => {
                               const atrasado = dayStr < todayStr && !['concluido','aprovado','publicado','cancelado'].includes(d.status)
                               const accentColor = atrasado ? '#ef4444' : (d._tipo === 'briefing' ? '#8b5cf6' : (plataformaColor[d.plataforma] || '#6b7280'))
@@ -682,9 +682,17 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                   style={{ borderLeft: `4px solid ${accentColor}` }}
                                 >
                                   <div className="px-3 py-2.5 space-y-2">
-                                    {/* Status */}
-                                    <div className="flex items-center justify-end gap-1">
-                                      <span className={'text-[10px] font-bold px-1.5 py-0.5 rounded-full ' + stConf.cls}>
+                                    {/* Etiquetas + Status */}
+                                    <div className="flex items-start justify-between gap-1">
+                                      <div className="flex gap-1 flex-wrap flex-1 min-w-0">
+                                        {getEtiquetas(d._tipo, d.id).map(etKey => {
+                                          const et = ETIQUETAS_PADRAO.find(e => e.key === etKey)
+                                          return et
+                                            ? <span key={etKey} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: isDark ? et.darkBg : et.bg, color: isDark ? et.darkColor : et.color }}>{et.emoji} {et.label}</span>
+                                            : <span key={etKey} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-white/[0.08] text-gray-500 dark:text-white/50">🏷️ {etKey}</span>
+                                        })}
+                                      </div>
+                                      <span className={'text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ' + stConf.cls}>
                                         {stConf.label}
                                       </span>
                                     </div>
@@ -743,7 +751,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                           <div className="flex items-center gap-3 min-w-0 flex-1">
                             <span className={'w-2.5 h-2.5 rounded-full flex-shrink-0 ' + (atrasado ? 'bg-red-500' : st.dot)} />
                             <div className="min-w-0">
-                              <h3 className="text-base font-extrabold text-gray-900 truncate">{d.titulo || 'Sem título'}</h3>
+                              <h3 className="text-base font-extrabold text-gray-900 dark:text-white/90 truncate">{d.titulo || 'Sem título'}</h3>
                               <p className="text-xs text-blue-500 font-medium">{d.evento_nome}</p>
                             </div>
                             <span className={'text-xs font-bold px-2.5 py-1 rounded-full border flex-shrink-0 ' + (atrasado ? 'bg-red-50 text-red-600 border-red-200' : st.bg + ' ' + st.text + ' ' + st.border)}>
@@ -769,12 +777,12 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                   })
                                 }
                               }}
-                              className={'text-xs px-3 py-1.5 rounded-lg font-bold transition ' + (adminEditMode ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' : 'bg-blue-50 text-blue-600 hover:bg-blue-100')}
+                              className={'text-xs px-3 py-1.5 rounded-lg font-bold transition ' + (adminEditMode ? 'bg-gray-100 dark:bg-white/[0.08] text-gray-600 dark:text-white/60 hover:bg-gray-200 dark:hover:bg-white/[0.12]' : 'bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/25')}
                             >
                               {adminEditMode ? 'Cancelar' : '✏️ Editar'}
                             </button>
                             <button onClick={() => { setAdminDetalhe(null); setAdminEditMode(false); setAdminEditForm({}) }}
-                              className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition font-bold">✕</button>
+                              className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-white/[0.08] flex items-center justify-center text-gray-400 dark:text-white/50 hover:text-gray-600 dark:hover:text-white/80 hover:bg-gray-200 dark:hover:bg-white/[0.12] transition font-bold">✕</button>
                           </div>
                         </div>
 
@@ -787,9 +795,9 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                               { l: 'Função', v: resp?.funcao === 'designer' ? 'Designer' : 'Social Media' },
                               { l: 'Data', v: fmtData(d._data) },
                             ].map((item, i) => (
-                              <div key={i} className="bg-gray-50 rounded-xl px-3 py-2.5">
-                                <p className="text-gray-400 font-bold uppercase mb-0.5" style={{fontSize:9,letterSpacing:1}}>{item.l}</p>
-                                <p className="text-sm font-semibold text-gray-800">{item.v}</p>
+                              <div key={i} className="bg-gray-50 dark:bg-white/[0.04] rounded-xl px-3 py-2.5">
+                                <p className="text-gray-400 dark:text-white/40 font-bold uppercase mb-0.5" style={{fontSize:9,letterSpacing:1}}>{item.l}</p>
+                                <p className="text-sm font-semibold text-gray-800 dark:text-white/80">{item.v}</p>
                               </div>
                             ))}
                           </div>
@@ -965,10 +973,10 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
 
                                 {/* Toggle: Aparecer para o Designer */}
                                 {(isAdmin || isSocialMedia) && d._tipo === 'post' && (
-                                  <div className="flex items-center justify-between p-3 rounded-xl border border-gray-200 bg-gray-50">
+                                  <div className="flex items-center justify-between p-3 rounded-xl border border-gray-200 dark:border-white/[0.10] bg-gray-50 dark:bg-white/[0.04]">
                                     <div>
-                                      <p className="text-sm font-semibold text-gray-800">🎨 Aparecer para o Designer?</p>
-                                      <p className="text-[10px] text-gray-400 mt-0.5">O designer do evento também visualiza essa demanda</p>
+                                      <p className="text-sm font-semibold text-gray-800 dark:text-white/80">🎨 Aparecer para o Designer?</p>
+                                      <p className="text-[10px] text-gray-400 dark:text-white/40 mt-0.5">O designer do evento também visualiza essa demanda</p>
                                     </div>
                                     <button
                                       type="button"
@@ -999,8 +1007,8 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                               {/* Ações Instagram (posts) */}
                               {d._tipo === 'post' && d.status !== 'publicado' && (
                                 <div className="space-y-2">
-                                  <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-gray-50 border border-gray-200">
-                                    <span className={'text-xs font-semibold ' + (d.auto_publish ? 'text-green-600' : 'text-gray-400')}>
+                                  <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-gray-50 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.10]">
+                                    <span className={'text-xs font-semibold ' + (d.auto_publish ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-white/40')}>
                                       {d.auto_publish ? `⏰ Agendado ${d.hora_publicacao ? d.hora_publicacao.slice(0,5) : ''}` : 'Agendar publicação'}
                                     </span>
                                     <button onClick={e => { e.stopPropagation(); toggleAutoPublish(d.id, d.auto_publish) }}
@@ -1015,21 +1023,21 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                 </div>
                               )}
                               {d.descricao && (
-                                <div className="bg-gray-50 rounded-xl px-4 py-3">
-                                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1.5">Briefing para o Designer</p>
-                                  <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{d.descricao}</p>
+                                <div className="bg-gray-50 dark:bg-white/[0.04] rounded-xl px-4 py-3">
+                                  <p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide mb-1.5">Briefing para o Designer</p>
+                                  <p className="text-sm text-gray-700 dark:text-white/70 whitespace-pre-wrap leading-relaxed">{d.descricao}</p>
                                 </div>
                               )}
                               {d.conteudo && (
-                                <div className="bg-gray-50 rounded-xl px-4 py-3">
-                                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1.5">Legenda / Conteúdo</p>
-                                  <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{d.conteudo}</p>
+                                <div className="bg-gray-50 dark:bg-white/[0.04] rounded-xl px-4 py-3">
+                                  <p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide mb-1.5">Legenda / Conteúdo</p>
+                                  <p className="text-sm text-gray-700 dark:text-white/70 whitespace-pre-wrap leading-relaxed">{d.conteudo}</p>
                                 </div>
                               )}
                               {(d.referencia || d.musica) && (
                                 <div className="grid grid-cols-2 gap-3">
-                                  {d.referencia && <div className="bg-gray-50 rounded-xl px-3 py-2.5"><p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">Referência</p><p className="text-xs text-gray-700 break-all">{d.referencia}</p></div>}
-                                  {d.musica && <div className="bg-gray-50 rounded-xl px-3 py-2.5"><p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">Música</p><p className="text-xs text-gray-700">{d.musica}</p></div>}
+                                  {d.referencia && <div className="bg-gray-50 dark:bg-white/[0.04] rounded-xl px-3 py-2.5"><p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide mb-1">Referência</p><p className="text-xs text-gray-700 dark:text-white/70 break-all">{d.referencia}</p></div>}
+                                  {d.musica && <div className="bg-gray-50 dark:bg-white/[0.04] rounded-xl px-3 py-2.5"><p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide mb-1">Música</p><p className="text-xs text-gray-700 dark:text-white/70">{d.musica}</p></div>}
                                 </div>
                               )}
                               {d.collaborators && (
@@ -1090,11 +1098,11 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
         return (
           <div className="space-y-4">
             {/* Tab toggle */}
-            <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
-              <button onClick={() => setDesignerTab('briefings')} className={'flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all flex-1 justify-center ' + (designerTab === 'briefings' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+            <div className="flex gap-1 bg-gray-100 dark:bg-white/[0.06] rounded-xl p-1">
+              <button onClick={() => setDesignerTab('briefings')} className={'flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all flex-1 justify-center ' + (designerTab === 'briefings' ? 'bg-white dark:bg-white/[0.10] text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-white/50 hover:text-gray-700 dark:hover:text-white/70')}>
                 <Palette size={16} /> Briefings
               </button>
-              <button onClick={() => setDesignerTab('materiais')} className={'flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all flex-1 justify-center ' + (designerTab === 'materiais' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+              <button onClick={() => setDesignerTab('materiais')} className={'flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all flex-1 justify-center ' + (designerTab === 'materiais' ? 'bg-white dark:bg-white/[0.10] text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-white/50 hover:text-gray-700 dark:hover:text-white/70')}>
                 <FolderOpen size={16} /> Material
               </button>
             </div>
@@ -1139,7 +1147,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                         <div
                           key={dayStr}
                           data-day={dayStr}
-                          className={'flex-shrink-0 rounded-2xl border shadow-sm overflow-hidden transition-colors duration-150 ' + (isToday ? 'bg-blue-50/40 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/30' : 'bg-white dark:bg-white/[0.04] border-gray-100 dark:border-white/[0.08]')}
+                          className={'flex-shrink-0 flex flex-col rounded-2xl border shadow-sm overflow-hidden transition-colors duration-150 ' + (isToday ? 'bg-blue-50/40 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/30' : 'bg-white dark:bg-white/[0.04] border-gray-100 dark:border-white/[0.08]')}
                           style={{ minWidth: 285, minHeight: 520, scrollSnapAlign: 'start' }}
                         >
                           <div className={'flex items-center gap-2 px-4 py-3 border-b ' + (isToday ? 'bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30' : 'border-gray-100 dark:border-white/[0.08] bg-white dark:bg-white/[0.03]')}>
@@ -1153,8 +1161,8 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                               </span>
                             )}
                           </div>
-                          <div className="p-2 space-y-2">
-                            <div className="overflow-y-auto space-y-2" style={{ maxHeight: 300 }}>
+                          <div className="p-2 space-y-2 flex-1 flex flex-col">
+                            <div className="overflow-y-auto space-y-2 flex-1">
                               {dayItems.map(d => {
                                 const atrasado = dayStr < todayStr && !['concluido','aprovado','publicado','cancelado'].includes(d.status)
                                 const stConf = atrasado
@@ -1168,8 +1176,16 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                     style={{ borderLeft: '4px solid #8b5cf6' }}
                                   >
                                     <div className="px-3 py-2.5 space-y-2">
-                                      <div className="flex items-center justify-end gap-1">
-                                        <span className={'text-[10px] font-bold px-1.5 py-0.5 rounded-full ' + stConf.cls}>
+                                      <div className="flex items-start justify-between gap-1">
+                                        <div className="flex gap-1 flex-wrap flex-1 min-w-0">
+                                          {getEtiquetas(d._tipo, d.id).map(etKey => {
+                                            const et = ETIQUETAS_PADRAO.find(e => e.key === etKey)
+                                            return et
+                                              ? <span key={etKey} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: isDark ? et.darkBg : et.bg, color: isDark ? et.darkColor : et.color }}>{et.emoji} {et.label}</span>
+                                              : <span key={etKey} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-white/[0.08] text-gray-500 dark:text-white/50">🏷️ {etKey}</span>
+                                          })}
+                                        </div>
+                                        <span className={'text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ' + stConf.cls}>
                                           {stConf.label}
                                         </span>
                                       </div>
@@ -1204,11 +1220,11 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
               <div className="space-y-4">
                 {/* Filtro evento */}
                 <div className="flex items-center gap-3">
-                  <select value={filtroEvento} onChange={e => setFiltroEvento(e.target.value)} className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-600 outline-none">
+                  <select value={filtroEvento} onChange={e => setFiltroEvento(e.target.value)} className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.10] bg-white dark:bg-white/[0.06] text-sm font-semibold text-gray-600 dark:text-white/70 outline-none">
                     <option value="todos">Todos os eventos</option>
                     {data.eventos.map(ev => <option key={ev.id} value={ev.id}>{ev.nome}</option>)}
                   </select>
-                  <button onClick={() => carregarMateriais()} className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-bold text-blue-600 hover:bg-blue-50 transition">Atualizar</button>
+                  <button onClick={() => carregarMateriais()} className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.10] bg-white dark:bg-white/[0.06] text-xs font-bold text-blue-600 hover:bg-blue-50 dark:hover:bg-white/[0.10] transition">Atualizar</button>
                 </div>
 
                 {loadingMateriais ? (
@@ -1217,12 +1233,12 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                   (filtroEvento === 'todos' ? data.eventos : data.eventos.filter(ev => ev.id === Number(filtroEvento))).map(ev => {
                     const evArqs = materiaisArquivos[ev.id] || []
                     return (
-                      <div key={ev.id} className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-                        <div className="px-5 py-3 border-b border-gray-100 bg-gray-50 flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center"><FolderOpen size={16} className="text-blue-600" /></div>
+                      <div key={ev.id} className="bg-white dark:bg-white/[0.04] rounded-2xl border border-gray-200 dark:border-white/[0.08] overflow-hidden">
+                        <div className="px-5 py-3 border-b border-gray-100 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center"><FolderOpen size={16} className="text-blue-600" /></div>
                           <div>
-                            <h3 className="font-bold text-gray-900 text-sm">{ev.nome}</h3>
-                            <span className="text-xs text-gray-400">{evArqs.length} arquivo{evArqs.length !== 1 ? 's' : ''}</span>
+                            <h3 className="font-bold text-gray-900 dark:text-white/90 text-sm">{ev.nome}</h3>
+                            <span className="text-xs text-gray-400 dark:text-white/40">{evArqs.length} arquivo{evArqs.length !== 1 ? 's' : ''}</span>
                           </div>
                         </div>
                         <div className="p-4 space-y-4">
@@ -1293,21 +1309,21 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
       {/* ===== SOCIAL MEDIA VIEW ===== */}
       {isSocialMedia && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div onClick={() => { setFiltro('todas'); setCalendarFilter('todos') }} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm cursor-pointer hover:border-blue-200 transition">
-            <div className="flex items-center justify-between mb-1"><span className="text-xs text-gray-400 font-semibold uppercase">Total Posts</span><Megaphone size={14} className="text-blue-400" /></div>
-            <p className="text-2xl font-bold text-blue-600">{totalPosts}</p><span className="text-xs text-gray-400">programados</span>
+          <div onClick={() => { setFiltro('todas'); setCalendarFilter('todos') }} className="bg-white dark:bg-white/[0.04] rounded-xl border border-gray-100 dark:border-white/[0.08] p-4 shadow-sm cursor-pointer hover:border-blue-200 dark:hover:border-blue-500/30 transition">
+            <div className="flex items-center justify-between mb-1"><span className="text-xs text-gray-400 dark:text-white/40 font-semibold uppercase">Total Posts</span><Megaphone size={14} className="text-blue-400" /></div>
+            <p className="text-2xl font-bold text-blue-600">{totalPosts}</p><span className="text-xs text-gray-400 dark:text-white/40">programados</span>
           </div>
-          <div onClick={() => { setFiltro('pendentes'); setCalendarFilter('pendente') }} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm cursor-pointer hover:border-yellow-200 transition">
-            <div className="flex items-center justify-between mb-1"><span className="text-xs text-gray-400 font-semibold uppercase">Pendentes</span><Clock size={14} className="text-yellow-400" /></div>
-            <p className="text-2xl font-bold text-yellow-600">{pendentesPost}</p><span className="text-xs text-gray-400">posts</span>
+          <div onClick={() => { setFiltro('pendentes'); setCalendarFilter('pendente') }} className="bg-white dark:bg-white/[0.04] rounded-xl border border-gray-100 dark:border-white/[0.08] p-4 shadow-sm cursor-pointer hover:border-yellow-200 dark:hover:border-yellow-500/30 transition">
+            <div className="flex items-center justify-between mb-1"><span className="text-xs text-gray-400 dark:text-white/40 font-semibold uppercase">Pendentes</span><Clock size={14} className="text-yellow-400" /></div>
+            <p className="text-2xl font-bold text-yellow-600">{pendentesPost}</p><span className="text-xs text-gray-400 dark:text-white/40">posts</span>
           </div>
-          <div onClick={() => { setFiltro('atrasadas'); setCalendarFilter('atrasado') }} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm cursor-pointer hover:border-red-200 transition">
-            <div className="flex items-center justify-between mb-1"><span className="text-xs text-gray-400 font-semibold uppercase">Atrasados</span><AlertCircle size={14} className="text-red-400" /></div>
-            <p className="text-2xl font-bold text-red-600">{atrasadosPost}</p><span className="text-xs text-gray-400">posts</span>
+          <div onClick={() => { setFiltro('atrasadas'); setCalendarFilter('atrasado') }} className="bg-white dark:bg-white/[0.04] rounded-xl border border-gray-100 dark:border-white/[0.08] p-4 shadow-sm cursor-pointer hover:border-red-200 dark:hover:border-red-500/30 transition">
+            <div className="flex items-center justify-between mb-1"><span className="text-xs text-gray-400 dark:text-white/40 font-semibold uppercase">Atrasados</span><AlertCircle size={14} className="text-red-400" /></div>
+            <p className="text-2xl font-bold text-red-600">{atrasadosPost}</p><span className="text-xs text-gray-400 dark:text-white/40">posts</span>
           </div>
-          <div onClick={() => { setFiltro('todas') }} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm cursor-pointer hover:border-blue-200 transition">
-            <div className="flex items-center justify-between mb-1"><span className="text-xs text-gray-400 font-semibold uppercase">Briefings</span><Palette size={14} className="text-blue-400" /></div>
-            <p className="text-2xl font-bold text-blue-600">{totalBriefings}</p><span className="text-xs text-gray-400">para revisar</span>
+          <div onClick={() => { setFiltro('todas') }} className="bg-white dark:bg-white/[0.04] rounded-xl border border-gray-100 dark:border-white/[0.08] p-4 shadow-sm cursor-pointer hover:border-blue-200 dark:hover:border-blue-500/30 transition">
+            <div className="flex items-center justify-between mb-1"><span className="text-xs text-gray-400 dark:text-white/40 font-semibold uppercase">Briefings</span><Palette size={14} className="text-blue-400" /></div>
+            <p className="text-2xl font-bold text-blue-600">{totalBriefings}</p><span className="text-xs text-gray-400 dark:text-white/40">para revisar</span>
           </div>
         </div>
       )}
@@ -1317,26 +1333,26 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
         <>
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex gap-2 items-center flex-wrap">
-            <select value={filtroEvento} onChange={e => setFiltroEvento(e.target.value)} className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-gray-600 outline-none cursor-pointer">
+            <select value={filtroEvento} onChange={e => setFiltroEvento(e.target.value)} className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.10] bg-white dark:bg-white/[0.06] text-xs font-semibold text-gray-600 dark:text-white/70 outline-none cursor-pointer">
               <option value="todos">Todos os eventos</option>
               {data.eventos.map(ev => <option key={ev.id} value={ev.id}>{ev.nome}</option>)}
             </select>
             <div className="flex gap-1 flex-wrap">
               {[{key:'todas',label:'Todas'},{key:'pendentes',label:'Pendentes'},{key:'atrasadas',label:'Atrasados'},{key:'aprovados',label:'Aprovados'}].map(f => (
-                <button key={f.key} onClick={() => { setFiltro(f.key); setCalendarFilter(f.key === 'todas' ? 'todos' : f.key === 'pendentes' ? 'pendente' : f.key === 'atrasadas' ? 'atrasado' : f.key === 'aprovados' ? 'aprovado' : f.key) }} className={'px-3 py-1.5 rounded-lg text-xs font-semibold transition ' + (filtro === f.key ? 'bg-blue-500 text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200')}>
+                <button key={f.key} onClick={() => { setFiltro(f.key); setCalendarFilter(f.key === 'todas' ? 'todos' : f.key === 'pendentes' ? 'pendente' : f.key === 'atrasadas' ? 'atrasado' : f.key === 'aprovados' ? 'aprovado' : f.key) }} className={'px-3 py-1.5 rounded-lg text-xs font-semibold transition ' + (filtro === f.key ? 'bg-blue-500 text-white shadow-sm' : 'bg-gray-100 dark:bg-white/[0.06] text-gray-500 dark:text-white/50 hover:bg-gray-200 dark:hover:bg-white/[0.10]')}>
                   {f.label}
                 </button>
               ))}
             </div>
           </div>
-          <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
-            <button onClick={() => setView('calendario')} className={'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition ' + (view === 'calendario' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+          <div className="flex gap-1 bg-gray-100 dark:bg-white/[0.06] rounded-lg p-0.5">
+            <button onClick={() => setView('calendario')} className={'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition ' + (view === 'calendario' ? 'bg-white dark:bg-white/[0.10] text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-white/50 hover:text-gray-700 dark:hover:text-white/70')}>
               <Calendar size={13} /> Calendario
             </button>
-            <button onClick={() => setView('briefings')} className={'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition ' + (view === 'briefings' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+            <button onClick={() => setView('briefings')} className={'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition ' + (view === 'briefings' ? 'bg-white dark:bg-white/[0.10] text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-white/50 hover:text-gray-700 dark:hover:text-white/70')}>
               <Palette size={13} /> Briefings
             </button>
-            <button onClick={() => setView('posts')} className={'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition ' + (view === 'posts' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+            <button onClick={() => setView('posts')} className={'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition ' + (view === 'posts' ? 'bg-white dark:bg-white/[0.10] text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-white/50 hover:text-gray-700 dark:hover:text-white/70')}>
               <Megaphone size={13} /> Posts
             </button>
           </div>
@@ -1366,19 +1382,19 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
             concluido:    { label: 'Concluído',   cls: 'bg-green-100 text-green-700' },
           }
           return (
-            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-              <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50">
-                <button onClick={() => setAdminMonthDate(new Date(year, month - 1, 1))} className="p-1.5 hover:bg-gray-200 rounded-lg transition"><ChevronLeft size={16} className="text-gray-500" /></button>
+            <div className="bg-white dark:bg-white/[0.04] rounded-2xl border border-gray-200 dark:border-white/[0.08] overflow-hidden">
+              <div className="px-5 py-3 border-b border-gray-100 dark:border-white/[0.08] flex items-center justify-between bg-gray-50 dark:bg-white/[0.03]">
+                <button onClick={() => setAdminMonthDate(new Date(year, month - 1, 1))} className="p-1.5 hover:bg-gray-200 dark:hover:bg-white/10 rounded-lg transition"><ChevronLeft size={16} className="text-gray-500 dark:text-white/50" /></button>
                 <div className="text-center">
-                  <h3 className="font-extrabold text-gray-900 text-sm">{mesesNomes[month]} {year}</h3>
-                  <span className="text-xs text-gray-400">{allItems.length} demandas · {daysInMonth} dias</span>
+                  <h3 className="font-extrabold text-gray-900 dark:text-white/90 text-sm">{mesesNomes[month]} {year}</h3>
+                  <span className="text-xs text-gray-400 dark:text-white/40">{allItems.length} demandas · {daysInMonth} dias</span>
                 </div>
                 <div className="flex items-center gap-1">
                   {!isCurrentMonth && <button onClick={() => { const n = new Date(); setAdminMonthDate(new Date(n.getFullYear(), n.getMonth(), 1)) }} className="px-2 py-1 text-xs font-bold text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition">Hoje</button>}
-                  <button onClick={() => setAdminMonthDate(new Date(year, month + 1, 1))} className="p-1.5 hover:bg-gray-200 rounded-lg transition"><ChevronRight size={16} className="text-gray-500" /></button>
+                  <button onClick={() => setAdminMonthDate(new Date(year, month + 1, 1))} className="p-1.5 hover:bg-gray-200 dark:hover:bg-white/10 rounded-lg transition"><ChevronRight size={16} className="text-gray-500 dark:text-white/50" /></button>
                 </div>
               </div>
-              <div ref={calendarScrollRef} className="flex overflow-x-auto gap-4 p-4 bg-gray-50/60" style={{ scrollSnapType: 'x mandatory', scrollBehavior: 'smooth' }}>
+              <div ref={calendarScrollRef} className="flex overflow-x-auto gap-4 p-4 bg-gray-50/60 dark:bg-transparent" style={{ scrollSnapType: 'x mandatory', scrollBehavior: 'smooth' }}>
                 {monthDays.map((day) => {
                   const dayStr = day.toISOString().split('T')[0]
                   const isToday = dayStr === todayStr
@@ -1399,28 +1415,28 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                         setDraggedItem(null)
                         setDragOverDay(null)
                       }}
-                      className={'flex-shrink-0 rounded-2xl border shadow-sm overflow-hidden transition-colors duration-150 ' + (isToday ? 'bg-blue-50/40 border-blue-100' : 'bg-white border-gray-100') + (isDragTarget ? ' ring-2 ring-inset ring-blue-400' : '')}
+                      className={'flex-shrink-0 flex flex-col rounded-2xl border shadow-sm overflow-hidden transition-colors duration-150 ' + (isToday ? 'bg-blue-50/40 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/30' : 'bg-white dark:bg-white/[0.04] border-gray-100 dark:border-white/[0.08]') + (isDragTarget ? ' ring-2 ring-inset ring-blue-400' : '')}
                       style={{ minWidth: 285, minHeight: 520, scrollSnapAlign: 'start' }}
                     >
-                      <div className={'flex items-center gap-2 px-4 py-3 border-b ' + (isToday ? 'bg-blue-50 border-blue-200' : 'border-gray-100 bg-white')}>
-                        <span className={'text-[10px] font-extrabold uppercase tracking-widest ' + (isToday ? 'text-blue-500' : 'text-gray-400')}>{diasNomes[day.getDay()]}</span>
-                        <span className={'text-sm font-extrabold flex items-center justify-center flex-shrink-0 ' + (isToday ? 'w-7 h-7 rounded-full bg-blue-600 text-white shadow-sm' : 'text-gray-800')}>
+                      <div className={'flex items-center gap-2 px-4 py-3 border-b ' + (isToday ? 'bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30' : 'border-gray-100 dark:border-white/[0.08] bg-white dark:bg-white/[0.03]')}>
+                        <span className={'text-[10px] font-extrabold uppercase tracking-widest ' + (isToday ? 'text-blue-500' : 'text-gray-400 dark:text-white/40')}>{diasNomes[day.getDay()]}</span>
+                        <span className={'text-sm font-extrabold flex items-center justify-center flex-shrink-0 ' + (isToday ? 'w-7 h-7 rounded-full bg-blue-600 text-white shadow-sm' : 'text-gray-800 dark:text-white/80')}>
                           {day.getDate()}
                         </span>
                         {dayItems.length > 0 && (
-                          <span className={'ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full ' + (isToday ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500')}>
+                          <span className={'ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full ' + (isToday ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 dark:bg-white/[0.08] text-gray-500 dark:text-white/50')}>
                             {dayItems.length}
                           </span>
                         )}
                       </div>
-                      <div className="p-2 space-y-2">
+                      <div className="p-2 space-y-2 flex-1 flex flex-col">
                         <div
                           onClick={() => { setNovoPostForm(f => ({...f, id_evento: data.eventos.length === 1 ? String(data.eventos[0].id) : '', data_publicacao: dayStr})); setShowNovoPost(true) }}
-                          className="flex items-center justify-center py-1.5 rounded-lg border-2 border-dashed border-gray-200 text-gray-300 hover:border-blue-400 hover:text-blue-400 hover:bg-blue-50/50 transition cursor-pointer group"
+                          className="flex items-center justify-center py-1.5 rounded-lg border-2 border-dashed border-gray-200 dark:border-white/[0.10] text-gray-300 dark:text-white/20 hover:border-blue-400 hover:text-blue-400 hover:bg-blue-50/50 transition cursor-pointer group"
                         >
                           <Plus size={13} className="group-hover:scale-110 transition-transform" />
                         </div>
-                        <div className="overflow-y-auto space-y-2" style={{ maxHeight: 300 }}>
+                        <div className="overflow-y-auto space-y-2 flex-1">
                           {dayItems.map(d => {
                             const atrasado = dayStr < todayStr && !['concluido','aprovado','publicado','cancelado'].includes(d.status)
                             const accentColor = atrasado ? '#ef4444' : (d._tipo === 'briefing' ? '#8b5cf6' : (plataformaColor[d.plataforma] || '#6b7280'))
@@ -1435,13 +1451,21 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                 onDragStart={e => { e.stopPropagation(); setDraggedItem({...d}) }}
                                 onDragEnd={() => { setDraggedItem(null); setDragOverDay(null) }}
                                 onClick={() => { setDetalhe({...d}); if(d._tipo === 'briefing') carregarArquivos(d.id); else setArquivos([]); setEditMode(false); setEditForm({}) }}
-                                className={'rounded-xl bg-white border cursor-pointer select-none transition-all duration-150 hover:shadow-md border-gray-100 shadow-sm '
+                                className={'rounded-xl bg-white dark:bg-white/[0.06] border cursor-pointer select-none transition-all duration-150 hover:shadow-md border-gray-100 dark:border-white/[0.08] shadow-sm '
                                   + (isDraggingThis ? 'opacity-40 scale-95 ' : '')}
                                 style={{ borderLeft: `4px solid ${accentColor}` }}
                               >
                                 <div className="px-3 py-2.5 space-y-2">
-                                  <div className="flex items-center justify-end gap-1">
-                                    <span className={'text-[10px] font-bold px-1.5 py-0.5 rounded-full ' + stConf.cls}>
+                                  <div className="flex items-start justify-between gap-1">
+                                    <div className="flex gap-1 flex-wrap flex-1 min-w-0">
+                                      {getEtiquetas(d._tipo, d.id).map(etKey => {
+                                        const et = ETIQUETAS_PADRAO.find(e => e.key === etKey)
+                                        return et
+                                          ? <span key={etKey} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: isDark ? et.darkBg : et.bg, color: isDark ? et.darkColor : et.color }}>{et.emoji} {et.label}</span>
+                                          : <span key={etKey} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-white/[0.08] text-gray-500 dark:text-white/50">🏷️ {etKey}</span>
+                                      })}
+                                    </div>
+                                    <span className={'text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ' + stConf.cls}>
                                       {stConf.label}
                                     </span>
                                   </div>
@@ -1475,19 +1499,19 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
         {/* Briefings list */}
         {view === 'briefings' && (
           <div className="space-y-3">
-            {briefingsFiltrados.length === 0 && <div className="bg-white rounded-xl border border-gray-100 p-12 text-center"><Palette size={32} className="text-gray-200 mx-auto mb-3" /><p className="text-sm text-gray-400 font-medium">Nenhum briefing encontrado</p></div>}
+            {briefingsFiltrados.length === 0 && <div className="bg-white dark:bg-white/[0.04] rounded-xl border border-gray-100 dark:border-white/[0.08] p-12 text-center"><Palette size={32} className="text-gray-200 dark:text-white/20 mx-auto mb-3" /><p className="text-sm text-gray-400 dark:text-white/40 font-medium">Nenhum briefing encontrado</p></div>}
             {[...briefingsFiltrados].sort((a,b) => (a.data_vencimento||'9999') < (b.data_vencimento||'9999') ? -1 : 1).map(b => {
               const atrasado = isAtrasado(b, 'data_vencimento')
               const tipos = (b.tipo_conteudo || '').split(',').filter(Boolean)
               const formatos = (b.formato || '').split(',').filter(Boolean)
               return (
                 <div key={b.id} onClick={() => { setDetalhe({_tipo:'briefing',...b}); carregarArquivos(b.id); setEditMode(false); setEditForm({}) }}
-                  className={'bg-white rounded-xl border overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer ' + (atrasado ? 'border-red-200' : 'border-gray-100 hover:border-blue-200')}>
+                  className={'bg-white dark:bg-white/[0.04] rounded-xl border overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer ' + (atrasado ? 'border-red-200 dark:border-red-500/30' : 'border-gray-100 dark:border-white/[0.08] hover:border-blue-200 dark:hover:border-blue-500/30')}>
                   <div className={'h-1 ' + (atrasado ? 'bg-red-500' : b.status === 'aprovado' ? 'bg-green-500' : b.status === 'em_revisao' ? 'bg-blue-500' : b.status === 'em_andamento' ? 'bg-blue-500' : 'bg-yellow-400')} />
                   <div className="p-4">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-gray-900 text-sm truncate">{b.titulo}</h4>
+                        <h4 className="font-bold text-gray-900 dark:text-white/90 text-sm truncate">{b.titulo}</h4>
                         <p className="text-xs text-blue-500 font-medium">{b.evento_nome}</p>
                         <div className="flex items-center gap-2 mt-1">
                           <span className={'text-[10px] font-bold px-2 py-0.5 rounded-full border ' + (statusColors[b.status] || 'bg-gray-100 text-gray-600 border-gray-200')}>{statusLabels[b.status] || b.status}</span>
@@ -1496,7 +1520,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                       </div>
                       <ArrowRight size={16} className="text-gray-300 flex-shrink-0 mt-1" />
                     </div>
-                    {b.descricao && <p className="text-xs text-gray-500 line-clamp-2 mb-3">{b.descricao}</p>}
+                    {b.descricao && <p className="text-xs text-gray-500 dark:text-white/50 line-clamp-2 mb-3">{b.descricao}</p>}
                     <div className="flex flex-wrap gap-1.5 mb-2">
                       {tipos.map(t => { const cfg = tipoConteudoConfig[t] || { icon: '📋', color: 'bg-gray-100 text-gray-600' }; return <span key={t} className={'text-[10px] font-bold px-2 py-0.5 rounded-full ' + cfg.color}>{cfg.icon} {t}</span> })}
                       {formatos.map(f => { const cfg = formatoConfig[f] || { icon: '📄', color: 'bg-gray-100 text-gray-600' }; return <span key={f} className={'text-[10px] font-bold px-2 py-0.5 rounded-full ' + cfg.color}>{cfg.icon} {f}</span> })}
@@ -1514,19 +1538,19 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
         {/* Posts list */}
         {view === 'posts' && (
           <div className="space-y-3">
-            {postsFiltrados.length === 0 && <div className="bg-white rounded-xl border border-gray-100 p-12 text-center"><Megaphone size={32} className="text-gray-200 mx-auto mb-3" /><p className="text-sm text-gray-400 font-medium">Nenhum post encontrado</p></div>}
+            {postsFiltrados.length === 0 && <div className="bg-white dark:bg-white/[0.04] rounded-xl border border-gray-100 dark:border-white/[0.08] p-12 text-center"><Megaphone size={32} className="text-gray-200 dark:text-white/20 mx-auto mb-3" /><p className="text-sm text-gray-400 dark:text-white/40 font-medium">Nenhum post encontrado</p></div>}
             {postsFiltrados.map(p => (
               <div key={p.id} onClick={() => { setDetalhe({_tipo:'post',...p}); setArquivos([]); setEditMode(false); setEditForm({}) }}
-                className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 hover:shadow-md hover:border-blue-200 transition cursor-pointer">
+                className="bg-white dark:bg-white/[0.04] rounded-xl border border-gray-100 dark:border-white/[0.08] shadow-sm p-4 hover:shadow-md hover:border-blue-200 dark:hover:border-blue-500/30 transition cursor-pointer">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-bold text-gray-900 text-sm">{p.titulo}</h3>
+                      <h3 className="font-bold text-gray-900 dark:text-white/90 text-sm">{p.titulo}</h3>
                       <span className={'text-[10px] font-bold px-2 py-0.5 rounded-full border ' + (statusColors[p.status] || 'bg-gray-100 text-gray-600 border-gray-200')}>{statusLabels[p.status] || p.status}</span>
                       {p.plataforma && <span className="text-[10px] bg-pink-100 text-pink-700 px-2 py-0.5 rounded-full font-bold">{p.plataforma}</span>}
                     </div>
                     <p className="text-xs text-blue-500 font-medium mb-1">{p.evento_nome}</p>
-                    {p.conteudo && <p className="text-xs text-gray-500 line-clamp-2">{p.conteudo}</p>}
+                    {p.conteudo && <p className="text-xs text-gray-500 dark:text-white/50 line-clamp-2">{p.conteudo}</p>}
                     <div className="flex gap-3 mt-2 text-xs text-gray-400">
                       {p.data_publicacao && <span className="flex items-center gap-1"><Calendar size={11} /> {fmtData(p.data_publicacao)}</span>}
                       {p.hora_publicacao && <span className="flex items-center gap-1"><Clock size={11} /> {p.hora_publicacao?.slice(0,5)}</span>}
@@ -1547,10 +1571,10 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
           <div className="bg-white dark:bg-[#1c1c24] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-auto shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="sticky top-0 bg-white dark:bg-[#1c1c24] border-b border-gray-100 dark:border-white/[0.08] p-4 flex items-center justify-between rounded-t-2xl z-10">
               <div>
-                <h3 className="font-extrabold text-gray-900">Novo Post</h3>
-                <p className="text-xs text-gray-400">Criar novo post no cronograma</p>
+                <h3 className="font-extrabold text-gray-900 dark:text-white/90">Novo Post</h3>
+                <p className="text-xs text-gray-400 dark:text-white/40">Criar novo post no cronograma</p>
               </div>
-              <button onClick={() => setShowNovoPost(false)} className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 text-lg font-bold">&times;</button>
+              <button onClick={() => setShowNovoPost(false)} className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-white/[0.08] flex items-center justify-center text-gray-400 dark:text-white/50 hover:text-gray-600 dark:hover:text-white/80 text-lg font-bold">&times;</button>
             </div>
             <div className="p-5 space-y-4">
               {/* Evento */}
@@ -1563,10 +1587,10 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                 </select>
               </div>
               {/* Aparecer para o Designer */}
-              <div className="flex items-center justify-between p-3.5 rounded-xl border border-gray-200 bg-gray-50">
+              <div className="flex items-center justify-between p-3.5 rounded-xl border border-gray-200 dark:border-white/[0.10] bg-gray-50 dark:bg-white/[0.04]">
                 <div>
-                  <p className="text-sm font-semibold text-gray-800">🎨 Aparecer para o Designer?</p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">O designer do evento também recebe essa demanda</p>
+                  <p className="text-sm font-semibold text-gray-800 dark:text-white/80">🎨 Aparecer para o Designer?</p>
+                  <p className="text-[10px] text-gray-400 dark:text-white/40 mt-0.5">O designer do evento também recebe essa demanda</p>
                 </div>
                 <button
                   type="button"
@@ -1691,7 +1715,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
               </div>
               {/* Submit */}
               <div className="flex gap-3 pt-2">
-                <button onClick={() => setShowNovoPost(false)} className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-bold hover:bg-gray-200 transition">Cancelar</button>
+                <button onClick={() => setShowNovoPost(false)} className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-white/[0.08] text-gray-600 dark:text-white/60 rounded-xl text-sm font-bold hover:bg-gray-200 dark:hover:bg-white/[0.12] transition">Cancelar</button>
                 <button onClick={criarNovoPost} disabled={criandoPost}
                   className="flex-1 px-4 py-2.5 bg-accent text-white rounded-xl text-sm font-bold hover:bg-accent/90 transition disabled:opacity-50 flex items-center justify-center gap-2">
                   {criandoPost ? <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> Criando...</> : <><Plus size={16} /> Criar Post</>}
@@ -1730,7 +1754,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                     </span>
                     {d.plataforma && d._tipo === 'post' && <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-accent/10 text-accent">{d.plataforma}</span>}
                   </div>
-                  <h3 className="font-extrabold text-gray-900 text-base mt-1.5 truncate">{d.titulo || 'Sem título'}</h3>
+                  <h3 className="font-extrabold text-gray-900 dark:text-white/90 text-base mt-1.5 truncate">{d.titulo || 'Sem título'}</h3>
                   <p className="text-xs text-blue-500 font-medium">{d.evento_nome}</p>
                 </div>
                 <div className="flex items-center gap-2 ml-3 flex-shrink-0">
@@ -1752,12 +1776,12 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                         })
                       }
                     }}
-                    className={'text-xs px-3 py-1.5 rounded-lg font-bold transition ' + (editMode ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' : 'bg-blue-50 text-blue-600 hover:bg-blue-100')}
+                    className={'text-xs px-3 py-1.5 rounded-lg font-bold transition ' + (editMode ? 'bg-gray-100 dark:bg-white/[0.08] text-gray-600 dark:text-white/60 hover:bg-gray-200 dark:hover:bg-white/[0.12]' : 'bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/25')}
                   >
                     {editMode ? 'Cancelar' : '✏️ Editar'}
                   </button>
                   <button onClick={() => setDetalhe(null)}
-                    className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition font-bold">✕</button>
+                    className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-white/[0.08] flex items-center justify-center text-gray-400 dark:text-white/50 hover:text-gray-600 dark:hover:text-white/80 hover:bg-gray-200 dark:hover:bg-white/[0.12] transition font-bold">✕</button>
                 </div>
               </div>
 
@@ -1968,26 +1992,26 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                     )}
 
                     {d.descricao && (
-                      <div className="bg-gray-50 rounded-xl px-4 py-3">
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1.5">Briefing</p>
-                        <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{d.descricao}</p>
+                      <div className="bg-gray-50 dark:bg-white/[0.04] rounded-xl px-4 py-3">
+                        <p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide mb-1.5">Briefing</p>
+                        <p className="text-sm text-gray-700 dark:text-white/70 whitespace-pre-wrap leading-relaxed">{d.descricao}</p>
                       </div>
                     )}
                     {d.conteudo && (
-                      <div className="bg-gray-50 rounded-xl px-4 py-3">
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1.5">Legenda / Conteúdo</p>
-                        <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{d.conteudo}</p>
+                      <div className="bg-gray-50 dark:bg-white/[0.04] rounded-xl px-4 py-3">
+                        <p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide mb-1.5">Legenda / Conteúdo</p>
+                        <p className="text-sm text-gray-700 dark:text-white/70 whitespace-pre-wrap leading-relaxed">{d.conteudo}</p>
                       </div>
                     )}
                     {(d.referencia || d.musica) && (
                       <div className="grid grid-cols-2 gap-3">
-                        {d.referencia && <div className="bg-gray-50 rounded-xl px-3 py-2.5"><p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">Referência</p><p className="text-xs text-gray-700 break-all">{d.referencia}</p></div>}
-                        {d.musica && <div className="bg-gray-50 rounded-xl px-3 py-2.5"><p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">Música</p><p className="text-xs text-gray-700">{d.musica}</p></div>}
+                        {d.referencia && <div className="bg-gray-50 dark:bg-white/[0.04] rounded-xl px-3 py-2.5"><p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide mb-1">Referência</p><p className="text-xs text-gray-700 dark:text-white/70 break-all">{d.referencia}</p></div>}
+                        {d.musica && <div className="bg-gray-50 dark:bg-white/[0.04] rounded-xl px-3 py-2.5"><p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide mb-1">Música</p><p className="text-xs text-gray-700 dark:text-white/70">{d.musica}</p></div>}
                       </div>
                     )}
                     {d.collaborators && (
-                      <div className="bg-gray-50 rounded-xl px-3 py-2.5">
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">Collaborators</p>
+                      <div className="bg-gray-50 dark:bg-white/[0.04] rounded-xl px-3 py-2.5">
+                        <p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide mb-1">Collaborators</p>
                         <p className="text-xs text-blue-600 font-medium">{d.collaborators}</p>
                       </div>
                     )}
@@ -2031,7 +2055,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                     <div className="flex flex-wrap gap-1.5">
                       {[{key:'pendente',label:'Pendente'},{key:'em_andamento',label:'Em Produção'},{key:'em_revisao',label:'Em Revisão'},{key:'aprovado',label:'Aprovado'},{key:'publicado',label:'Publicado'}].map(s => (
                         <button key={s.key} onClick={() => { atualizarStatus(d._tipo, d.id, s.key); setDetalhe({...d, status: s.key}) }}
-                          className={'px-3 py-1.5 rounded-lg text-xs font-bold transition ' + (d.status === s.key ? 'bg-blue-500 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200')}>
+                          className={'px-3 py-1.5 rounded-lg text-xs font-bold transition ' + (d.status === s.key ? 'bg-blue-500 text-white shadow-sm' : 'bg-gray-100 dark:bg-white/[0.08] text-gray-600 dark:text-white/60 hover:bg-gray-200 dark:hover:bg-white/[0.12]')}>
                           {s.label}
                         </button>
                       ))}
