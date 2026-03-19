@@ -37,7 +37,7 @@ if(b.status==='em_revisao'&&updated){
       await pool.query('INSERT INTO notificacoes(org_id,usuario_id,tipo,titulo,mensagem,link,referencia_tipo,referencia_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8)',
         [req.user.org_id,g.id,'demanda_aprovacao','Demanda aguardando aprovação',
          (req.user.nome||'Usuário')+' enviou "'+updated.titulo+'" para revisão',
-         '/demandas','briefing',updated.id]);
+         '/demandas?tipo=briefing&id='+updated.id,'briefing',updated.id]);
     }
   }catch(e2){console.error('Erro ao criar notificacoes de briefing:',e2.message)}
 }
@@ -101,7 +101,7 @@ if(b.status==='em_revisao'&&updated){
       await pool.query('INSERT INTO notificacoes(org_id,usuario_id,tipo,titulo,mensagem,link,referencia_tipo,referencia_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8)',
         [req.user.org_id,g.id,'demanda_aprovacao','Demanda aguardando aprovação',
          (req.user.nome||'Usuário')+' enviou "'+updated.titulo+'" para revisão',
-         '/demandas','cronograma',updated.id]);
+         '/demandas?tipo=post&id='+updated.id,'cronograma',updated.id]);
     }
   }catch(e2){console.error('Erro ao criar notificacoes de cronograma:',e2.message)}
 }
