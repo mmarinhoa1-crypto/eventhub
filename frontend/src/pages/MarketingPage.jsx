@@ -355,7 +355,7 @@ export default function MarketingPage() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <select value={eventoAberto} onChange={e => abrirEvento(Number(e.target.value))} className="text-xl font-bold text-gray-900 bg-white border border-gray-200 rounded-xl outline-none cursor-pointer pl-3 pr-10 py-1.5 hover:border-blue-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                <select value={eventoAberto} onChange={e => abrirEvento(Number(e.target.value))} className="text-xl font-bold text-gray-900 bg-white border border-gray-200 rounded-xl outline-none cursor-pointer pl-3 pr-10 py-1.5 hover:border-blue-300 focus:ring-2 focus:ring-accent focus:border-accent transition">
                   {eventos.map(e => <option key={e.id} value={e.id}>{e.nome}</option>)}
                 </select>
               </div>
@@ -523,7 +523,7 @@ export default function MarketingPage() {
       ) : (
       <>
       <div className="flex gap-2 items-center">
-        <input value={filtroMkt} onChange={e => setFiltroMkt(e.target.value)} placeholder="Buscar evento..." className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+        <input value={filtroMkt} onChange={e => setFiltroMkt(e.target.value)} placeholder="Buscar evento..." className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-accent focus:border-accent outline-none" />
         {filtroMkt && <button onClick={() => setFiltroMkt('')} className="text-xs text-gray-400 hover:text-gray-600">Limpar</button>}
       </div>
 
@@ -566,16 +566,16 @@ export default function MarketingPage() {
               )}
               {editando === ev.id ? (
                 <div className="p-4 space-y-2.5" onClick={e => e.stopPropagation()}>
-                  {canEditName && <input value={form.nome} onChange={e => setForm({...form, nome: e.target.value})} placeholder="Nome do evento" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none" />}
+                  {canEditName && <input value={form.nome} onChange={e => setForm({...form, nome: e.target.value})} placeholder="Nome do evento" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-accent outline-none" />}
                   <div className="grid grid-cols-2 gap-2">
-                    <input type="date" value={form.data_evento} onChange={e => setForm({...form, data_evento: e.target.value})} className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
-                    <input value={form.cidade} onChange={e => setForm({...form, cidade: e.target.value})} placeholder="Cidade" className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
+                    <input type="date" value={form.data_evento} onChange={e => setForm({...form, data_evento: e.target.value})} className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-accent outline-none" />
+                    <input value={form.cidade} onChange={e => setForm({...form, cidade: e.target.value})} placeholder="Cidade" className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-accent outline-none" />
                   </div>
-                  <input value={form.instagram} onChange={e => setForm({...form, instagram: e.target.value})} placeholder="@instagram" className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
+                  <input value={form.instagram} onChange={e => setForm({...form, instagram: e.target.value})} placeholder="@instagram" className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-accent outline-none" />
                   <div className="grid grid-cols-3 gap-2">
-                    <select value={form.designer_id} onChange={e => setForm({...form, designer_id: e.target.value})} className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none"><option value="">Designer</option>{designers.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}</select>
-                    <select value={form.social_media_id} onChange={e => setForm({...form, social_media_id: e.target.value})} className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none"><option value="">Social Media</option>{socialMedias.map(s => <option key={s.id} value={s.id}>{s.nome}</option>)}</select>
-                    <select value={form.diretor_id} onChange={e => setForm({...form, diretor_id: e.target.value})} className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none"><option value="">Diretor</option>{diretores.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}</select>
+                    <select value={form.designer_id} onChange={e => setForm({...form, designer_id: e.target.value})} className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:ring-2 focus:ring-accent outline-none"><option value="">Designer</option>{designers.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}</select>
+                    <select value={form.social_media_id} onChange={e => setForm({...form, social_media_id: e.target.value})} className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:ring-2 focus:ring-accent outline-none"><option value="">Social Media</option>{socialMedias.map(s => <option key={s.id} value={s.id}>{s.nome}</option>)}</select>
+                    <select value={form.diretor_id} onChange={e => setForm({...form, diretor_id: e.target.value})} className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:ring-2 focus:ring-accent outline-none"><option value="">Diretor</option>{diretores.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}</select>
                   </div>
                   <div className="flex gap-2">
                     <button onClick={(e) => salvarEdit(ev.id, e)} className="flex items-center gap-1 px-3 py-1.5 bg-green-500 text-white rounded-lg text-xs font-semibold hover:bg-green-600 transition"><Save size={12} /> Salvar</button>
@@ -633,7 +633,7 @@ export default function MarketingPage() {
                   Passados <span className={'ml-1 text-xs font-bold px-1.5 py-0.5 rounded-full ' + (showPast ? 'bg-white/20' : 'bg-gray-100 text-gray-500')}>{passados.length}</span>
                 </button>
               )}
-              <button onClick={() => setShowPast(false)} className={'px-4 py-2 rounded-xl text-sm font-bold transition-all ' + (!showPast ? 'bg-blue-600 text-white shadow' : 'bg-white dark:bg-white/[0.05] text-gray-500 dark:text-white/50 border border-gray-200 dark:border-white/[0.08] hover:text-gray-700 dark:hover:text-white/80')}>
+              <button onClick={() => setShowPast(false)} className={'px-4 py-2 rounded-xl text-sm font-bold transition-all ' + (!showPast ? 'bg-accent text-white shadow' : 'bg-white dark:bg-white/[0.05] text-gray-500 dark:text-white/50 border border-gray-200 dark:border-white/[0.08] hover:text-gray-700 dark:hover:text-white/80')}>
                 Proximos Eventos <span className={'ml-1 text-xs font-bold px-1.5 py-0.5 rounded-full ' + (!showPast ? 'bg-white/20' : 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400')}>{futuros.length}</span>
               </button>
             </div>
@@ -705,9 +705,9 @@ export default function MarketingPage() {
                 onChange={e => setIgTokenInput(e.target.value)}
                 placeholder="Cole o token aqui..."
                 rows={2}
-                className="w-full border border-gray-200 rounded-lg px-2.5 py-2 text-xs font-mono focus:ring-2 focus:ring-blue-500 outline-none resize-none bg-white"
+                className="w-full border border-gray-200 rounded-lg px-2.5 py-2 text-xs font-mono focus:ring-2 focus:ring-accent outline-none resize-none bg-white"
               />
-              <button onClick={conectarIGToken} disabled={savingIG || !igTokenInput.trim()} className={'w-full mt-2 px-3 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ' + (savingIG ? 'bg-gray-300 text-gray-500' : !igTokenInput.trim() ? 'bg-gray-200 text-gray-400' : 'bg-gradient-to-r from-blue-500 to-blue-500 text-white hover:from-blue-600 hover:to-blue-600 shadow-sm')}>
+              <button onClick={conectarIGToken} disabled={savingIG || !igTokenInput.trim()} className={'w-full mt-2 px-3 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ' + (savingIG ? 'bg-gray-300 text-gray-500' : !igTokenInput.trim() ? 'bg-gray-200 text-gray-400' : 'bg-accent text-white hover:bg-accent/90 shadow-sm')}>
                 <Instagram size={12} /> {savingIG ? 'Verificando...' : 'Conectar'}
               </button>
             </div>

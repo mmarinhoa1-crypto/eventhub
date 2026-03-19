@@ -808,7 +808,7 @@ export default function MarketingTab({ eventoId }) {
                 onClick={() => setActiveSubTab(tab.key)}
                 className={`flex-1 min-w-0 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${
                   isActive
-                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
+                    ? 'bg-accent text-white shadow-md'
                     : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
                 }`}
               >
@@ -835,7 +835,7 @@ export default function MarketingTab({ eventoId }) {
             <div className="p-4 flex items-center justify-between">
               <div className="flex items-center gap-3 flex-wrap">
                 <h3 className="font-semibold text-gray-900">Briefings</h3>
-                <input value={buscaBriefing} onChange={e => setBuscaBriefing(e.target.value)} placeholder="Buscar..." className="border border-gray-200 rounded-lg px-2.5 py-1 text-xs focus:ring-2 focus:ring-blue-500 outline-none w-36" />
+                <input value={buscaBriefing} onChange={e => setBuscaBriefing(e.target.value)} placeholder="Buscar..." className="border border-gray-200 rounded-lg px-2.5 py-1 text-xs focus:ring-2 focus:ring-accent outline-none w-36" />
                 <div className="flex gap-2">
                   <span className="bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded-full text-xs font-bold">
                     {briefingsFiltrados.filter(b => b.status !== 'cancelado').length} total
@@ -1199,7 +1199,7 @@ export default function MarketingTab({ eventoId }) {
                                   </div>
                                 )}
                                 <div className="flex items-center justify-between pt-1 border-t border-gray-50">
-                                  <select value={c.status} onChange={e => atualizarCronograma(c.id, { status: e.target.value })} className="text-[10px] border border-gray-200 rounded px-1 py-0.5 outline-none focus:ring-1 focus:ring-blue-400">
+                                  <select value={c.status} onChange={e => atualizarCronograma(c.id, { status: e.target.value })} className="text-[10px] border border-gray-200 rounded px-1 py-0.5 outline-none focus:ring-1 focus:ring-accent">
                                     <option value="pendente">Pendente</option>
                                     <option value="em_andamento">Não feito</option>
                                     <option value="publicado">Publicado</option>
@@ -1232,7 +1232,7 @@ export default function MarketingTab({ eventoId }) {
                                     </div>
                                     {/* Botão publicar agora */}
                                     <button onClick={(e) => { e.stopPropagation(); publicarNoInstagram(c.id) }} disabled={publicandoIG===c.id}
-                                      className={'w-full flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[10px] font-bold transition ' + (publicandoIG===c.id ? 'bg-blue-100 text-blue-400 animate-pulse' : 'bg-gradient-to-r from-blue-500 to-blue-500 text-white hover:from-blue-600 hover:to-blue-600 shadow-sm')}>
+                                      className={'w-full flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[10px] font-bold transition ' + (publicandoIG===c.id ? 'bg-blue-100 text-blue-400 animate-pulse' : 'bg-accent text-white hover:bg-accent/90 shadow-sm')}>
                                       <Instagram size={10} /> {publicandoIG===c.id ? 'Publicando...' : 'Publicar agora'}
                                     </button>
                                   </div>
@@ -1426,7 +1426,7 @@ export default function MarketingTab({ eventoId }) {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Estratégia da Semana</label>
-                <textarea value={estrategiaText} onChange={e => setEstrategiaText(e.target.value)} placeholder="Descreva a estratégia, objetivos e foco da semana..." rows={3} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <textarea value={estrategiaText} onChange={e => setEstrategiaText(e.target.value)} placeholder="Descreva a estratégia, objetivos e foco da semana..." rows={3} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
               </div>
               <div className="flex gap-2">
                 <Button onClick={() => criarPlanejamento({ semana_inicio: week.inicio, semana_fim: week.fim, estrategia: estrategiaText })} className="flex-1">Criar Planejamento</Button>
@@ -1519,7 +1519,7 @@ export default function MarketingTab({ eventoId }) {
                                     value={feedbacksPosts[c.id] !== undefined ? feedbacksPosts[c.id] : (c.feedback || '')}
                                     onChange={e => setFeedbacksPosts(prev => ({...prev, [c.id]: e.target.value}))}
                                     rows={2}
-                                    className="w-full mt-1 text-[11px] border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400 resize-none"
+                                    className="w-full mt-1 text-[11px] border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-accent resize-none"
                                   />
                                 )}
                                 {/* Feedback visível para diretor quando já revisado */}
@@ -1547,7 +1547,7 @@ export default function MarketingTab({ eventoId }) {
                     onChange={e => setFeedbackGeral(e.target.value)}
                     placeholder="Comentário geral sobre o planejamento..."
                     rows={2}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
                   />
                 </div>
               )}
@@ -1649,7 +1649,7 @@ export default function MarketingTab({ eventoId }) {
                     </div>
                   )}
                   <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                    <select value={c.status} onChange={e => { atualizarCronograma(c.id, { status: e.target.value }); setDiaSelecionado(prev => ({...prev, posts: prev.posts.map(p => p.id === c.id ? {...p, status: e.target.value} : p)})) }} className="text-xs border border-gray-200 rounded-lg px-2 py-1 outline-none focus:ring-1 focus:ring-blue-400">
+                    <select value={c.status} onChange={e => { atualizarCronograma(c.id, { status: e.target.value }); setDiaSelecionado(prev => ({...prev, posts: prev.posts.map(p => p.id === c.id ? {...p, status: e.target.value} : p)})) }} className="text-xs border border-gray-200 rounded-lg px-2 py-1 outline-none focus:ring-1 focus:ring-accent">
                       <option value="pendente">Pendente</option>
                       <option value="em_andamento">Não feito</option>
                       <option value="publicado">Publicado</option>
@@ -2109,7 +2109,7 @@ export default function MarketingTab({ eventoId }) {
                 </div>
               </div>
               <button onClick={forcarAnaliseAI} disabled={aiAnalyzing || funnel?.status !== 'active'}
-                className={'px-3 py-1.5 rounded-lg text-xs font-bold transition ' + (aiAnalyzing ? 'bg-purple-900 text-violet-400 animate-pulse' : funnel?.status !== 'active' ? 'bg-gray-700 text-gray-500' : 'bg-gradient-to-r from-blue-500 to-blue-500 text-white hover:from-blue-600 hover:to-blue-600 shadow-md')}>
+                className={'px-3 py-1.5 rounded-lg text-xs font-bold transition ' + (aiAnalyzing ? 'bg-purple-900 text-violet-400 animate-pulse' : funnel?.status !== 'active' ? 'bg-gray-700 text-gray-500' : 'bg-accent text-white hover:bg-accent/90 shadow-md')}>
                 {aiAnalyzing ? '⏳ Analisando...' : '🧠 Analisar Agora'}
               </button>
             </div>
@@ -2497,9 +2497,9 @@ export default function MarketingTab({ eventoId }) {
                     onChange={e => setIgTokenInput(e.target.value)}
                     placeholder="Cole o token do Instagram aqui..."
                     rows={3}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-xs font-mono focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none bg-white"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-xs font-mono focus:ring-2 focus:ring-accent focus:border-accent outline-none resize-none bg-white"
                   />
-                  <button onClick={adicionarContaIG} disabled={savingIGToken || !igTokenInput.trim()} className={'w-full px-4 py-2.5 rounded-lg text-sm font-semibold transition flex items-center justify-center gap-2 ' + (savingIGToken ? 'bg-gray-300 text-gray-500' : !igTokenInput.trim() ? 'bg-gray-200 text-gray-400' : 'bg-gradient-to-r from-blue-500 to-blue-500 text-white hover:from-blue-600 hover:to-blue-600 shadow-md')}>
+                  <button onClick={adicionarContaIG} disabled={savingIGToken || !igTokenInput.trim()} className={'w-full px-4 py-2.5 rounded-lg text-sm font-semibold transition flex items-center justify-center gap-2 ' + (savingIGToken ? 'bg-gray-300 text-gray-500' : !igTokenInput.trim() ? 'bg-gray-200 text-gray-400' : 'bg-accent text-white hover:bg-accent/90 shadow-md')}>
                     <Instagram size={14} /> {savingIGToken ? 'Verificando...' : 'Adicionar Conta'}
                   </button>
                 </div>
@@ -2538,7 +2538,7 @@ export default function MarketingTab({ eventoId }) {
             <select
               value={tipoIA}
               onChange={(e) => setTipoIA(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
             >
               {tiposBriefing.map((t) => (
                 <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
@@ -2553,7 +2553,7 @@ export default function MarketingTab({ eventoId }) {
               onChange={(e) => setDirecionamentoIA(e.target.value)}
               placeholder="Ex: Preciso de um briefing de 7 dias com acoes de virada de lote nos dias 20 e 21. Foco em urgencia e escassez. Tom jovem e energetico."
               rows={4}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent mb-3"
             />
           </div>
 
@@ -2819,10 +2819,10 @@ function BriefingForm({ onSubmit, onCancel }) {
       <div>
         <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2 block">Destino</label>
         <div className="flex gap-2">
-          <button type="button" onClick={() => setForm({...form, destino: 'design'})} className={'flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold border-2 transition ' + (form.destino === 'design' ? 'border-blue-500 bg-blue-500 text-white shadow-md' : 'border-gray-200 bg-white text-gray-500 hover:border-blue-300')}>
+          <button type="button" onClick={() => setForm({...form, destino: 'design'})} className={'flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold border-2 transition ' + (form.destino === 'design' ? 'border-accent bg-accent text-white shadow-md' : 'border-gray-200 bg-white text-gray-500 hover:border-accent/50')}>
             🎨 Design
           </button>
-          <button type="button" onClick={() => setForm({...form, destino: 'social'})} className={'flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold border-2 transition ' + (form.destino === 'social' ? 'border-blue-500 bg-blue-500 text-white shadow-md' : 'border-gray-200 bg-white text-gray-500 hover:border-blue-300')}>
+          <button type="button" onClick={() => setForm({...form, destino: 'social'})} className={'flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold border-2 transition ' + (form.destino === 'social' ? 'border-accent bg-accent text-white shadow-md' : 'border-gray-200 bg-white text-gray-500 hover:border-accent/50')}>
             📲 Social Media
           </button>
         </div>
@@ -2831,22 +2831,22 @@ function BriefingForm({ onSubmit, onCancel }) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div>
           <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Titulo *</label>
-          <input value={form.titulo} onChange={e => setForm({...form, titulo: e.target.value})} placeholder="Ex: Post abertura de vendas" className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+          <input value={form.titulo} onChange={e => setForm({...form, titulo: e.target.value})} placeholder="Ex: Post abertura de vendas" className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-accent focus:border-accent outline-none" />
         </div>
         <div>
           <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Plataforma</label>
-          <select value={form.plataforma} onChange={e => setForm({...form, plataforma: e.target.value})} className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+          <select value={form.plataforma} onChange={e => setForm({...form, plataforma: e.target.value})} className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-accent focus:border-accent outline-none">
             {['Instagram','Facebook','TikTok','YouTube','Twitter/X','LinkedIn','WhatsApp'].map(p => <option key={p} value={p}>{p}</option>)}
           </select>
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
             <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Data de Entrega</label>
-            <input type="date" value={form.data_vencimento} onChange={e => setForm({...form, data_vencimento: e.target.value})} className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+            <input type="date" value={form.data_vencimento} onChange={e => setForm({...form, data_vencimento: e.target.value})} className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-accent focus:border-accent outline-none" />
           </div>
           <div>
             <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Horário</label>
-            <input type="time" value={form.hora_vencimento} onChange={e => setForm({...form, hora_vencimento: e.target.value})} className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+            <input type="time" value={form.hora_vencimento} onChange={e => setForm({...form, hora_vencimento: e.target.value})} className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-accent focus:border-accent outline-none" />
           </div>
         </div>
       </div>
@@ -2854,7 +2854,7 @@ function BriefingForm({ onSubmit, onCancel }) {
         <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2 block">Tipo de Conteudo (selecione 1 ou mais)</label>
         <div className="flex gap-2">
           {tiposConteudo.map(tc => (
-            <button key={tc} type="button" onClick={() => toggleMulti('tipo_conteudo', tc)} className={'px-4 py-2 rounded-lg text-xs font-bold border-2 transition ' + (isSelected('tipo_conteudo', tc) ? 'border-blue-500 bg-blue-500 text-white shadow-md' : 'border-gray-200 bg-white text-gray-500 hover:border-blue-300')}>
+            <button key={tc} type="button" onClick={() => toggleMulti('tipo_conteudo', tc)} className={'px-4 py-2 rounded-lg text-xs font-bold border-2 transition ' + (isSelected('tipo_conteudo', tc) ? 'border-accent bg-accent text-white shadow-md' : 'border-gray-200 bg-white text-gray-500 hover:border-accent/50')}>
               {tc === 'ESTATICA' ? '🖼️' : tc === 'VIDEO' ? '🎬' : tc === 'GIF' ? '✨' : tc === 'FOTO ORGÂNICA' ? '📸' : tc === 'VÍDEO ORGÂNICO' ? '🎞️' : tc === 'INTERAÇÃO' ? '💬' : '✨'} {tc}
             </button>
           ))}
@@ -2864,7 +2864,7 @@ function BriefingForm({ onSubmit, onCancel }) {
         <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2 block">Formato (selecione 1 ou mais)</label>
         <div className="flex gap-2">
           {formatos.map(fm => (
-            <button key={fm} type="button" onClick={() => toggleMulti('formato', fm)} className={'px-4 py-2 rounded-lg text-xs font-bold border-2 transition ' + (isSelected('formato', fm) ? 'border-blue-500 bg-blue-500 text-white shadow-md' : 'border-gray-200 bg-white text-gray-500 hover:border-blue-300')}>
+            <button key={fm} type="button" onClick={() => toggleMulti('formato', fm)} className={'px-4 py-2 rounded-lg text-xs font-bold border-2 transition ' + (isSelected('formato', fm) ? 'border-accent bg-accent text-white shadow-md' : 'border-gray-200 bg-white text-gray-500 hover:border-accent/50')}>
               {fm === 'FEED' ? '📱' : fm === 'STORIES' ? '📲' : fm === 'CARROSSEL' ? '🔄' : '🎥'} {fm}
             </button>
           ))}
@@ -2872,24 +2872,24 @@ function BriefingForm({ onSubmit, onCancel }) {
       </div>
       <div>
         <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Briefing</label>
-        <textarea value={form.descricao} onChange={e => setForm({...form, descricao: e.target.value})} placeholder="Descreva o que o designer precisa criar..." rows={3} className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+        <textarea value={form.descricao} onChange={e => setForm({...form, descricao: e.target.value})} placeholder="Descreva o que o designer precisa criar..." rows={3} className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-accent focus:border-accent outline-none" />
       </div>
       <div>
         <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Legenda</label>
-        <textarea value={form.legenda || ''} onChange={e => setForm({...form, legenda: e.target.value})} placeholder="Legenda do post..." rows={3} className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+        <textarea value={form.legenda || ''} onChange={e => setForm({...form, legenda: e.target.value})} placeholder="Legenda do post..." rows={3} className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-accent focus:border-accent outline-none" />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
           <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Referencia</label>
-          <input value={form.referencia} onChange={e => setForm({...form, referencia: e.target.value})} placeholder="Link ou descricao da referencia visual" className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+          <input value={form.referencia} onChange={e => setForm({...form, referencia: e.target.value})} placeholder="Link ou descricao da referencia visual" className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-accent focus:border-accent outline-none" />
         </div>
         <div>
           <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Musica</label>
-          <input value={form.musica} onChange={e => setForm({...form, musica: e.target.value})} placeholder="Nome da musica ou link" className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+          <input value={form.musica} onChange={e => setForm({...form, musica: e.target.value})} placeholder="Nome da musica ou link" className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-accent focus:border-accent outline-none" />
         </div>
       </div>
       <div className="flex gap-2 pt-1">
-        <button onClick={handleSubmit} className="flex items-center gap-1.5 px-5 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg text-sm font-semibold hover:from-blue-600 hover:to-violet-700 transition shadow-md">{form.destino === 'social' ? 'Criar Post' : 'Criar Briefing'}</button>
+        <button onClick={handleSubmit} className="flex items-center gap-1.5 px-5 py-2 bg-accent text-white rounded-lg text-sm font-semibold hover:bg-accent/90 transition shadow-md">{form.destino === 'social' ? 'Criar Post' : 'Criar Briefing'}</button>
         <button onClick={onCancel} className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-semibold hover:bg-gray-200 transition">Cancelar</button>
       </div>
     </div>
@@ -2933,10 +2933,10 @@ function CronogramaForm({ onSubmit, onCancel, initialDate }) {
       <div>
         <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2 block">Destino</label>
         <div className="flex gap-2">
-          <button type="button" onClick={() => setForm({...form, destino: 'social'})} className={'flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold border-2 transition ' + (form.destino === 'social' ? 'border-blue-500 bg-blue-500 text-white shadow-md' : 'border-gray-200 bg-white text-gray-500 hover:border-blue-300')}>
+          <button type="button" onClick={() => setForm({...form, destino: 'social'})} className={'flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold border-2 transition ' + (form.destino === 'social' ? 'border-accent bg-accent text-white shadow-md' : 'border-gray-200 bg-white text-gray-500 hover:border-accent/50')}>
             📲 Social Media
           </button>
-          <button type="button" onClick={() => setForm({...form, destino: 'design'})} className={'flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold border-2 transition ' + (form.destino === 'design' ? 'border-blue-500 bg-blue-500 text-white shadow-md' : 'border-gray-200 bg-white text-gray-500 hover:border-blue-300')}>
+          <button type="button" onClick={() => setForm({...form, destino: 'design'})} className={'flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold border-2 transition ' + (form.destino === 'design' ? 'border-accent bg-accent text-white shadow-md' : 'border-gray-200 bg-white text-gray-500 hover:border-accent/50')}>
             🎨 Design
           </button>
         </div>
@@ -2948,12 +2948,12 @@ function CronogramaForm({ onSubmit, onCancel, initialDate }) {
           value={form.titulo}
           onChange={(e) => setForm({ ...form, titulo: e.target.value })}
           required
-          className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
         />
         <select
           value={form.plataforma}
           onChange={(e) => setForm({ ...form, plataforma: e.target.value })}
-          className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
         >
           {plataformas.map((p) => (
             <option key={p} value={p}>{p}</option>
@@ -2963,20 +2963,20 @@ function CronogramaForm({ onSubmit, onCancel, initialDate }) {
           type="date"
           value={form.data_publicacao}
           onChange={(e) => setForm({ ...form, data_publicacao: e.target.value })}
-          className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
         />
         <input
           type="time"
           value={form.hora_publicacao}
           onChange={(e) => setForm({ ...form, hora_publicacao: e.target.value })}
-          className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
         />
       </div>
       <div>
         <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2 block">Tipo de Conteudo (selecione 1 ou mais)</label>
         <div className="flex gap-2">
           {tiposConteudo.map(tc => (
-            <button key={tc} type="button" onClick={() => toggleMulti('tipo_conteudo', tc)} className={'px-4 py-2 rounded-lg text-xs font-bold border-2 transition ' + (isSelected('tipo_conteudo', tc) ? 'border-blue-500 bg-blue-500 text-white shadow-md' : 'border-gray-200 bg-white text-gray-500 hover:border-blue-300')}>
+            <button key={tc} type="button" onClick={() => toggleMulti('tipo_conteudo', tc)} className={'px-4 py-2 rounded-lg text-xs font-bold border-2 transition ' + (isSelected('tipo_conteudo', tc) ? 'border-accent bg-accent text-white shadow-md' : 'border-gray-200 bg-white text-gray-500 hover:border-accent/50')}>
               {tc === 'ESTATICA' ? '🖼️' : tc === 'VIDEO' ? '🎬' : '✨'} {tc}
             </button>
           ))}
@@ -2986,7 +2986,7 @@ function CronogramaForm({ onSubmit, onCancel, initialDate }) {
         <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2 block">Formato (selecione 1 ou mais)</label>
         <div className="flex gap-2">
           {formatos.map(fm => (
-            <button key={fm} type="button" onClick={() => toggleMulti('formato', fm)} className={'px-4 py-2 rounded-lg text-xs font-bold border-2 transition ' + (isSelected('formato', fm) ? 'border-blue-500 bg-blue-500 text-white shadow-md' : 'border-gray-200 bg-white text-gray-500 hover:border-blue-300')}>
+            <button key={fm} type="button" onClick={() => toggleMulti('formato', fm)} className={'px-4 py-2 rounded-lg text-xs font-bold border-2 transition ' + (isSelected('formato', fm) ? 'border-accent bg-accent text-white shadow-md' : 'border-gray-200 bg-white text-gray-500 hover:border-accent/50')}>
               {fm === 'FEED' ? '📱' : fm === 'STORIES' ? '📲' : fm === 'CARROSSEL' ? '🔄' : '🎥'} {fm}
             </button>
           ))}
@@ -2997,25 +2997,25 @@ function CronogramaForm({ onSubmit, onCancel, initialDate }) {
         value={form.conteudo}
         onChange={(e) => setForm({ ...form, conteudo: e.target.value })}
         rows={2}
-        className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
       />
       <div>
         <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Briefing</label>
-        <textarea value={form.descricao} onChange={e => setForm({...form, descricao: e.target.value})} placeholder="Descreva o que o designer precisa criar..." rows={3} className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+        <textarea value={form.descricao} onChange={e => setForm({...form, descricao: e.target.value})} placeholder="Descreva o que o designer precisa criar..." rows={3} className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-accent focus:border-accent outline-none" />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
           <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Referencia</label>
-          <input value={form.referencia} onChange={e => setForm({...form, referencia: e.target.value})} placeholder="Link ou descricao da referencia visual" className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+          <input value={form.referencia} onChange={e => setForm({...form, referencia: e.target.value})} placeholder="Link ou descricao da referencia visual" className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-accent focus:border-accent outline-none" />
         </div>
         <div>
           <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Musica</label>
-          <input value={form.musica} onChange={e => setForm({...form, musica: e.target.value})} placeholder="Nome da musica ou link" className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+          <input value={form.musica} onChange={e => setForm({...form, musica: e.target.value})} placeholder="Nome da musica ou link" className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-accent focus:border-accent outline-none" />
         </div>
       </div>
       <div>
         <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Collaborators Instagram</label>
-        <input value={form.collaborators} onChange={e => setForm({...form, collaborators: e.target.value})} placeholder="@usuario1, @usuario2 (até 5 contas)" className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+        <input value={form.collaborators} onChange={e => setForm({...form, collaborators: e.target.value})} placeholder="@usuario1, @usuario2 (até 5 contas)" className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-accent focus:border-accent outline-none" />
         <p className="text-[10px] text-gray-400 mt-0.5">Convite de collab enviado ao publicar. Contas precisam ser públicas.</p>
       </div>
       <div>
@@ -3054,7 +3054,7 @@ function CronogramaForm({ onSubmit, onCancel, initialDate }) {
         )}
       </div>
       <div className="flex gap-2 pt-1">
-        <button type="submit" className="flex items-center gap-1.5 px-5 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg text-sm font-semibold hover:from-blue-600 hover:to-violet-700 transition shadow-md">Salvar</button>
+        <button type="submit" className="flex items-center gap-1.5 px-5 py-2 bg-accent text-white rounded-lg text-sm font-semibold hover:bg-accent/90 transition shadow-md">Salvar</button>
         <button type="button" onClick={onCancel} className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-semibold hover:bg-gray-200 transition">Cancelar</button>
       </div>
     </form>
@@ -3080,18 +3080,18 @@ function EditPostForm({ post, onSave, onCancel }) {
     <form onSubmit={handleSubmit} className="space-y-3">
       <div>
         <label className="text-[11px] font-semibold text-gray-400 uppercase">Título</label>
-        <input value={form.titulo} onChange={e => setForm({...form, titulo: e.target.value})} className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" required />
+        <input value={form.titulo} onChange={e => setForm({...form, titulo: e.target.value})} className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-accent outline-none" required />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-[11px] font-semibold text-gray-400 uppercase">Plataforma</label>
-          <select value={form.plataforma} onChange={e => setForm({...form, plataforma: e.target.value})} className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+          <select value={form.plataforma} onChange={e => setForm({...form, plataforma: e.target.value})} className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-accent outline-none">
             {plataformas.map(p => <option key={p} value={p}>{p}</option>)}
           </select>
         </div>
         <div>
           <label className="text-[11px] font-semibold text-gray-400 uppercase">Status</label>
-          <select value={form.status} onChange={e => setForm({...form, status: e.target.value})} className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+          <select value={form.status} onChange={e => setForm({...form, status: e.target.value})} className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-accent outline-none">
             <option value="pendente">Pendente</option>
             <option value="em_andamento">Não feito</option>
             <option value="publicado">Publicado</option>
@@ -3102,20 +3102,20 @@ function EditPostForm({ post, onSave, onCancel }) {
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-[11px] font-semibold text-gray-400 uppercase">Data</label>
-          <input type="date" value={form.data_publicacao} onChange={e => setForm({...form, data_publicacao: e.target.value})} className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+          <input type="date" value={form.data_publicacao} onChange={e => setForm({...form, data_publicacao: e.target.value})} className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-accent outline-none" />
         </div>
         <div>
           <label className="text-[11px] font-semibold text-gray-400 uppercase">Horário</label>
-          <input type="time" value={form.hora_publicacao} onChange={e => setForm({...form, hora_publicacao: e.target.value})} className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+          <input type="time" value={form.hora_publicacao} onChange={e => setForm({...form, hora_publicacao: e.target.value})} className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-accent outline-none" />
         </div>
       </div>
       <div>
         <label className="text-[11px] font-semibold text-gray-400 uppercase">Conteúdo / Legenda</label>
-        <textarea value={form.conteudo} onChange={e => setForm({...form, conteudo: e.target.value})} rows={3} className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+        <textarea value={form.conteudo} onChange={e => setForm({...form, conteudo: e.target.value})} rows={3} className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-accent outline-none" />
       </div>
       <div>
         <label className="text-[11px] font-semibold text-gray-400 uppercase">Formato</label>
-        <select value={form.formato} onChange={e => setForm({...form, formato: e.target.value})} className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+        <select value={form.formato} onChange={e => setForm({...form, formato: e.target.value})} className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-accent outline-none">
           <option value="">Selecione o formato</option>
           {['Interação ST','Vídeo Orgânico ST','Foto ST','Foto Feed','Reels Orgânico','Reels','Carrossel','GIF'].map(f => <option key={f} value={f}>{f}</option>)}
         </select>
@@ -3143,7 +3143,7 @@ function EditPostForm({ post, onSave, onCancel }) {
         </div>
       </div>
       <div className="flex gap-2 pt-1">
-        <button type="submit" className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg text-sm font-semibold hover:from-blue-600 hover:to-violet-700 transition shadow-md">Salvar</button>
+        <button type="submit" className="flex-1 px-4 py-2 bg-accent text-white rounded-lg text-sm font-semibold hover:bg-accent/90 transition shadow-md">Salvar</button>
         <button type="button" onClick={onCancel} className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-semibold hover:bg-gray-200 transition">Cancelar</button>
       </div>
     </form>

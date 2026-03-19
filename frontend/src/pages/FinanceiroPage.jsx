@@ -76,7 +76,7 @@ export default function FinanceiroPage() {
           <select
             value={eventoId || ''}
             onChange={e => selecionarEvento(Number(e.target.value))}
-            className="appearance-none bg-white border border-gray-200 rounded-xl px-4 py-2.5 pr-10 text-sm font-medium text-gray-700 shadow-sm hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer min-w-[250px]"
+            className="appearance-none bg-white border border-gray-200 rounded-xl px-4 py-2.5 pr-10 text-sm font-medium text-gray-700 shadow-sm hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent cursor-pointer min-w-[250px]"
           >
             {eventos.map(ev => (
               <option key={ev.id} value={ev.id}>{ev.nome}</option>

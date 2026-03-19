@@ -184,6 +184,16 @@ export default function MinhasDemandas() {
         await api.patch('/briefings/' + detalhe.id, editForm)
       } else {
         await api.patch('/cronograma/' + detalhe.id, editForm)
+        if (editForm.aparecer_designer !== undefined) {
+          await api.post('/cronograma/' + detalhe.id + '/toggle-designer', {
+            ativo: editForm.aparecer_designer,
+            descricao: editForm.descricao || '',
+            tipo_conteudo: editForm.tipo_conteudo || '',
+            formato: editForm.formato || '',
+            referencia: editForm.referencia || '',
+            musica: editForm.musica || '',
+          })
+        }
       }
       toast.success('Atualizado!')
       setDetalhe({...detalhe, ...editForm})
@@ -504,7 +514,7 @@ export default function MinhasDemandas() {
             <div className="flex gap-2 items-center flex-wrap">
               <div className="flex gap-1 bg-white rounded-lg p-0.5 border border-gray-200">
                 {[{id:'todos',l:'Todos'},{id:'designer',l:'Designers'},{id:'social_media',l:'Social Media'}].map(f => (
-                  <button key={f.id} onClick={() => {setFiltroFuncao(f.id);setFiltroMembro('todos')}} className={'px-3 py-1.5 rounded-md text-xs font-bold transition-all ' + (filtroFuncao === f.id ? 'bg-blue-600 text-white' : 'text-gray-500 hover:text-gray-700')}>{f.l}</button>
+                  <button key={f.id} onClick={() => {setFiltroFuncao(f.id);setFiltroMembro('todos')}} className={'px-3 py-1.5 rounded-md text-xs font-bold transition-all ' + (filtroFuncao === f.id ? 'bg-accent text-white' : 'text-gray-500 hover:text-gray-700')}>{f.l}</button>
                 ))}
               </div>
               <div className="relative" style={{width:240}}>
@@ -533,7 +543,7 @@ export default function MinhasDemandas() {
               </div>
               <div className="flex gap-1 bg-white rounded-lg p-0.5 border border-gray-200">
                 {[{id:'todos',l:'Todos'},{id:'pendente',l:'Pendentes'},{id:'producao',l:'Producao'},{id:'atrasado',l:'Atrasados'},{id:'entregue',l:'Entregues'}].map(f => (
-                  <button key={f.id} onClick={() => setFiltroStatusAdmin(f.id)} className={'px-3 py-1.5 rounded-md text-xs font-bold transition-all ' + (filtroStatusAdmin === f.id ? (f.id === 'atrasado' ? 'bg-red-500 text-white' : 'bg-blue-600 text-white') : (f.id === 'atrasado' ? 'text-red-500' : 'text-gray-500 hover:text-gray-700'))}>{f.l}</button>
+                  <button key={f.id} onClick={() => setFiltroStatusAdmin(f.id)} className={'px-3 py-1.5 rounded-md text-xs font-bold transition-all ' + (filtroStatusAdmin === f.id ? (f.id === 'atrasado' ? 'bg-red-500 text-white' : 'bg-accent text-white') : (f.id === 'atrasado' ? 'text-red-500' : 'text-gray-500 hover:text-gray-700'))}>{f.l}</button>
                 ))}
               </div>
             </div>
@@ -544,7 +554,7 @@ export default function MinhasDemandas() {
                 const stats = getStats(m.id)
                 const isActive = filtroMembro === String(m.id)
                 return (
-                  <div key={m.id} onClick={() => setFiltroMembro(isActive ? 'todos' : String(m.id))} className={'rounded-2xl p-3.5 cursor-pointer transition-all border-2 ' + (isActive ? 'bg-blue-50 border-blue-500' : 'bg-white border-gray-200 hover:border-blue-200')}>
+                  <div key={m.id} onClick={() => setFiltroMembro(isActive ? 'todos' : String(m.id))} className={'rounded-2xl p-3.5 cursor-pointer transition-all border-2 ' + (isActive ? 'bg-accent/10 border-accent' : 'bg-white border-gray-200 hover:border-accent/40')}>
                     <div className="flex items-center gap-2.5 mb-2.5">
                       <div className={'w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold ' + (m.funcao === 'designer' ? 'bg-gradient-to-br from-blue-500 to-blue-600' : 'bg-gradient-to-br from-blue-500 to-blue-600')}>
                         {(m.nome||'?').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}
@@ -580,21 +590,21 @@ export default function MinhasDemandas() {
 
               return (
                 <>
-                <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-                  <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50">
-                    <button onClick={() => setAdminMonthDate(new Date(year, month - 1, 1))} className="p-1.5 hover:bg-gray-200 rounded-lg transition"><ChevronLeft size={16} className="text-gray-500" /></button>
+                <div className="bg-white dark:bg-white/[0.04] rounded-2xl border border-gray-200 dark:border-white/[0.08] overflow-hidden">
+                  <div className="px-5 py-3 border-b border-gray-100 dark:border-white/[0.08] flex items-center justify-between bg-gray-50 dark:bg-white/[0.03]">
+                    <button onClick={() => setAdminMonthDate(new Date(year, month - 1, 1))} className="p-1.5 hover:bg-gray-200 dark:hover:bg-white/10 rounded-lg transition"><ChevronLeft size={16} className="text-gray-500 dark:text-white/50" /></button>
                     <div className="text-center">
-                      <h3 className="font-extrabold text-gray-900 text-sm">
+                      <h3 className="font-extrabold text-gray-900 dark:text-white/90 text-sm">
                         {mesesNomes[month]} {year}
                       </h3>
-                      <span className="text-xs text-gray-400">{filteredItems.length} demandas · {daysInMonth} dias</span>
+                      <span className="text-xs text-gray-400 dark:text-white/40">{filteredItems.length} demandas · {daysInMonth} dias</span>
                     </div>
                     <div className="flex items-center gap-1">
                       {!isCurrentMonth && <button onClick={() => { const n = new Date(); setAdminMonthDate(new Date(n.getFullYear(), n.getMonth(), 1)) }} className="px-2 py-1 text-xs font-bold text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition">Hoje</button>}
-                      <button onClick={() => setAdminMonthDate(new Date(year, month + 1, 1))} className="p-1.5 hover:bg-gray-200 rounded-lg transition"><ChevronRight size={16} className="text-gray-500" /></button>
+                      <button onClick={() => setAdminMonthDate(new Date(year, month + 1, 1))} className="p-1.5 hover:bg-gray-200 dark:hover:bg-white/10 rounded-lg transition"><ChevronRight size={16} className="text-gray-500 dark:text-white/50" /></button>
                     </div>
                   </div>
-                  <div ref={calendarScrollRef} className="flex overflow-x-auto" style={{ scrollSnapType: 'x mandatory', scrollBehavior: 'smooth' }}>
+                  <div ref={calendarScrollRef} className="flex overflow-x-auto gap-4 p-4 bg-gray-50/60 dark:bg-transparent" style={{ scrollSnapType: 'x mandatory', scrollBehavior: 'smooth' }}>
                     {monthDays.map((day) => {
                       const dayStr = day.toISOString().split('T')[0]
                       const isToday = dayStr === todayStr
@@ -615,17 +625,17 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                             setDraggedItem(null)
                             setDragOverDay(null)
                           }}
-                          className={'flex-shrink-0 border-r border-gray-100 transition-colors duration-150 ' + (isToday ? 'bg-blue-50/40' : 'bg-white') + (isDragTarget ? ' bg-blue-50 ring-2 ring-inset ring-blue-400' : '')}
-                          style={{ minWidth: 210, minHeight: 520, scrollSnapAlign: 'start' }}
+                          className={'flex-shrink-0 rounded-2xl border shadow-sm overflow-hidden transition-colors duration-150 ' + (isToday ? 'bg-blue-50/40 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/30' : 'bg-white dark:bg-white/[0.04] border-gray-100 dark:border-white/[0.08]') + (isDragTarget ? ' ring-2 ring-inset ring-blue-400' : '')}
+                          style={{ minWidth: 285, minHeight: 520, scrollSnapAlign: 'start' }}
                         >
                           {/* Day header */}
-                          <div className={'py-3 border-b text-center ' + (isToday ? 'bg-blue-100 border-blue-200' : 'border-gray-100 bg-white')}>
-                            <p className={'text-[11px] font-bold uppercase tracking-wide mb-1 ' + (isToday ? 'text-blue-500' : 'text-gray-400')}>{diasNomes[day.getDay()]}</p>
-                            <span className={'w-8 h-8 flex items-center justify-center rounded-full mx-auto text-sm font-bold ' + (isToday ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-700')}>
+                          <div className={'flex items-center gap-2 px-4 py-3 border-b ' + (isToday ? 'bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30' : 'border-gray-100 dark:border-white/[0.08] bg-white dark:bg-white/[0.03]')}>
+                            <span className={'text-[10px] font-extrabold uppercase tracking-widest ' + (isToday ? 'text-blue-500' : 'text-gray-400 dark:text-white/40')}>{diasNomes[day.getDay()]}</span>
+                            <span className={'text-sm font-extrabold flex items-center justify-center flex-shrink-0 ' + (isToday ? 'w-7 h-7 rounded-full bg-blue-600 text-white shadow-sm' : 'text-gray-800 dark:text-white/80')}>
                               {day.getDate()}
                             </span>
                             {dayItems.length > 0 && (
-                              <span className={'mt-1 inline-flex items-center justify-center text-[10px] font-bold px-1.5 py-0.5 rounded-full ' + (isToday ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500')}>
+                              <span className={'ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full ' + (isToday ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 dark:bg-white/[0.08] text-gray-500 dark:text-white/50')}>
                                 {dayItems.length}
                               </span>
                             )}
@@ -635,12 +645,12 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                             {/* Add button */}
                             <div
                               onClick={() => { setNovoPostForm(f => ({...f, id_evento: data.eventos.length === 1 ? String(data.eventos[0].id) : '', data_publicacao: dayStr})); setShowNovoPost(true) }}
-                              className="flex items-center justify-center py-1.5 rounded-lg border-2 border-dashed border-gray-200 text-gray-300 hover:border-blue-400 hover:text-blue-400 hover:bg-blue-50/50 transition cursor-pointer group"
+                              className="flex items-center justify-center py-1.5 rounded-lg border-2 border-dashed border-gray-200 dark:border-white/[0.10] text-gray-300 dark:text-white/20 hover:border-blue-400 hover:text-blue-400 hover:bg-blue-50/50 transition cursor-pointer group"
                             >
                               <Plus size={13} className="group-hover:scale-110 transition-transform" />
                             </div>
 
-                            <div className="overflow-y-auto space-y-1.5" style={{ maxHeight: 380 }}>
+                            <div className="overflow-y-auto space-y-2" style={{ maxHeight: 300 }}>
                             {dayItems.map(d => {
                               const atrasado = dayStr < todayStr && !['concluido','aprovado','publicado','cancelado'].includes(d.status)
                               const accentColor = atrasado ? '#ef4444' : (d._tipo === 'briefing' ? '#8b5cf6' : (plataformaColor[d.plataforma] || '#6b7280'))
@@ -666,36 +676,33 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                   onDragStart={e => { e.stopPropagation(); setDraggedItem({...d}) }}
                                   onDragEnd={() => { setDraggedItem(null); setDragOverDay(null) }}
                                   onClick={e => { e.stopPropagation(); const next = isSelected ? null : d; setAdminDetalhe(next); if(next) { setAdminArquivos([]); carregarAdminArqs(next) } }}
-                                  className={'rounded-xl bg-white border cursor-pointer select-none transition-all duration-150 hover:shadow-md '
+                                  className={'rounded-xl bg-white dark:bg-white/[0.06] border cursor-pointer select-none transition-all duration-150 hover:shadow-md '
                                     + (isDraggingThis ? 'opacity-40 scale-95 ' : '')
-                                    + (isSelected ? 'ring-2 ring-blue-500 shadow-md border-blue-200 ' : 'border-gray-100 shadow-sm ')}
-                                  style={{ borderLeft: `3px solid ${accentColor}` }}
+                                    + (isSelected ? 'ring-2 ring-blue-500 shadow-md border-blue-200 ' : 'border-gray-100 dark:border-white/[0.08] shadow-sm ')}
+                                  style={{ borderLeft: `4px solid ${accentColor}` }}
                                 >
-                                  <div className="px-2.5 py-2 space-y-1.5">
-                                    {/* Tipo + Status */}
-                                    <div className="flex items-center justify-between gap-1">
-                                      <span className={'text-[9px] font-bold px-1.5 py-0.5 rounded-md ' + (d._tipo === 'briefing' ? 'bg-violet-100 text-violet-700' : 'bg-pink-100 text-pink-700')}>
-                                        {d._tipo === 'briefing' ? '✏️ Briefing' : (d.plataforma || 'Post')}
-                                      </span>
-                                      <span className={'text-[9px] font-bold px-1.5 py-0.5 rounded-full ' + stConf.cls}>
+                                  <div className="px-3 py-2.5 space-y-2">
+                                    {/* Status */}
+                                    <div className="flex items-center justify-end gap-1">
+                                      <span className={'text-[10px] font-bold px-1.5 py-0.5 rounded-full ' + stConf.cls}>
                                         {stConf.label}
                                       </span>
                                     </div>
 
                                     {/* Título */}
-                                    <p className="text-[11px] font-semibold text-gray-900 line-clamp-2 leading-snug">{d.titulo || 'Sem título'}</p>
+                                    <p className="text-sm font-semibold text-gray-900 dark:text-white/90 line-clamp-2 leading-snug">{d.titulo || 'Sem título'}</p>
 
                                     {/* Nome do evento */}
-                                    <p className="text-[10px] font-medium truncate" style={{ color: accentColor }}>{d.evento_nome}</p>
+                                    <p className="text-xs font-medium truncate" style={{ color: accentColor }}>{d.evento_nome}</p>
 
                                     {/* Formatos / Tipo de conteúdo */}
                                     {(d.formato || d.tipo_conteudo) && (
                                       <div className="flex gap-1 flex-wrap">
                                         {d.formato && d.formato.split(',').filter(Boolean).map(f => (
-                                          <span key={f} className="text-[9px] font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md">{f.trim()}</span>
+                                          <span key={f} className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md">{f.trim()}</span>
                                         ))}
                                         {d.tipo_conteudo && d.tipo_conteudo.split(',').filter(Boolean).slice(0,1).map(t => (
-                                          <span key={t} className="text-[9px] font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md">{t.trim()}</span>
+                                          <span key={t} className="text-[10px] font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md">{t.trim()}</span>
                                         ))}
                                       </div>
                                     )}
@@ -729,10 +736,10 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
 
                   return (
                     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setAdminDetalhe(null)}>
-                      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-auto shadow-2xl" onClick={e => e.stopPropagation()}>
+                      <div className="bg-white dark:bg-[#1c1c24] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-auto shadow-2xl" onClick={e => e.stopPropagation()}>
 
                         {/* Header */}
-                        <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between rounded-t-2xl z-10">
+                        <div className="sticky top-0 bg-white dark:bg-[#1c1c24] border-b border-gray-100 dark:border-white/[0.08] px-5 py-4 flex items-center justify-between rounded-t-2xl z-10">
                           <div className="flex items-center gap-3 min-w-0 flex-1">
                             <span className={'w-2.5 h-2.5 rounded-full flex-shrink-0 ' + (atrasado ? 'bg-red-500' : st.dot)} />
                             <div className="min-w-0">
@@ -833,13 +840,13 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                 <div>
                                   <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Título</label>
                                   <input value={adminEditForm.titulo||''} onChange={e => setAdminEditForm({...adminEditForm, titulo: e.target.value})}
-                                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                                 </div>
 
                                 <div>
                                   <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Status</label>
                                   <select value={adminEditForm.status||''} onChange={e => setAdminEditForm({...adminEditForm, status: e.target.value})}
-                                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
                                     <option value="pendente">Pendente</option>
                                     <option value="em_andamento">Em Produção</option>
                                     <option value="em_revisao">Em Revisão</option>
@@ -853,7 +860,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                   <div>
                                     <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Plataforma</label>
                                     <select value={adminEditForm.plataforma||'Instagram'} onChange={e => setAdminEditForm({...adminEditForm, plataforma: e.target.value})}
-                                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
                                       {['Instagram','Facebook','TikTok','YouTube','Twitter','LinkedIn','WhatsApp'].map(p => <option key={p}>{p}</option>)}
                                     </select>
                                   </div>
@@ -864,18 +871,18 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                       onChange={e => d._tipo === 'post'
                                         ? setAdminEditForm({...adminEditForm, data_publicacao: e.target.value})
                                         : setAdminEditForm({...adminEditForm, data_vencimento: e.target.value})}
-                                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                                   </div>
                                   <div>
                                     <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Hora</label>
                                     <input type="time" value={adminEditForm.hora_publicacao||''} onChange={e => setAdminEditForm({...adminEditForm, hora_publicacao: e.target.value})}
-                                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                                   </div>
                                   <div>
                                     <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Collaborators</label>
                                     <input value={adminEditForm.collaborators||''} onChange={e => setAdminEditForm({...adminEditForm, collaborators: e.target.value})}
                                       placeholder="@usuario1, @usuario2"
-                                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                                   </div>
                                 </div>
 
@@ -916,7 +923,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                   <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Briefing para o Designer</label>
                                   <textarea value={adminEditForm.descricao||''} onChange={e => setAdminEditForm({...adminEditForm, descricao: e.target.value})}
                                     rows={3} placeholder="Descreva o que o designer precisa criar..."
-                                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                                 </div>
 
                                 {/* Legenda / Conteúdo — para todos os tipos */}
@@ -928,7 +935,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                       ? setAdminEditForm({...adminEditForm, conteudo: e.target.value})
                                       : setAdminEditForm({...adminEditForm, legenda: e.target.value})}
                                     rows={3} placeholder="Legenda do post..."
-                                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-3">
@@ -936,13 +943,13 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                     <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Referência</label>
                                     <input value={adminEditForm.referencia||''} onChange={e => setAdminEditForm({...adminEditForm, referencia: e.target.value})}
                                       placeholder="Link ou descrição"
-                                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                                   </div>
                                   <div>
                                     <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Música</label>
                                     <input value={adminEditForm.musica||''} onChange={e => setAdminEditForm({...adminEditForm, musica: e.target.value})}
                                       placeholder="Nome ou link"
-                                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                                   </div>
                                 </div>
 
@@ -966,9 +973,9 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                     <button
                                       type="button"
                                       onClick={() => setAdminEditForm(f => ({...f, aparecer_designer: !f.aparecer_designer}))}
-                                      className={'relative w-12 h-6 rounded-full transition-colors flex-shrink-0 ' + (adminEditForm.aparecer_designer ? 'bg-blue-600' : 'bg-gray-300')}
+                                      className={'relative w-11 h-6 rounded-full overflow-hidden transition-colors flex-shrink-0 ' + (adminEditForm.aparecer_designer ? 'bg-blue-600' : 'bg-gray-300')}
                                     >
-                                      <span className={'absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ' + (adminEditForm.aparecer_designer ? 'translate-x-6' : 'translate-x-0.5')} />
+                                      <span className={'absolute left-0.5 top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ' + (adminEditForm.aparecer_designer ? 'translate-x-5' : 'translate-x-0')} />
                                     </button>
                                   </div>
                                 )}
@@ -1077,13 +1084,6 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
 
       {/* ===== DESIGNER VIEW (KANBAN + MATERIAIS) ===== */}
       {isDesigner && (() => {
-        const kanbanCols = [
-          { key: 'pendente', label: 'Pendente', gradient: 'from-yellow-400 to-orange-500' },
-          { key: 'em_andamento', label: 'Em Producao', gradient: 'from-blue-400 to-blue-600' },
-          { key: 'em_revisao', label: 'Revisao', gradient: 'from-violet-400 to-violet-600' },
-          { key: 'aprovado', label: 'Aprovado', gradient: 'from-green-400 to-emerald-600' },
-          { key: 'publicado', label: 'Publicado', gradient: 'from-teal-400 to-cyan-600' },
-        ]
         const bListBase = filtroEvento === 'todos' ? data.briefings : data.briefings.filter(b => b.id_evento === Number(filtroEvento))
         const bList = filtrarPorData(bListBase, 'data_vencimento')
         const atrasados = bListBase.filter(b => isAtrasado(b, 'data_vencimento')).length
@@ -1099,151 +1099,105 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
               </button>
             </div>
 
-            {designerTab === 'briefings' && (<>
-            {/* Cards resumo */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
-                <div className="flex items-center justify-between mb-1"><span className="text-xs text-gray-400 font-semibold uppercase">Total</span><Palette size={14} className="text-blue-400" /></div>
-                <p className="text-2xl font-bold text-blue-600">{bList.length}</p><span className="text-xs text-gray-400">briefings</span>
-              </div>
-              <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
-                <div className="flex items-center justify-between mb-1"><span className="text-xs text-gray-400 font-semibold uppercase">A Fazer</span><Clock size={14} className="text-yellow-400" /></div>
-                <p className="text-2xl font-bold text-yellow-600">{bList.filter(b => ['pendente','em_andamento'].includes(b.status)).length}</p><span className="text-xs text-gray-400">pendentes</span>
-              </div>
-              <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
-                <div className="flex items-center justify-between mb-1"><span className="text-xs text-gray-400 font-semibold uppercase">Atrasados</span><AlertCircle size={14} className="text-red-400" /></div>
-                <p className="text-2xl font-bold text-red-600">{atrasados}</p><span className="text-xs text-gray-400">briefings</span>
-              </div>
-              <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
-                <div className="flex items-center justify-between mb-1"><span className="text-xs text-gray-400 font-semibold uppercase">Aprovados</span><CheckCircle size={14} className="text-green-400" /></div>
-                <p className="text-2xl font-bold text-green-600">{bList.filter(b => ['aprovado','publicado'].includes(b.status)).length}</p><span className="text-xs text-gray-400">entregas</span>
-              </div>
-            </div>
-
-            {/* Filtros */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <select value={filtroEvento} onChange={e => setFiltroEvento(e.target.value)} className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-600 outline-none">
-                <option value="todos">Todos os eventos</option>
-                {data.eventos.map(ev => <option key={ev.id} value={ev.id}>{ev.nome}</option>)}
-              </select>
-              <div className="flex gap-1 flex-wrap">
-                {[{key:'todas',label:'Todas'},{key:'hoje',label:'Hoje'},{key:'semana',label:'Semana'},{key:'atrasadas',label:'Atrasados'},{key:'pendentes',label:'Pendentes'}].map(f => (
-                  <button key={f.key} onClick={() => setFiltro(f.key)} className={'px-3 py-1.5 rounded-lg text-xs font-semibold transition ' + (filtro === f.key ? 'bg-blue-500 text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200')}>
-                    {f.label}
-                  </button>
-                ))}
-              </div>
-              <span className="text-xs text-gray-400 ml-auto">{bList.length} briefings</span>
-            </div>
-
-            {/* Kanban */}
-            <div className="flex gap-3 overflow-x-auto pb-4">
-              {kanbanCols.map(col => {
-                const items = bList.filter(b => b.status === col.key).sort((a, b) => (a.data_vencimento || '9999') < (b.data_vencimento || '9999') ? -1 : 1)
-                return (
-                  <div key={col.key} className="flex-shrink-0 w-64">
-                    <div className={`bg-gradient-to-r ${col.gradient} rounded-t-xl px-4 py-2.5 flex items-center justify-between`}>
-                      <span className="text-white font-bold text-sm">{col.label}</span>
-                      <span className="bg-white/25 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">{items.length}</span>
+            {designerTab === 'briefings' && (() => {
+              const year = adminMonthDate.getFullYear()
+              const month = adminMonthDate.getMonth()
+              const daysInMonth = new Date(year, month + 1, 0).getDate()
+              const mesesNomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+              const diasNomes = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
+              const todayStr = new Date().toISOString().split('T')[0]
+              const monthDays = Array.from({ length: daysInMonth }, (_, i) => new Date(year, month, i + 1))
+              const isCurrentMonth = year === new Date().getFullYear() && month === new Date().getMonth()
+              const allItems = bList.map(b => ({...b, _tipo:'briefing', _data: b.data_vencimento}))
+              const dsStatusConf = {
+                pendente:     { label: 'Pendente',    cls: 'bg-yellow-100 text-yellow-700' },
+                em_andamento: { label: 'Em Produção', cls: 'bg-blue-100 text-blue-700' },
+                em_revisao:   { label: 'Em Revisão',  cls: 'bg-violet-100 text-violet-700' },
+                aprovado:     { label: 'Aprovado',    cls: 'bg-green-100 text-green-700' },
+                publicado:    { label: 'Publicado',   cls: 'bg-emerald-100 text-emerald-700' },
+                concluido:    { label: 'Concluído',   cls: 'bg-green-100 text-green-700' },
+              }
+              return (
+                <div className="bg-white dark:bg-white/[0.04] rounded-2xl border border-gray-200 dark:border-white/[0.08] overflow-hidden">
+                  <div className="px-5 py-3 border-b border-gray-100 dark:border-white/[0.08] flex items-center justify-between bg-gray-50 dark:bg-white/[0.03]">
+                    <button onClick={() => setAdminMonthDate(new Date(year, month - 1, 1))} className="p-1.5 hover:bg-gray-200 dark:hover:bg-white/10 rounded-lg transition"><ChevronLeft size={16} className="text-gray-500 dark:text-white/50" /></button>
+                    <div className="text-center">
+                      <h3 className="font-extrabold text-gray-900 dark:text-white/90 text-sm">{mesesNomes[month]} {year}</h3>
+                      <span className="text-xs text-gray-400 dark:text-white/40">{allItems.length} demandas · {daysInMonth} dias</span>
                     </div>
-                    <div className="bg-gray-50/80 rounded-b-xl p-2.5 space-y-2.5 border border-t-0 border-gray-200" style={{ minHeight: 420 }}>
-                      {items.map(b => {
-                        const atras = isAtrasado(b, 'data_vencimento')
-                        const tipos = (b.tipo_conteudo || '').split(',').filter(Boolean)
-                        const formatos = (b.formato || '').split(',').filter(Boolean)
-                        const arqs = cardArquivos['briefing-' + b.id] || []
-                        return (
-                          <div key={b.id} onClick={() => { setDetalhe({_tipo:'briefing',...b}); carregarArquivos(b.id); setEditMode(false); setEditForm({}) }}
-                            className={`bg-white rounded-xl border ${atras ? 'border-red-300 ring-1 ring-red-200' : 'border-gray-200'} hover:shadow-md transition-all cursor-pointer`}>
-                            <div className="p-3 space-y-2">
-                              <div className="flex items-start justify-between gap-1">
-                                <h4 className="font-bold text-gray-900 text-xs leading-tight flex-1">{b.titulo}</h4>
-                                {atras && <span className="text-[9px] font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded-full whitespace-nowrap">ATRASADO</span>}
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <Megaphone size={10} className="text-blue-400" />
-                                <span className="text-[10px] text-blue-600 font-semibold truncate">{b.evento_nome || 'Sem evento'}</span>
-                              </div>
-                              {b.data_vencimento && (
-                                <div className="flex items-center gap-1.5 text-[11px] text-gray-500">
-                                  <Calendar size={10} className={atras ? 'text-red-400' : 'text-blue-400'} />
-                                  <span className={atras ? 'text-red-600 font-semibold' : 'font-medium'}>{new Date(b.data_vencimento + 'T12:00:00').toLocaleDateString('pt-BR')}</span>
-                                </div>
-                              )}
-                              {tipos.length > 0 && (
-                                <div className="flex flex-wrap gap-1">{tipos.map(tc => (
-                                  <span key={tc} className="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] font-bold">{tc === 'ESTATICA' ? '🖼️' : tc === 'VIDEO' ? '🎬' : tc === 'GIF' ? '✨' : '📋'} {tc}</span>
-                                ))}</div>
-                              )}
-                              {formatos.length > 0 && (
-                                <div className="flex flex-wrap gap-1">{formatos.map(fm => (
-                                  <span key={fm} className="px-1.5 py-0.5 bg-violet-50 text-violet-600 rounded text-[10px] font-bold">{fm === 'FEED' ? '📱' : fm === 'STORIES' ? '📲' : fm === 'CARROSSEL' ? '🔄' : '🎥'} {fm}</span>
-                                ))}</div>
-                              )}
-                              {b.descricao && <p className="text-[11px] text-gray-500 line-clamp-2">{b.descricao}</p>}
-                              {arqs.length > 0 && (
-                                <div className="flex flex-wrap gap-1" onClick={e => e.stopPropagation()}>
-                                  {arqs.slice(0,4).map(arq => (
-                                    <div key={arq.id} onClick={() => setPreviewArquivo(arq)}>
-                                      {arq.tipo && arq.tipo.startsWith('image') ? (
-                                        <img src={'/api' + arq.url} className="w-10 h-10 rounded object-cover border border-gray-200 cursor-pointer hover:shadow-md transition" />
-                                      ) : (
-                                        <div className="w-10 h-10 rounded bg-gray-100 border border-gray-200 flex items-center justify-center cursor-pointer hover:shadow-md transition"><FileText size={10} className="text-gray-400" /></div>
-                                      )}
-                                    </div>
-                                  ))}
-                                  {arqs.length > 4 && <span className="text-[9px] text-gray-400 self-end">+{arqs.length - 4}</span>}
-                                </div>
-                              )}
-                              {/* Etiquetas */}
-                              {getEtiquetas('briefing', b.id).length > 0 && (
-                                <div className="flex gap-1 flex-wrap">
-                                  {getEtiquetas('briefing', b.id).slice(0, 2).map(e => {
-                                    const cfg = ETIQUETAS_PADRAO.find(c => c.key === e)
-                                    return cfg
-                                      ? <span key={e} className="text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none" style={{ color: cfg.color, backgroundColor: cfg.bg }}>{cfg.emoji} {cfg.label}</span>
-                                      : <span key={e} className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 leading-none">🏷️ {e}</span>
-                                  })}
-                                  {getEtiquetas('briefing', b.id).length > 2 && <span className="text-[9px] text-gray-400">+{getEtiquetas('briefing', b.id).length - 2}</span>}
-                                </div>
-                              )}
-                              <div className="flex items-center justify-between pt-1 border-t border-gray-100 mt-1" onClick={e => e.stopPropagation()}>
-                                {(() => {
-                                  const statusOrder = ['pendente','em_andamento','em_revisao','aprovado','publicado']
-                                  const idx = statusOrder.indexOf(b.status)
-                                  const prev = idx > 0 ? statusOrder[idx - 1] : null
-                                  const next = idx < statusOrder.length - 1 ? statusOrder[idx + 1] : null
-                                  return (
-                                    <div className="flex items-center gap-1">
-                                      {prev && (
-                                        <button onClick={() => atualizarStatus('briefing', b.id, prev)} className="p-1 rounded-md bg-gray-100 hover:bg-gray-200 transition" title={'Mover para ' + (statusLabels[prev] || prev)}>
-                                          <ChevronLeft size={12} className="text-gray-500" />
-                                        </button>
-                                      )}
-                                      {next && (
-                                        <button onClick={() => atualizarStatus('briefing', b.id, next)} className="p-1 rounded-md bg-blue-100 hover:bg-blue-200 transition" title={'Mover para ' + (statusLabels[next] || next)}>
-                                          <ChevronRight size={12} className="text-blue-600" />
-                                        </button>
-                                      )}
-                                    </div>
-                                  )
-                                })()}
-                                <div className="relative">
-                                  <input type="file" accept="image/*,video/*,.pdf,.psd,.ai,.zip" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                    onChange={e => { const file = e.target.files[0]; if(file) uploadCardArquivo('briefing', b.id, file); e.target.value='' }} />
-                                  <Paperclip size={11} className="text-gray-300 hover:text-blue-500 transition cursor-pointer" />
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )
-                      })}
+                    <div className="flex items-center gap-1">
+                      {!isCurrentMonth && <button onClick={() => { const n = new Date(); setAdminMonthDate(new Date(n.getFullYear(), n.getMonth(), 1)) }} className="px-2 py-1 text-xs font-bold text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition">Hoje</button>}
+                      <button onClick={() => setAdminMonthDate(new Date(year, month + 1, 1))} className="p-1.5 hover:bg-gray-200 dark:hover:bg-white/10 rounded-lg transition"><ChevronRight size={16} className="text-gray-500 dark:text-white/50" /></button>
                     </div>
                   </div>
-                )
-              })}
-            </div>
-            </>)}
+                  <div ref={calendarScrollRef} className="flex overflow-x-auto gap-4 p-4 bg-gray-50/60 dark:bg-transparent" style={{ scrollSnapType: 'x mandatory', scrollBehavior: 'smooth' }}>
+                    {monthDays.map((day) => {
+                      const dayStr = day.toISOString().split('T')[0]
+                      const isToday = dayStr === todayStr
+                      const dayItems = allItems.filter(d => d._data?.slice(0,10) === dayStr).sort((a, b) => (a.status === 'publicado' ? 1 : 0) - (b.status === 'publicado' ? 1 : 0))
+                      return (
+                        <div
+                          key={dayStr}
+                          data-day={dayStr}
+                          className={'flex-shrink-0 rounded-2xl border shadow-sm overflow-hidden transition-colors duration-150 ' + (isToday ? 'bg-blue-50/40 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/30' : 'bg-white dark:bg-white/[0.04] border-gray-100 dark:border-white/[0.08]')}
+                          style={{ minWidth: 285, minHeight: 520, scrollSnapAlign: 'start' }}
+                        >
+                          <div className={'flex items-center gap-2 px-4 py-3 border-b ' + (isToday ? 'bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30' : 'border-gray-100 dark:border-white/[0.08] bg-white dark:bg-white/[0.03]')}>
+                            <span className={'text-[10px] font-extrabold uppercase tracking-widest ' + (isToday ? 'text-blue-500' : 'text-gray-400 dark:text-white/40')}>{diasNomes[day.getDay()]}</span>
+                            <span className={'text-sm font-extrabold flex items-center justify-center flex-shrink-0 ' + (isToday ? 'w-7 h-7 rounded-full bg-blue-600 text-white shadow-sm' : 'text-gray-800 dark:text-white/80')}>
+                              {day.getDate()}
+                            </span>
+                            {dayItems.length > 0 && (
+                              <span className={'ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full ' + (isToday ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 dark:bg-white/[0.08] text-gray-500 dark:text-white/50')}>
+                                {dayItems.length}
+                              </span>
+                            )}
+                          </div>
+                          <div className="p-2 space-y-2">
+                            <div className="overflow-y-auto space-y-2" style={{ maxHeight: 300 }}>
+                              {dayItems.map(d => {
+                                const atrasado = dayStr < todayStr && !['concluido','aprovado','publicado','cancelado'].includes(d.status)
+                                const stConf = atrasado
+                                  ? { label: 'Atrasado', cls: 'bg-red-100 text-red-700' }
+                                  : (dsStatusConf[d.status] || { label: d.status, cls: 'bg-gray-100 text-gray-500' })
+                                return (
+                                  <div
+                                    key={'briefing-'+d.id}
+                                    onClick={() => { setDetalhe({...d}); carregarArquivos(d.id); setEditMode(false); setEditForm({}) }}
+                                    className={'rounded-xl bg-white dark:bg-white/[0.06] border border-gray-100 dark:border-white/[0.08] cursor-pointer select-none transition-all duration-150 hover:shadow-md shadow-sm'}
+                                    style={{ borderLeft: '4px solid #8b5cf6' }}
+                                  >
+                                    <div className="px-3 py-2.5 space-y-2">
+                                      <div className="flex items-center justify-end gap-1">
+                                        <span className={'text-[10px] font-bold px-1.5 py-0.5 rounded-full ' + stConf.cls}>
+                                          {stConf.label}
+                                        </span>
+                                      </div>
+                                      <p className="text-sm font-semibold text-gray-900 dark:text-white/90 line-clamp-2 leading-snug">{d.titulo || 'Sem título'}</p>
+                                      <p className="text-xs font-medium truncate text-violet-600">{d.evento_nome}</p>
+                                      {(d.formato || d.tipo_conteudo) && (
+                                        <div className="flex gap-1 flex-wrap">
+                                          {d.formato && d.formato.split(',').filter(Boolean).map(f => (
+                                            <span key={f} className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md">{f.trim()}</span>
+                                          ))}
+                                          {d.tipo_conteudo && d.tipo_conteudo.split(',').filter(Boolean).slice(0,1).map(t => (
+                                            <span key={t} className="text-[10px] font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md">{t.trim()}</span>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })()}
 
             {/* ===== MATERIAIS TAB ===== */}
             {designerTab === 'materiais' && (
@@ -1388,52 +1342,53 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
           </div>
         </div>
 
-        {/* Calendario semanal (Designer/SocialMedia) */}
+        {/* Calendario mensal (SocialMedia) */}
         {view === 'calendario' && (() => {
-          const getWeekDays = (offset) => {
-            const now = new Date()
-            const day = now.getDay()
-            const mon = new Date(now)
-            mon.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + offset * 7)
-            const days = []
-            for (let i = 0; i < 7; i++) { const d = new Date(mon); d.setDate(mon.getDate() + i); days.push(d) }
-            return days
-          }
-          const weekOffset = calendarDate.__weekOffset || 0
-          const weekDays = getWeekDays(weekOffset)
-          const diasNomes = ['Seg','Ter','Qua','Qui','Sex','Sab','Dom']
+          const year = adminMonthDate.getFullYear()
+          const month = adminMonthDate.getMonth()
+          const daysInMonth = new Date(year, month + 1, 0).getDate()
+          const mesesNomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+          const diasNomes = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
           const todayStr = new Date().toISOString().split('T')[0]
+          const monthDays = Array.from({ length: daysInMonth }, (_, i) => new Date(year, month, i + 1))
+          const isCurrentMonth = year === new Date().getFullYear() && month === new Date().getMonth()
           const linkedPostIds2 = new Set(briefingsFiltrados.filter(b => b.cronograma_id).map(b => b.cronograma_id))
           const allItems = [
             ...briefingsFiltrados.map(b => ({...b, _tipo:'briefing', _data: b.data_vencimento})),
             ...postsFiltrados.filter(p => !linkedPostIds2.has(p.id)).map(p => ({...p, _tipo:'post', _data: p.data_publicacao}))
           ]
+          const smStatusConf = {
+            pendente:     { label: 'Pendente',    cls: 'bg-yellow-100 text-yellow-700' },
+            em_andamento: { label: 'Em Produção', cls: 'bg-blue-100 text-blue-700' },
+            em_revisao:   { label: 'Em Revisão',  cls: 'bg-violet-100 text-violet-700' },
+            aprovado:     { label: 'Aprovado',    cls: 'bg-green-100 text-green-700' },
+            publicado:    { label: 'Publicado',   cls: 'bg-emerald-100 text-emerald-700' },
+            concluido:    { label: 'Concluído',   cls: 'bg-green-100 text-green-700' },
+          }
           return (
             <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
               <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50">
-                <button onClick={() => setCalendarDate(Object.assign(new Date(), {__weekOffset: weekOffset - 1}))} className="p-1.5 hover:bg-gray-200 rounded-lg transition"><ChevronLeft size={16} className="text-gray-500" /></button>
+                <button onClick={() => setAdminMonthDate(new Date(year, month - 1, 1))} className="p-1.5 hover:bg-gray-200 rounded-lg transition"><ChevronLeft size={16} className="text-gray-500" /></button>
                 <div className="text-center">
-                  <h3 className="font-extrabold text-gray-900 text-sm">
-                    {weekDays[0].toLocaleDateString('pt-BR',{day:'numeric',month:'short'})} - {weekDays[6].toLocaleDateString('pt-BR',{day:'numeric',month:'short',year:'numeric'})}
-                  </h3>
-                  <span className="text-xs text-gray-400">{allItems.length} demandas</span>
+                  <h3 className="font-extrabold text-gray-900 text-sm">{mesesNomes[month]} {year}</h3>
+                  <span className="text-xs text-gray-400">{allItems.length} demandas · {daysInMonth} dias</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  {weekOffset !== 0 && <button onClick={() => setCalendarDate(Object.assign(new Date(), {__weekOffset: 0}))} className="px-2 py-1 text-xs font-bold text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition">Hoje</button>}
-                  <button onClick={() => setCalendarDate(Object.assign(new Date(), {__weekOffset: weekOffset + 1}))} className="p-1.5 hover:bg-gray-200 rounded-lg transition"><ChevronRight size={16} className="text-gray-500" /></button>
+                  {!isCurrentMonth && <button onClick={() => { const n = new Date(); setAdminMonthDate(new Date(n.getFullYear(), n.getMonth(), 1)) }} className="px-2 py-1 text-xs font-bold text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition">Hoje</button>}
+                  <button onClick={() => setAdminMonthDate(new Date(year, month + 1, 1))} className="p-1.5 hover:bg-gray-200 rounded-lg transition"><ChevronRight size={16} className="text-gray-500" /></button>
                 </div>
               </div>
-              <div className="grid grid-cols-7 divide-x divide-gray-100">
-                {weekDays.map((day, idx) => {
+              <div ref={calendarScrollRef} className="flex overflow-x-auto gap-4 p-4 bg-gray-50/60" style={{ scrollSnapType: 'x mandatory', scrollBehavior: 'smooth' }}>
+                {monthDays.map((day) => {
                   const dayStr = day.toISOString().split('T')[0]
                   const isToday = dayStr === todayStr
                   const dayItems = allItems.filter(d => d._data?.slice(0,10) === dayStr).sort((a, b) => (a.status === 'publicado' ? 1 : 0) - (b.status === 'publicado' ? 1 : 0))
-                  const smPlataformaColor = { 'Instagram': '#e1306c', 'Facebook': '#1877f2', 'TikTok': '#010101', 'YouTube': '#ff0000', 'Twitter': '#1da1f2', 'LinkedIn': '#0a66c2' }
-                  const smStatusAccent = { pendente: '#f59e0b', em_andamento: '#3b82f6', em_producao: '#3b82f6', em_revisao: '#8b5cf6', aprovado: '#10b981', publicado: '#10b981', concluido: '#10b981', cancelado: '#9ca3af' }
+                  const plataformaColor = { 'Instagram': '#e1306c', 'Facebook': '#1877f2', 'TikTok': '#010101', 'YouTube': '#ff0000', 'Twitter': '#1da1f2', 'LinkedIn': '#0a66c2' }
                   const isDragTarget = dragOverDay === dayStr && draggedItem
                   return (
                     <div
-                      key={idx}
+                      key={dayStr}
+                      data-day={dayStr}
                       onDragOver={e => { e.preventDefault(); setDragOverDay(dayStr) }}
                       onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverDay(null) }}
                       onDrop={e => {
@@ -1444,146 +1399,69 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                         setDraggedItem(null)
                         setDragOverDay(null)
                       }}
-                      className={'transition-colors duration-150 ' + (isToday ? 'bg-blue-50/30' : 'bg-white') + (isDragTarget ? ' bg-blue-50 ring-2 ring-inset ring-blue-400' : '')}
-                      style={{minHeight: 480}}
+                      className={'flex-shrink-0 rounded-2xl border shadow-sm overflow-hidden transition-colors duration-150 ' + (isToday ? 'bg-blue-50/40 border-blue-100' : 'bg-white border-gray-100') + (isDragTarget ? ' ring-2 ring-inset ring-blue-400' : '')}
+                      style={{ minWidth: 285, minHeight: 520, scrollSnapAlign: 'start' }}
                     >
-                      {/* Day header */}
-                      <div className={'py-3 border-b text-center ' + (isToday ? 'bg-blue-50 border-blue-200' : 'border-gray-100')}>
-                        <p className={'text-[11px] font-bold uppercase tracking-wide mb-1 ' + (isToday ? 'text-blue-500' : 'text-gray-400')}>{diasNomes[idx]}</p>
-                        <span className={'w-8 h-8 flex items-center justify-center rounded-full mx-auto text-sm font-bold ' + (isToday ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-700')}>
+                      <div className={'flex items-center gap-2 px-4 py-3 border-b ' + (isToday ? 'bg-blue-50 border-blue-200' : 'border-gray-100 bg-white')}>
+                        <span className={'text-[10px] font-extrabold uppercase tracking-widest ' + (isToday ? 'text-blue-500' : 'text-gray-400')}>{diasNomes[day.getDay()]}</span>
+                        <span className={'text-sm font-extrabold flex items-center justify-center flex-shrink-0 ' + (isToday ? 'w-7 h-7 rounded-full bg-blue-600 text-white shadow-sm' : 'text-gray-800')}>
                           {day.getDate()}
                         </span>
                         {dayItems.length > 0 && (
-                          <span className={'mt-1 inline-flex items-center justify-center text-[10px] font-bold px-1.5 py-0.5 rounded-full ' + (isToday ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500')}>
+                          <span className={'ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full ' + (isToday ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500')}>
                             {dayItems.length}
                           </span>
                         )}
                       </div>
-
                       <div className="p-2 space-y-2">
-                        {/* Add button */}
                         <div
                           onClick={() => { setNovoPostForm(f => ({...f, id_evento: data.eventos.length === 1 ? String(data.eventos[0].id) : '', data_publicacao: dayStr})); setShowNovoPost(true) }}
                           className="flex items-center justify-center py-1.5 rounded-lg border-2 border-dashed border-gray-200 text-gray-300 hover:border-blue-400 hover:text-blue-400 hover:bg-blue-50/50 transition cursor-pointer group"
                         >
                           <Plus size={13} className="group-hover:scale-110 transition-transform" />
                         </div>
-
-                        {dayItems.map(d => {
-                          const atrasado = dayStr < todayStr && !['concluido','aprovado','publicado','cancelado'].includes(d.status)
-                          const accentColor = atrasado ? '#ef4444' : (d._tipo === 'briefing' ? '#8b5cf6' : (smPlataformaColor[d.plataforma] || '#6b7280'))
-                          const isDraggingThis = draggedItem && draggedItem.id === d.id && draggedItem._tipo === d._tipo
-                          const arqs = cardArquivos[d._tipo + '-' + d.id] || []
-
-                          return (
-                            <div
-                              key={d._tipo+'-'+d.id}
-                              draggable
-                              onDragStart={e => { e.stopPropagation(); setDraggedItem({...d}) }}
-                              onDragEnd={() => { setDraggedItem(null); setDragOverDay(null) }}
-                              onClick={() => { setDetalhe({...d}); if(d._tipo === 'briefing') carregarArquivos(d.id); else setArquivos([]); setEditMode(false); setEditForm({}) }}
-                              className={'rounded-xl bg-white border border-gray-100 shadow-sm cursor-grab active:cursor-grabbing select-none transition-all duration-150 hover:shadow-md '
-                                + (isDraggingThis ? 'opacity-40 scale-95 ' : '')}
-                              style={{ borderLeft: `3px solid ${accentColor}` }}
-                            >
-                              <div className="p-2.5 space-y-2">
-                                {/* Type badge + status dot */}
-                                <div className="flex items-center justify-between gap-1">
-                                  <span className={'text-[10px] font-bold px-1.5 py-0.5 rounded-md ' + (d._tipo === 'briefing' ? 'bg-violet-100 text-violet-700' : 'bg-pink-100 text-pink-700')}>
-                                    {d._tipo === 'briefing' ? '✏️ Briefing' : (d.plataforma || 'Post')}
-                                  </span>
-                                  {atrasado
-                                    ? <span className="text-[9px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded-full">Atrasado</span>
-                                    : <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: smStatusAccent[d.status] || '#9ca3af' }} />
-                                  }
-                                </div>
-
-                                {/* Title */}
-                                <p className="text-xs font-semibold text-gray-900 line-clamp-2 leading-snug">{d.titulo || 'Sem título'}</p>
-
-                                {/* Event name */}
-                                <p className="text-[10px] font-medium truncate" style={{ color: accentColor }}>{d.evento_nome}</p>
-
-                                {/* Meta row */}
-                                <div className="flex items-center gap-1 flex-wrap">
-                                  {d._tipo === 'post' && d.hora_publicacao && (
-                                    <span className="flex items-center gap-0.5 text-[10px] text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded-md border border-gray-100">
-                                      <Clock size={8} /> {d.hora_publicacao.slice(0,5)}
+                        <div className="overflow-y-auto space-y-2" style={{ maxHeight: 300 }}>
+                          {dayItems.map(d => {
+                            const atrasado = dayStr < todayStr && !['concluido','aprovado','publicado','cancelado'].includes(d.status)
+                            const accentColor = atrasado ? '#ef4444' : (d._tipo === 'briefing' ? '#8b5cf6' : (plataformaColor[d.plataforma] || '#6b7280'))
+                            const isDraggingThis = draggedItem && draggedItem.id === d.id && draggedItem._tipo === d._tipo
+                            const stConf = atrasado
+                              ? { label: 'Atrasado', cls: 'bg-red-100 text-red-700' }
+                              : (smStatusConf[d.status] || { label: d.status, cls: 'bg-gray-100 text-gray-500' })
+                            return (
+                              <div
+                                key={d._tipo+'-'+d.id}
+                                draggable
+                                onDragStart={e => { e.stopPropagation(); setDraggedItem({...d}) }}
+                                onDragEnd={() => { setDraggedItem(null); setDragOverDay(null) }}
+                                onClick={() => { setDetalhe({...d}); if(d._tipo === 'briefing') carregarArquivos(d.id); else setArquivos([]); setEditMode(false); setEditForm({}) }}
+                                className={'rounded-xl bg-white border cursor-pointer select-none transition-all duration-150 hover:shadow-md border-gray-100 shadow-sm '
+                                  + (isDraggingThis ? 'opacity-40 scale-95 ' : '')}
+                                style={{ borderLeft: `4px solid ${accentColor}` }}
+                              >
+                                <div className="px-3 py-2.5 space-y-2">
+                                  <div className="flex items-center justify-end gap-1">
+                                    <span className={'text-[10px] font-bold px-1.5 py-0.5 rounded-full ' + stConf.cls}>
+                                      {stConf.label}
                                     </span>
-                                  )}
-                                  {d.formato && <span className="text-[9px] font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md">{d.formato}</span>}
-                                  {d.tipo_conteudo && <span className="text-[9px] font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md">{d.tipo_conteudo.split(',')[0]}</span>}
-                                </div>
-
-                                {/* Thumbnails */}
-                                {arqs.length > 0 && (
-                                  <div className="flex gap-1 flex-wrap" onClick={e => e.stopPropagation()}>
-                                    {arqs.slice(0,3).map(arq => (
-                                      arq.tipo?.startsWith('image') ? (
-                                        <img key={arq.id} src={'/api' + arq.url} onClick={() => setPreviewArquivo(arq)}
-                                          className="w-8 h-8 rounded-lg object-cover border border-gray-100 cursor-pointer hover:opacity-80 transition" />
-                                      ) : (
-                                        <div key={arq.id} onClick={() => setPreviewArquivo(arq)} className="w-8 h-8 rounded-lg bg-gray-100 border border-gray-100 flex items-center justify-center cursor-pointer hover:bg-gray-200 transition">
-                                          <FileText size={10} className="text-gray-400" />
-                                        </div>
-                                      )
-                                    ))}
-                                    {arqs.length > 3 && <span className="text-[9px] text-gray-400 self-end">+{arqs.length - 3}</span>}
                                   </div>
-                                )}
-
-                                {/* Etiquetas */}
-                                {getEtiquetas(d._tipo, d.id).length > 0 && (
-                                  <div className="flex gap-1 flex-wrap" onClick={e => e.stopPropagation()}>
-                                    {getEtiquetas(d._tipo, d.id).slice(0, 2).map(e => {
-                                      const cfg = ETIQUETAS_PADRAO.find(c => c.key === e)
-                                      return cfg
-                                        ? <span key={e} className="text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none" style={{ color: cfg.color, backgroundColor: cfg.bg }}>{cfg.emoji} {cfg.label}</span>
-                                        : <span key={e} className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 leading-none">🏷️ {e}</span>
-                                    })}
-                                    {getEtiquetas(d._tipo, d.id).length > 2 && <span className="text-[9px] text-gray-400 self-center">+{getEtiquetas(d._tipo, d.id).length - 2}</span>}
-                                  </div>
-                                )}
-
-                                {/* Actions */}
-                                <div className="flex items-center justify-between border-t border-gray-100 pt-1.5" onClick={e => e.stopPropagation()}>
-                                  <select value={d.status} onChange={e => atualizarStatus(d._tipo, d.id, e.target.value)}
-                                    className="text-[10px] bg-transparent border-0 text-gray-500 outline-none cursor-pointer flex-1 min-w-0">
-                                    <option value="pendente">Pendente</option>
-                                    <option value="em_andamento">Em Produção</option>
-                                    <option value="em_revisao">Em Revisão</option>
-                                    <option value="aprovado">Aprovado</option>
-                                    <option value="publicado">Publicado</option>
-                                  </select>
-                                  <label className="cursor-pointer flex-shrink-0 ml-1">
-                                    <input type="file" accept="image/*,video/*,.pdf" className="hidden"
-                                      onChange={e => { const file = e.target.files[0]; if(file) uploadCardArquivo(d._tipo, d.id, file); e.target.value='' }} />
-                                    <Paperclip size={11} className="text-gray-300 hover:text-blue-500 transition" />
-                                  </label>
-                                </div>
-
-                                {/* Instagram publish */}
-                                {d._tipo === 'post' && d.status !== 'publicado' && (
-                                  <div className="space-y-1.5" onClick={e => e.stopPropagation()}>
-                                    <div className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-gray-50 border border-gray-100">
-                                      <span className={'text-[10px] font-semibold ' + (d.auto_publish ? 'text-green-600' : 'text-gray-400')}>
-                                        {d.auto_publish ? `⏰ ${d.hora_publicacao ? d.hora_publicacao.slice(0,5) : 'Agendado'}` : 'Agendar'}
-                                      </span>
-                                      <button onClick={() => toggleAutoPublish(d.id, d.auto_publish)}
-                                        className={'relative w-8 h-4 rounded-full transition-colors ' + (d.auto_publish ? 'bg-green-500' : 'bg-gray-300')}>
-                                        <span className={'absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-transform ' + (d.auto_publish ? 'translate-x-4' : 'translate-x-0.5')} />
-                                      </button>
+                                  <p className="text-sm font-semibold text-gray-900 dark:text-white/90 line-clamp-2 leading-snug">{d.titulo || 'Sem título'}</p>
+                                  <p className="text-xs font-medium truncate" style={{ color: accentColor }}>{d.evento_nome}</p>
+                                  {(d.formato || d.tipo_conteudo) && (
+                                    <div className="flex gap-1 flex-wrap">
+                                      {d.formato && d.formato.split(',').filter(Boolean).map(f => (
+                                        <span key={f} className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md">{f.trim()}</span>
+                                      ))}
+                                      {d.tipo_conteudo && d.tipo_conteudo.split(',').filter(Boolean).slice(0,1).map(t => (
+                                        <span key={t} className="text-[10px] font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md">{t.trim()}</span>
+                                      ))}
                                     </div>
-                                    <button onClick={() => publicarInstagram(d.id)}
-                                      className="w-full flex items-center justify-center gap-1 py-1.5 rounded-lg bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 hover:opacity-90 transition text-white text-[10px] font-bold shadow-sm">
-                                      📸 Publicar no Instagram
-                                    </button>
-                                  </div>
-                                )}
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          )
-                        })}
+                            )
+                          })}
+                        </div>
                       </div>
                     </div>
                   )
@@ -1592,6 +1470,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
             </div>
           )
         })()}
+
 
         {/* Briefings list */}
         {view === 'briefings' && (
@@ -1665,8 +1544,8 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
       {/* ===== NOVO POST MODAL ===== */}
       {showNovoPost && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowNovoPost(false)}>
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-auto shadow-2xl" onClick={e => e.stopPropagation()}>
-            <div className="sticky top-0 bg-white border-b border-gray-100 p-4 flex items-center justify-between rounded-t-2xl z-10">
+          <div className="bg-white dark:bg-[#1c1c24] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-auto shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="sticky top-0 bg-white dark:bg-[#1c1c24] border-b border-gray-100 dark:border-white/[0.08] p-4 flex items-center justify-between rounded-t-2xl z-10">
               <div>
                 <h3 className="font-extrabold text-gray-900">Novo Post</h3>
                 <p className="text-xs text-gray-400">Criar novo post no cronograma</p>
@@ -1678,7 +1557,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
               <div>
                 <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Evento *</label>
                 <select value={novoPostForm.id_evento} onChange={e => setNovoPostForm({...novoPostForm, id_evento: e.target.value})}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
                   <option value="">Selecione um evento</option>
                   {data.eventos.map(ev => <option key={ev.id} value={ev.id}>{ev.nome}</option>)}
                 </select>
@@ -1692,9 +1571,9 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                 <button
                   type="button"
                   onClick={() => setNovoPostForm(f => ({...f, destino: f.destino === 'design' ? 'social' : 'design'}))}
-                  className={'relative w-12 h-6 rounded-full transition-colors flex-shrink-0 ' + (novoPostForm.destino === 'design' ? 'bg-blue-600' : 'bg-gray-300')}
+                  className={'relative w-11 h-6 rounded-full overflow-hidden transition-colors flex-shrink-0 ' + (novoPostForm.destino === 'design' ? 'bg-accent' : 'bg-gray-300')}
                 >
-                  <span className={'absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ' + (novoPostForm.destino === 'design' ? 'translate-x-6' : 'translate-x-0.5')} />
+                  <span className={'absolute left-0.5 top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ' + (novoPostForm.destino === 'design' ? 'translate-x-5' : 'translate-x-0')} />
                 </button>
               </div>
               {/* Titulo, Plataforma, Data, Hora */}
@@ -1702,24 +1581,24 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                 <div>
                   <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Titulo *</label>
                   <input placeholder="Titulo do post" value={novoPostForm.titulo} onChange={e => setNovoPostForm({...novoPostForm, titulo: e.target.value})}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                 </div>
                 <div>
                   <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Plataforma</label>
                   <select value={novoPostForm.plataforma} onChange={e => setNovoPostForm({...novoPostForm, plataforma: e.target.value})}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
                     {['Instagram','Facebook','TikTok','YouTube','Twitter','LinkedIn','WhatsApp'].map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Data Publicacao</label>
                   <input type="date" value={novoPostForm.data_publicacao} onChange={e => setNovoPostForm({...novoPostForm, data_publicacao: e.target.value})}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                 </div>
                 <div>
                   <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Hora</label>
                   <input type="time" value={novoPostForm.hora_publicacao} onChange={e => setNovoPostForm({...novoPostForm, hora_publicacao: e.target.value})}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                 </div>
               </div>
               {/* Tipo de Conteudo */}
@@ -1750,32 +1629,32 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
               <div>
                 <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Conteudo / Legenda</label>
                 <textarea placeholder="Conteudo ou legenda do post" value={novoPostForm.conteudo} onChange={e => setNovoPostForm({...novoPostForm, conteudo: e.target.value})}
-                  rows={2} className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  rows={2} className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
               </div>
               {/* Briefing / Descricao */}
               <div>
                 <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Briefing</label>
                 <textarea placeholder="Descreva o que o designer precisa criar..." value={novoPostForm.descricao} onChange={e => setNovoPostForm({...novoPostForm, descricao: e.target.value})}
-                  rows={2} className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  rows={2} className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
               </div>
               {/* Referencia e Musica */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Referencia</label>
                   <input placeholder="Link ou descricao" value={novoPostForm.referencia} onChange={e => setNovoPostForm({...novoPostForm, referencia: e.target.value})}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                 </div>
                 <div>
                   <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Musica</label>
                   <input placeholder="Nome ou link" value={novoPostForm.musica} onChange={e => setNovoPostForm({...novoPostForm, musica: e.target.value})}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                 </div>
               </div>
               {/* Collaborators */}
               <div>
                 <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Collaborators Instagram</label>
                 <input placeholder="@usuario1, @usuario2 (até 5 contas)" value={novoPostForm.collaborators} onChange={e => setNovoPostForm({...novoPostForm, collaborators: e.target.value})}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                 <p className="text-[10px] text-gray-400 mt-0.5">Convite de collab enviado ao publicar. Contas precisam ser públicas.</p>
               </div>
               {/* Arquivos */}
@@ -1814,7 +1693,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
               <div className="flex gap-3 pt-2">
                 <button onClick={() => setShowNovoPost(false)} className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-bold hover:bg-gray-200 transition">Cancelar</button>
                 <button onClick={criarNovoPost} disabled={criandoPost}
-                  className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center gap-2">
+                  className="flex-1 px-4 py-2.5 bg-accent text-white rounded-xl text-sm font-bold hover:bg-accent/90 transition disabled:opacity-50 flex items-center justify-center gap-2">
                   {criandoPost ? <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> Criando...</> : <><Plus size={16} /> Criar Post</>}
                 </button>
               </div>
@@ -1837,10 +1716,10 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
 
         return (
           <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setDetalhe(null)}>
-            <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-auto shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="bg-white dark:bg-[#1c1c24] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-auto shadow-2xl" onClick={e => e.stopPropagation()}>
 
               {/* Header */}
-              <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between rounded-t-2xl z-10">
+              <div className="sticky top-0 bg-white dark:bg-[#1c1c24] border-b border-gray-100 dark:border-white/[0.08] px-5 py-4 flex items-center justify-between rounded-t-2xl z-10">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className={'text-[11px] font-bold px-2.5 py-1 rounded-full border ' + (statusColors[d.status] || 'bg-gray-100 text-gray-600 border-gray-200')}>
@@ -1849,7 +1728,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                     <span className={'text-[11px] font-bold px-2.5 py-1 rounded-full ' + (d._tipo === 'briefing' ? 'bg-violet-100 text-violet-700' : 'bg-pink-100 text-pink-700')}>
                       {d._tipo === 'briefing' ? '✏️ Briefing' : '📲 Post'}
                     </span>
-                    {d.plataforma && d._tipo === 'post' && <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700">{d.plataforma}</span>}
+                    {d.plataforma && d._tipo === 'post' && <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-accent/10 text-accent">{d.plataforma}</span>}
                   </div>
                   <h3 className="font-extrabold text-gray-900 text-base mt-1.5 truncate">{d.titulo || 'Sem título'}</h3>
                   <p className="text-xs text-blue-500 font-medium">{d.evento_nome}</p>
@@ -1867,6 +1746,9 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                           hora_publicacao: d.hora_publicacao||'', collaborators: d.collaborators||'',
                           tipo_conteudo: d.tipo_conteudo||'', formato: d.formato||'',
                           plataforma: d.plataforma||'Instagram', status: d.status||'pendente',
+                          aparecer_designer: d._tipo === 'briefing'
+                            ? true
+                            : !!(data.briefings.find(b => b.cronograma_id === d.id)),
                         })
                       }
                     }}
@@ -1924,13 +1806,13 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                     <div>
                       <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Título</label>
                       <input value={editForm.titulo||''} onChange={e => setEditForm({...editForm, titulo: e.target.value})}
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                     </div>
 
                     <div>
                       <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Status</label>
                       <select value={editForm.status||''} onChange={e => setEditForm({...editForm, status: e.target.value})}
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
                         <option value="pendente">Pendente</option>
                         <option value="em_andamento">Em Produção</option>
                         <option value="em_revisao">Em Revisão</option>
@@ -1943,7 +1825,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                       <div>
                         <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Data de Vencimento</label>
                         <input type="date" value={editForm.data_vencimento?.slice(0,10)||''} onChange={e => setEditForm({...editForm, data_vencimento: e.target.value})}
-                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                       </div>
                     )}
 
@@ -1952,25 +1834,25 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                         <div>
                           <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Plataforma</label>
                           <select value={editForm.plataforma||'Instagram'} onChange={e => setEditForm({...editForm, plataforma: e.target.value})}
-                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
                             {['Instagram','Facebook','TikTok','YouTube','Twitter','LinkedIn','WhatsApp'].map(p => <option key={p}>{p}</option>)}
                           </select>
                         </div>
                         <div>
                           <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Data de Publicação</label>
                           <input type="date" value={editForm.data_publicacao?.slice(0,10)||''} onChange={e => setEditForm({...editForm, data_publicacao: e.target.value})}
-                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                         </div>
                         <div>
                           <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Hora</label>
                           <input type="time" value={editForm.hora_publicacao||''} onChange={e => setEditForm({...editForm, hora_publicacao: e.target.value})}
-                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                         </div>
                         <div>
                           <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Collaborators</label>
                           <input value={editForm.collaborators||''} onChange={e => setEditForm({...editForm, collaborators: e.target.value})}
                             placeholder="@usuario1, @usuario2"
-                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                         </div>
                       </div>
                     )}
@@ -2014,7 +1896,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                       </label>
                       <textarea value={editForm.descricao||''} onChange={e => setEditForm({...editForm, descricao: e.target.value})}
                         rows={3} placeholder="Descreva o que precisa ser criado..."
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                     </div>
 
                     {d._tipo === 'post' && (
@@ -2022,7 +1904,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                         <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Legenda / Conteúdo</label>
                         <textarea value={editForm.conteudo||''} onChange={e => setEditForm({...editForm, conteudo: e.target.value})}
                           rows={3} placeholder="Legenda do post..."
-                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                       </div>
                     )}
 
@@ -2031,15 +1913,32 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                         <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Referência</label>
                         <input value={editForm.referencia||''} onChange={e => setEditForm({...editForm, referencia: e.target.value})}
                           placeholder="Link ou descrição"
-                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                       </div>
                       <div>
                         <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Música</label>
                         <input value={editForm.musica||''} onChange={e => setEditForm({...editForm, musica: e.target.value})}
                           placeholder="Nome ou link"
-                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                       </div>
                     </div>
+
+                    {/* Toggle: Aparecer para o Designer (social_media + posts) */}
+                    {isSocialMedia && d._tipo === 'post' && (
+                      <div className="flex items-center justify-between p-3 rounded-xl border border-gray-200 bg-gray-50">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-800">🎨 Aparecer para o Designer?</p>
+                          <p className="text-[10px] text-gray-400 mt-0.5">O designer do evento também visualiza essa demanda</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setEditForm(f => ({...f, aparecer_designer: !f.aparecer_designer}))}
+                          className={'relative w-11 h-6 rounded-full overflow-hidden transition-colors flex-shrink-0 ' + (editForm.aparecer_designer ? 'bg-blue-600' : 'bg-gray-300')}
+                        >
+                          <span className={'absolute left-0.5 top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ' + (editForm.aparecer_designer ? 'translate-x-5' : 'translate-x-0')} />
+                        </button>
+                      </div>
+                    )}
 
                     <button onClick={salvarEdicao}
                       className="w-full px-4 py-2.5 bg-green-500 text-white rounded-xl text-sm font-bold hover:bg-green-600 transition">

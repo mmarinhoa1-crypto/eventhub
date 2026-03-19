@@ -1,6 +1,7 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useRef, useEffect } from 'react'
-import { Bell, Sun, Moon } from 'lucide-react'
+import { Sun, Moon, ChevronDown } from 'lucide-react'
+import NotificationPanel from './NotificationPanel'
 import { useAuth } from '../../hooks/useAuth'
 import { useTema } from '../../contexts/ThemeContext'
 
@@ -76,7 +77,7 @@ export default function Sidebar() {
     border: '1px solid var(--sidebar-submenu-border)',
   }
 
-  const linkBase = 'px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap'
+  const linkBase = 'px-2.5 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap'
   const linkActive = 'bg-black/8 text-gray-900 font-semibold dark:bg-white/20 dark:text-white'
   const linkInactive = 'text-gray-500 hover:text-gray-900 hover:bg-black/5 dark:text-white/60 dark:hover:text-white dark:hover:bg-white/10'
 
@@ -92,13 +93,13 @@ export default function Sidebar() {
   return (
     <nav
       ref={navRef}
-      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50"
-      style={{ maxWidth: 'calc(100vw - 2rem)' }}
+      className="fixed top-4 left-1/2 -translate-x-1/2 z-50"
+      style={{ maxWidth: 'calc(100vw - 0.5rem)' }}
     >
       {/* Submenus — sobem acima da barra */}
       {openMenu === 'marketing' && showMarketing && (
         <div
-          className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 rounded-2xl overflow-hidden shadow-2xl min-w-[180px]"
+          className="absolute top-full mt-3 left-1/2 -translate-x-1/2 rounded-2xl overflow-hidden shadow-2xl min-w-[180px]"
           style={submenuStyle}
         >
           <div className="px-2 py-2 space-y-0.5">
@@ -117,7 +118,7 @@ export default function Sidebar() {
 
       {openMenu === 'financeiro' && showFinanceiro && (
         <div
-          className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 rounded-2xl overflow-hidden shadow-2xl min-w-[180px]"
+          className="absolute top-full mt-3 left-1/2 -translate-x-1/2 rounded-2xl overflow-hidden shadow-2xl min-w-[180px]"
           style={submenuStyle}
         >
           <div className="px-2 py-2 space-y-0.5">
@@ -134,9 +135,13 @@ export default function Sidebar() {
 
       {/* Barra principal */}
       <div
-        className="flex items-center gap-1 px-3 py-2.5 rounded-2xl shadow-2xl"
+        className="flex items-center gap-0.5 px-2.5 py-2.5 rounded-2xl shadow-2xl"
         style={barStyle}
       >
+        {/* Logo 314 */}
+        <img src="/logo-rosa.png" alt="314 Produções" className="h-7 w-auto flex-shrink-0" />
+        <div className={`w-px h-5 mx-0.5 ${divider}`} />
+
         {/* Links de navegação */}
         {mainLinks
           .filter(l => l.roles.includes(funcao))
@@ -151,18 +156,20 @@ export default function Sidebar() {
         {showMarketing && (
           <button
             onClick={() => toggleMenu('marketing')}
-            className={`${linkBase} ${isMarketingActive || openMenu === 'marketing' ? linkActive : linkInactive}`}
+            className={`${linkBase} flex items-center gap-1 ${isMarketingActive || openMenu === 'marketing' ? linkActive : linkInactive}`}
           >
             Marketing
+            <ChevronDown size={12} className={'transition-transform duration-200 ' + (openMenu === 'marketing' ? 'rotate-180' : '')} />
           </button>
         )}
 
         {showFinanceiro && (
           <button
             onClick={() => toggleMenu('financeiro')}
-            className={`${linkBase} ${isFinanceiroActive || openMenu === 'financeiro' ? linkActive : linkInactive}`}
+            className={`${linkBase} flex items-center gap-1 ${isFinanceiroActive || openMenu === 'financeiro' ? linkActive : linkInactive}`}
           >
             Financeiro
+            <ChevronDown size={12} className={'transition-transform duration-200 ' + (openMenu === 'financeiro' ? 'rotate-180' : '')} />
           </button>
         )}
 
@@ -174,20 +181,17 @@ export default function Sidebar() {
           </NavLink>
         )}
 
-        <div className={`w-px h-5 mx-1 ${divider}`} />
+        <div className={`w-px h-5 mx-0.5 ${divider}`} />
 
         {/* Notificação */}
-        <button className={`${iconBtn} relative`} title="Notificações">
-          <Bell size={16} />
-          <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-accent rounded-full" />
-        </button>
+        <NotificationPanel />
 
         {/* Toggle tema */}
         <button onClick={alternarTema} className={iconBtn} title={isDark ? 'Modo claro' : 'Modo escuro'}>
           {isDark ? <Sun size={16} /> : <Moon size={16} />}
         </button>
 
-        <div className={`w-px h-5 mx-1 ${divider}`} />
+        <div className={`w-px h-5 mx-0.5 ${divider}`} />
 
         <span className="text-xs font-medium px-1 hidden sm:block text-gray-400 dark:text-white/40">
           {usuario?.nome?.split(' ')[0] || 'Usuário'}

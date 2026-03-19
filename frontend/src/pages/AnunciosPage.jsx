@@ -604,7 +604,7 @@ export default function AnunciosPage() {
               <option value="">Todas as campanhas</option>
               {campanhasUnicas.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
             </select>
-            <button onClick={analisarCriativos} disabled={loadingIA || criativosFiltrados.length === 0} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white text-xs font-semibold hover:from-blue-700 hover:to-blue-800 transition disabled:opacity-50 shadow-sm">
+            <button onClick={analisarCriativos} disabled={loadingIA || criativosFiltrados.length === 0} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent text-white text-xs font-semibold hover:bg-accent/90 transition disabled:opacity-50 shadow-sm">
               <Sparkles size={14} className={loadingIA ? 'animate-spin' : ''} />
               {loadingIA ? 'Analisando...' : 'Analise IA'}
             </button>

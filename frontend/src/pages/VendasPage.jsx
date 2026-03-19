@@ -104,7 +104,7 @@ export default function VendasPage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={() => { if(!eventoId)return; toast.loading('Sincronizando...'); api.post('/eventos/'+eventoId+'/baladapp/sync-vendas').then(r => { toast.dismiss(); toast.success('Sync: '+r.data.inseridos+' pedidos importados'); setTimeout(()=>window.location.reload(),1000) }).catch(e => { toast.dismiss(); toast.error(e.response?.data?.erro||'Erro no sync') }) }} className="px-3 py-1.5 bg-blue-500 text-white rounded-lg text-xs font-semibold hover:bg-blue-600 transition">Sync Vendas</button>
+          <button onClick={() => { if(!eventoId)return; toast.loading('Sincronizando...'); api.post('/eventos/'+eventoId+'/baladapp/sync-vendas').then(r => { toast.dismiss(); toast.success('Sync: '+r.data.inseridos+' pedidos importados'); setTimeout(()=>window.location.reload(),1000) }).catch(e => { toast.dismiss(); toast.error(e.response?.data?.erro||'Erro no sync') }) }} className="px-3 py-1.5 bg-accent text-white rounded-lg text-xs font-semibold hover:bg-accent/90 transition">Sync Vendas</button>
           {ultimaSync && (
             <span className="flex items-center gap-1.5 text-xs font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10 px-3 py-1.5 rounded-full border border-green-100 dark:border-green-500/20">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />

@@ -90,7 +90,7 @@ export default function DashboardFinanceiro({ eventoId }) {
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-gray-900">Dashboard Financeiro</h2>
         {data.baladapp_id && (
-          <button onClick={syncBaladapp} disabled={syncing} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl text-sm font-medium hover:from-blue-600 hover:to-violet-700 disabled:opacity-50 transition-all shadow-lg shadow-blue-200">
+          <button onClick={syncBaladapp} disabled={syncing} className="flex items-center gap-2 px-4 py-2 bg-accent text-white rounded-xl text-sm font-medium hover:bg-accent/90 disabled:opacity-50 transition-all shadow-lg shadow-accent/20">
             <RefreshCw size={14} className={syncing?'animate-spin':''}/> {syncing?'Sincronizando...':'Sync BaladaAPP'}
           </button>
         )}
