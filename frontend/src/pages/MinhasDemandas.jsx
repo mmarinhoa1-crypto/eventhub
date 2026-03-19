@@ -1139,10 +1139,14 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                   const isVideo = arq.tipo?.startsWith('video/') || /\.(mp4|mov|webm)$/i.test(arq.nome_original || arq.url || '')
                                   const fileUrl = arq.url?.startsWith('http') ? arq.url : '/api' + (arq.url?.startsWith('/') ? arq.url : '/uploads/' + (arq.nome_arquivo || arq.url))
                                   return (
-                                    <div key={arq.id} className="rounded-xl overflow-hidden border border-gray-200 bg-white hover:shadow-sm transition">
-                                      {isImg && <img src={fileUrl} alt={arq.nome_original} className="w-full object-cover cursor-pointer hover:opacity-80" style={{height:80}} onClick={() => { const o=document.createElement('div'); o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer'; o.onclick=()=>o.remove(); const im=document.createElement('img'); im.src=fileUrl; im.style.cssText='max-width:90vw;max-height:90vh;border-radius:12px;object-fit:contain'; o.appendChild(im); document.body.appendChild(o) }} />}
+                                    <div key={arq.id} className="group relative rounded-xl overflow-hidden border border-gray-200 dark:border-white/[0.10] bg-white dark:bg-white/[0.04] hover:shadow-sm transition">
+                                      {isImg && <img src={fileUrl} alt={arq.nome_original} className="w-full object-cover cursor-pointer hover:opacity-80" style={{height:80}} onClick={() => setPreviewArquivo(arq)} />}
                                       {isVideo && <video src={fileUrl} controls className="w-full" style={{height:80}} />}
-                                      {!isImg && !isVideo && <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 text-xs font-semibold text-gray-600 hover:text-blue-600">📎 {arq.nome_original || 'Arquivo'}</a>}
+                                      {!isImg && !isVideo && <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 text-xs font-semibold text-gray-600 dark:text-white/60 hover:text-blue-600">📎 {arq.nome_original || 'Arquivo'}</a>}
+                                      <a href={fileUrl} download={arq.nome_original || 'arquivo'} onClick={e => e.stopPropagation()}
+                                        className="absolute bottom-1 right-1 w-7 h-7 bg-blue-500 hover:bg-blue-600 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition z-10">
+                                        <Download size={13} className="text-white" />
+                                      </a>
                                     </div>
                                   )
                                 })}
@@ -2137,11 +2141,15 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                         const isImg = a.tipo?.startsWith('image') || /\.(jpg|jpeg|png|gif|webp)$/i.test(a.nome_original || '')
                         const fileUrl = '/api' + a.url
                         return (
-                          <div key={a.id} className="group relative rounded-xl overflow-hidden border border-gray-200 bg-gray-50 hover:shadow-sm transition">
+                          <div key={a.id} className="group relative rounded-xl overflow-hidden border border-gray-200 dark:border-white/[0.10] bg-gray-50 dark:bg-white/[0.04] hover:shadow-sm transition">
                             {isImg
                               ? <img src={fileUrl} alt={a.nome_original} className="w-full h-20 object-cover cursor-pointer hover:opacity-80" onClick={() => setPreviewArquivo(a)} />
                               : <a href={fileUrl} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center h-20 gap-1 text-gray-400 hover:text-blue-600"><FileText size={20} /><span className="text-[10px] font-medium px-2 truncate w-full text-center">{a.nome_original}</span></a>
                             }
+                            <a href={fileUrl} download={a.nome_original || 'arquivo'} onClick={e => e.stopPropagation()}
+                              className="absolute bottom-1 right-1 w-7 h-7 bg-blue-500 hover:bg-blue-600 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition z-10">
+                              <Download size={13} className="text-white" />
+                            </a>
                             <button onClick={e => { e.stopPropagation(); deletarArquivo(a.id, d.id) }}
                               className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-xs font-bold">✕</button>
                           </div>
