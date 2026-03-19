@@ -44,13 +44,22 @@ const formatoConfig = {
 }
 
 const ETIQUETAS_PADRAO = [
-  { key: 'urgente',   label: 'Urgente',    emoji: '🔴', color: '#dc2626', bg: '#fef2f2', border: '#fecaca',   darkColor: '#f87171', darkBg: 'rgba(220,38,38,0.18)',   darkBorder: 'rgba(220,38,38,0.35)' },
-  { key: 'pausa',     label: 'Pausa',      emoji: '⏸️', color: '#d97706', bg: '#fffbeb', border: '#fde68a',   darkColor: '#fbbf24', darkBg: 'rgba(217,119,6,0.18)',   darkBorder: 'rgba(217,119,6,0.35)' },
-  { key: 'em_foco',   label: 'Em Foco',    emoji: '🎯', color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe',   darkColor: '#a78bfa', darkBg: 'rgba(124,58,237,0.18)',  darkBorder: 'rgba(124,58,237,0.35)' },
-  { key: 'revisao',   label: 'Revisão',    emoji: '💬', color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe',   darkColor: '#60a5fa', darkBg: 'rgba(37,99,235,0.18)',   darkBorder: 'rgba(37,99,235,0.35)' },
-  { key: 'pronto',    label: 'Pronto',     emoji: '✅', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0',   darkColor: '#4ade80', darkBg: 'rgba(5,150,105,0.18)',   darkBorder: 'rgba(5,150,105,0.35)' },
-  { key: 'feedback',  label: 'Feedback',   emoji: '📋', color: '#ea580c', bg: '#fff7ed', border: '#fed7aa',   darkColor: '#fb923c', darkBg: 'rgba(234,88,12,0.18)',   darkBorder: 'rgba(234,88,12,0.35)' },
-  { key: 'aguardando',label: 'Aguardando', emoji: '⌛', color: '#6b7280', bg: '#f9fafb', border: '#e5e7eb',   darkColor: '#a1a1aa', darkBg: 'rgba(107,114,128,0.18)', darkBorder: 'rgba(107,114,128,0.30)' },
+  { key: 'urgente',   label: 'Urgente',    color: '#dc2626', bg: '#fef2f2', border: '#fecaca',   darkColor: '#f87171', darkBg: 'rgba(220,38,38,0.18)',   darkBorder: 'rgba(220,38,38,0.35)' },
+  { key: 'pausa',     label: 'Pausa',      color: '#d97706', bg: '#fffbeb', border: '#fde68a',   darkColor: '#fbbf24', darkBg: 'rgba(217,119,6,0.18)',   darkBorder: 'rgba(217,119,6,0.35)' },
+  { key: 'em_foco',   label: 'Em Foco',    color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe',   darkColor: '#a78bfa', darkBg: 'rgba(124,58,237,0.18)',  darkBorder: 'rgba(124,58,237,0.35)' },
+  { key: 'revisao',   label: 'Revisão',    color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe',   darkColor: '#60a5fa', darkBg: 'rgba(37,99,235,0.18)',   darkBorder: 'rgba(37,99,235,0.35)' },
+  { key: 'pronto',    label: 'Pronto',     color: '#059669', bg: '#ecfdf5', border: '#a7f3d0',   darkColor: '#4ade80', darkBg: 'rgba(5,150,105,0.18)',   darkBorder: 'rgba(5,150,105,0.35)' },
+  { key: 'feedback',  label: 'Feedback',   color: '#ea580c', bg: '#fff7ed', border: '#fed7aa',   darkColor: '#fb923c', darkBg: 'rgba(234,88,12,0.18)',   darkBorder: 'rgba(234,88,12,0.35)' },
+  { key: 'aguardando',label: 'Aguardando', color: '#6b7280', bg: '#f9fafb', border: '#e5e7eb',   darkColor: '#a1a1aa', darkBg: 'rgba(107,114,128,0.18)', darkBorder: 'rgba(107,114,128,0.30)' },
+]
+
+const TAGS_STATUS = [
+  { key: 'atrasado',      label: 'Atrasado',      color: '#BE0000' },
+  { key: 'pendente',      label: 'Pendente',      color: '#FFA447' },
+  { key: 'em_andamento',  label: 'Em Andamento',  color: '#FCB53B' },
+  { key: 'recebido',      label: 'Recebido',      color: '#5459AC' },
+  { key: 'aprovado',      label: 'Aprovado',      color: '#725CAD' },
+  { key: 'publicado',     label: 'Publicado',     color: '#6FAF4F' },
 ]
 
 export default function MinhasDemandas() {
@@ -97,6 +106,9 @@ export default function MinhasDemandas() {
   const [dragOverDay, setDragOverDay] = useState(null)
   const [etiquetasStore, setEtiquetasStore] = useState(() => {
     try { return JSON.parse(localStorage.getItem('eventhub_etiquetas') || '{}') } catch { return {} }
+  })
+  const [tagsStore, setTagsStore] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('eventhub_tags') || '{}') } catch { return {} }
   })
   const [novoPostForm, setNovoPostForm] = useState({ titulo: '', plataforma: 'Instagram', data_publicacao: '', hora_publicacao: '', conteudo: '', tipo_conteudo: '', formato: '', descricao: '', referencia: '', musica: '', destino: 'social', status: 'pendente', collaborators: '', id_evento: '' })
   const [novoPostArquivos, setNovoPostArquivos] = useState([])
@@ -325,6 +337,18 @@ export default function MinhasDemandas() {
 
   function removeEtiqueta(tipo, id, etiqueta) {
     saveEtiquetas(tipo, id, getEtiquetas(tipo, id).filter(e => e !== etiqueta))
+  }
+
+  function getTag(tipo, id) {
+    return tagsStore[(tipo || 'item') + '-' + id] || null
+  }
+
+  function setTagStatus(tipo, id, tagKey) {
+    const key = (tipo || 'item') + '-' + id
+    const current = tagsStore[key]
+    const novo = { ...tagsStore, [key]: current === tagKey ? null : tagKey }
+    setTagsStore(novo)
+    try { localStorage.setItem('eventhub_tags', JSON.stringify(novo)) } catch {}
   }
 
   async function criarNovoPost() {
@@ -626,7 +650,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                             setDragOverDay(null)
                           }}
                           className={'flex-shrink-0 flex flex-col rounded-2xl border shadow-sm overflow-hidden transition-colors duration-150 ' + (isToday ? 'bg-blue-50/40 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/30' : 'bg-white dark:bg-white/[0.04] border-gray-100 dark:border-white/[0.08]') + (isDragTarget ? ' ring-2 ring-inset ring-blue-400' : '')}
-                          style={{ minWidth: 285, minHeight: 520, scrollSnapAlign: 'start' }}
+                          style={{ minWidth: 285, height: 520, scrollSnapAlign: 'start' }}
                         >
                           {/* Day header */}
                           <div className={'flex items-center gap-2 px-4 py-3 border-b ' + (isToday ? 'bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30' : 'border-gray-100 dark:border-white/[0.08] bg-white dark:bg-white/[0.03]')}>
@@ -641,7 +665,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                             )}
                           </div>
 
-                          <div className="p-2 space-y-2 flex-1 flex flex-col">
+                          <div className="p-2 space-y-2 flex-1 flex flex-col min-h-0">
                             {/* Add button */}
                             <div
                               onClick={() => { setNovoPostForm(f => ({...f, id_evento: data.eventos.length === 1 ? String(data.eventos[0].id) : '', data_publicacao: dayStr})); setShowNovoPost(true) }}
@@ -650,7 +674,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                               <Plus size={13} className="group-hover:scale-110 transition-transform" />
                             </div>
 
-                            <div className="overflow-y-auto space-y-2 flex-1">
+                            <div className="overflow-y-auto space-y-2 flex-1 min-h-0">
                             {dayItems.map(d => {
                               const atrasado = dayStr < todayStr && !['concluido','aprovado','publicado','cancelado'].includes(d.status)
                               const accentColor = atrasado ? '#ef4444' : (d._tipo === 'briefing' ? '#8b5cf6' : (plataformaColor[d.plataforma] || '#6b7280'))
@@ -665,9 +689,12 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                 publicado:    { label: 'Publicado',   cls: 'bg-emerald-100 text-emerald-700' },
                                 concluido:    { label: 'Concluído',   cls: 'bg-green-100 text-green-700' },
                               }
+                              const cardTag = getTag(d._tipo, d.id)
+                              const tagConf = cardTag ? TAGS_STATUS.find(t => t.key === cardTag) : null
                               const stConf = atrasado
                                 ? { label: 'Atrasado', cls: 'bg-red-100 text-red-700' }
                                 : (statusConf[d.status] || { label: d.status, cls: 'bg-gray-100 text-gray-500' })
+                              const borderColor = tagConf ? tagConf.color : accentColor
 
                               return (
                                 <div
@@ -679,7 +706,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                   className={'rounded-xl bg-white dark:bg-white/[0.06] border cursor-pointer select-none transition-all duration-150 hover:shadow-md '
                                     + (isDraggingThis ? 'opacity-40 scale-95 ' : '')
                                     + (isSelected ? 'ring-2 ring-blue-500 shadow-md border-blue-200 ' : 'border-gray-100 dark:border-white/[0.08] shadow-sm ')}
-                                  style={{ borderLeft: `4px solid ${accentColor}` }}
+                                  style={{ borderLeft: `4px solid ${borderColor}` }}
                                 >
                                   <div className="px-3 py-2.5 space-y-2">
                                     {/* Etiquetas + Status */}
@@ -688,13 +715,14 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                         {getEtiquetas(d._tipo, d.id).map(etKey => {
                                           const et = ETIQUETAS_PADRAO.find(e => e.key === etKey)
                                           return et
-                                            ? <span key={etKey} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: isDark ? et.darkBg : et.bg, color: isDark ? et.darkColor : et.color }}>{et.emoji} {et.label}</span>
+                                            ? <span key={etKey} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: isDark ? et.darkBg : et.bg, color: isDark ? et.darkColor : et.color }}>{et.label}</span>
                                             : <span key={etKey} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-white/[0.08] text-gray-500 dark:text-white/50">🏷️ {etKey}</span>
                                         })}
                                       </div>
-                                      <span className={'text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ' + stConf.cls}>
-                                        {stConf.label}
-                                      </span>
+                                      {tagConf
+                                        ? <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: tagConf.color + '20', color: tagConf.color }}>{tagConf.label}</span>
+                                        : <span className={'text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ' + stConf.cls}>{stConf.label}</span>
+                                      }
                                     </div>
 
                                     {/* Título */}
@@ -814,7 +842,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                     style={ativa
                                       ? { backgroundColor: isDark ? et.darkBg : et.bg, color: isDark ? et.darkColor : et.color, borderColor: isDark ? et.darkBorder : et.border }
                                       : { backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
-                                    <span>{et.emoji}</span> {et.label}
+                                    {et.label}
                                   </button>
                                 )
                               })}
@@ -838,6 +866,25 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                 </div>
                               )
                             })()}
+                          </div>
+
+                          {/* Tags de Status */}
+                          <div className="space-y-2">
+                            <p className="text-[11px] font-bold text-gray-400 dark:text-white/40 uppercase tracking-wide">Tags</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {TAGS_STATUS.map(tag => {
+                                const ativa = getTag(d._tipo, d.id) === tag.key
+                                return (
+                                  <button key={tag.key} onClick={() => setTagStatus(d._tipo, d.id, tag.key)}
+                                    className="text-xs font-semibold px-2.5 py-1 rounded-full border-2 transition-all"
+                                    style={ativa
+                                      ? { backgroundColor: tag.color + '20', color: tag.color, borderColor: tag.color }
+                                      : { backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
+                                    {tag.label}
+                                  </button>
+                                )
+                              })}
+                            </div>
                           </div>
 
                           {adminEditMode ? (
@@ -1148,7 +1195,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                           key={dayStr}
                           data-day={dayStr}
                           className={'flex-shrink-0 flex flex-col rounded-2xl border shadow-sm overflow-hidden transition-colors duration-150 ' + (isToday ? 'bg-blue-50/40 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/30' : 'bg-white dark:bg-white/[0.04] border-gray-100 dark:border-white/[0.08]')}
-                          style={{ minWidth: 285, minHeight: 520, scrollSnapAlign: 'start' }}
+                          style={{ minWidth: 285, height: 520, scrollSnapAlign: 'start' }}
                         >
                           <div className={'flex items-center gap-2 px-4 py-3 border-b ' + (isToday ? 'bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30' : 'border-gray-100 dark:border-white/[0.08] bg-white dark:bg-white/[0.03]')}>
                             <span className={'text-[10px] font-extrabold uppercase tracking-widest ' + (isToday ? 'text-blue-500' : 'text-gray-400 dark:text-white/40')}>{diasNomes[day.getDay()]}</span>
@@ -1161,19 +1208,22 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                               </span>
                             )}
                           </div>
-                          <div className="p-2 space-y-2 flex-1 flex flex-col">
-                            <div className="overflow-y-auto space-y-2 flex-1">
+                          <div className="p-2 space-y-2 flex-1 flex flex-col min-h-0">
+                            <div className="overflow-y-auto space-y-2 flex-1 min-h-0">
                               {dayItems.map(d => {
                                 const atrasado = dayStr < todayStr && !['concluido','aprovado','publicado','cancelado'].includes(d.status)
+                                const cardTag = getTag(d._tipo, d.id)
+                                const tagConf = cardTag ? TAGS_STATUS.find(t => t.key === cardTag) : null
                                 const stConf = atrasado
                                   ? { label: 'Atrasado', cls: 'bg-red-100 text-red-700' }
                                   : (dsStatusConf[d.status] || { label: d.status, cls: 'bg-gray-100 text-gray-500' })
+                                const borderColor = tagConf ? tagConf.color : '#8b5cf6'
                                 return (
                                   <div
                                     key={'briefing-'+d.id}
                                     onClick={() => { setDetalhe({...d}); carregarArquivos(d.id); setEditMode(false); setEditForm({}) }}
                                     className={'rounded-xl bg-white dark:bg-white/[0.06] border border-gray-100 dark:border-white/[0.08] cursor-pointer select-none transition-all duration-150 hover:shadow-md shadow-sm'}
-                                    style={{ borderLeft: '4px solid #8b5cf6' }}
+                                    style={{ borderLeft: `4px solid ${borderColor}` }}
                                   >
                                     <div className="px-3 py-2.5 space-y-2">
                                       <div className="flex items-start justify-between gap-1">
@@ -1181,13 +1231,14 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                           {getEtiquetas(d._tipo, d.id).map(etKey => {
                                             const et = ETIQUETAS_PADRAO.find(e => e.key === etKey)
                                             return et
-                                              ? <span key={etKey} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: isDark ? et.darkBg : et.bg, color: isDark ? et.darkColor : et.color }}>{et.emoji} {et.label}</span>
+                                              ? <span key={etKey} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: isDark ? et.darkBg : et.bg, color: isDark ? et.darkColor : et.color }}>{et.label}</span>
                                               : <span key={etKey} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-white/[0.08] text-gray-500 dark:text-white/50">🏷️ {etKey}</span>
                                           })}
                                         </div>
-                                        <span className={'text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ' + stConf.cls}>
-                                          {stConf.label}
-                                        </span>
+                                        {tagConf
+                                          ? <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: tagConf.color + '20', color: tagConf.color }}>{tagConf.label}</span>
+                                          : <span className={'text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ' + stConf.cls}>{stConf.label}</span>
+                                        }
                                       </div>
                                       <p className="text-sm font-semibold text-gray-900 dark:text-white/90 line-clamp-2 leading-snug">{d.titulo || 'Sem título'}</p>
                                       <p className="text-xs font-medium truncate text-violet-600">{d.evento_nome}</p>
@@ -1416,7 +1467,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                         setDragOverDay(null)
                       }}
                       className={'flex-shrink-0 flex flex-col rounded-2xl border shadow-sm overflow-hidden transition-colors duration-150 ' + (isToday ? 'bg-blue-50/40 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/30' : 'bg-white dark:bg-white/[0.04] border-gray-100 dark:border-white/[0.08]') + (isDragTarget ? ' ring-2 ring-inset ring-blue-400' : '')}
-                      style={{ minWidth: 285, minHeight: 520, scrollSnapAlign: 'start' }}
+                      style={{ minWidth: 285, height: 520, scrollSnapAlign: 'start' }}
                     >
                       <div className={'flex items-center gap-2 px-4 py-3 border-b ' + (isToday ? 'bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30' : 'border-gray-100 dark:border-white/[0.08] bg-white dark:bg-white/[0.03]')}>
                         <span className={'text-[10px] font-extrabold uppercase tracking-widest ' + (isToday ? 'text-blue-500' : 'text-gray-400 dark:text-white/40')}>{diasNomes[day.getDay()]}</span>
@@ -1429,21 +1480,24 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                           </span>
                         )}
                       </div>
-                      <div className="p-2 space-y-2 flex-1 flex flex-col">
+                      <div className="p-2 space-y-2 flex-1 flex flex-col min-h-0">
                         <div
                           onClick={() => { setNovoPostForm(f => ({...f, id_evento: data.eventos.length === 1 ? String(data.eventos[0].id) : '', data_publicacao: dayStr})); setShowNovoPost(true) }}
                           className="flex items-center justify-center py-1.5 rounded-lg border-2 border-dashed border-gray-200 dark:border-white/[0.10] text-gray-300 dark:text-white/20 hover:border-blue-400 hover:text-blue-400 hover:bg-blue-50/50 transition cursor-pointer group"
                         >
                           <Plus size={13} className="group-hover:scale-110 transition-transform" />
                         </div>
-                        <div className="overflow-y-auto space-y-2 flex-1">
+                        <div className="overflow-y-auto space-y-2 flex-1 min-h-0">
                           {dayItems.map(d => {
                             const atrasado = dayStr < todayStr && !['concluido','aprovado','publicado','cancelado'].includes(d.status)
                             const accentColor = atrasado ? '#ef4444' : (d._tipo === 'briefing' ? '#8b5cf6' : (plataformaColor[d.plataforma] || '#6b7280'))
                             const isDraggingThis = draggedItem && draggedItem.id === d.id && draggedItem._tipo === d._tipo
+                            const cardTag = getTag(d._tipo, d.id)
+                            const tagConf = cardTag ? TAGS_STATUS.find(t => t.key === cardTag) : null
                             const stConf = atrasado
                               ? { label: 'Atrasado', cls: 'bg-red-100 text-red-700' }
                               : (smStatusConf[d.status] || { label: d.status, cls: 'bg-gray-100 text-gray-500' })
+                            const borderColor = tagConf ? tagConf.color : accentColor
                             return (
                               <div
                                 key={d._tipo+'-'+d.id}
@@ -1453,7 +1507,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                 onClick={() => { setDetalhe({...d}); if(d._tipo === 'briefing') carregarArquivos(d.id); else setArquivos([]); setEditMode(false); setEditForm({}) }}
                                 className={'rounded-xl bg-white dark:bg-white/[0.06] border cursor-pointer select-none transition-all duration-150 hover:shadow-md border-gray-100 dark:border-white/[0.08] shadow-sm '
                                   + (isDraggingThis ? 'opacity-40 scale-95 ' : '')}
-                                style={{ borderLeft: `4px solid ${accentColor}` }}
+                                style={{ borderLeft: `4px solid ${borderColor}` }}
                               >
                                 <div className="px-3 py-2.5 space-y-2">
                                   <div className="flex items-start justify-between gap-1">
@@ -1461,13 +1515,14 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                       {getEtiquetas(d._tipo, d.id).map(etKey => {
                                         const et = ETIQUETAS_PADRAO.find(e => e.key === etKey)
                                         return et
-                                          ? <span key={etKey} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: isDark ? et.darkBg : et.bg, color: isDark ? et.darkColor : et.color }}>{et.emoji} {et.label}</span>
+                                          ? <span key={etKey} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: isDark ? et.darkBg : et.bg, color: isDark ? et.darkColor : et.color }}>{et.label}</span>
                                           : <span key={etKey} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-white/[0.08] text-gray-500 dark:text-white/50">🏷️ {etKey}</span>
                                       })}
                                     </div>
-                                    <span className={'text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ' + stConf.cls}>
-                                      {stConf.label}
-                                    </span>
+                                    {tagConf
+                                      ? <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: tagConf.color + '20', color: tagConf.color }}>{tagConf.label}</span>
+                                      : <span className={'text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ' + stConf.cls}>{stConf.label}</span>
+                                    }
                                   </div>
                                   <p className="text-sm font-semibold text-gray-900 dark:text-white/90 line-clamp-2 leading-snug">{d.titulo || 'Sem título'}</p>
                                   <p className="text-xs font-medium truncate" style={{ color: accentColor }}>{d.evento_nome}</p>
@@ -1798,7 +1853,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                           style={ativa
                             ? { backgroundColor: isDark ? et.darkBg : et.bg, color: isDark ? et.darkColor : et.color, borderColor: isDark ? et.darkBorder : et.border }
                             : { backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
-                          {et.emoji} {et.label}
+                          {et.label}
                         </button>
                       )
                     })}
@@ -1821,6 +1876,25 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                       </div>
                     )
                   })()}
+                </div>
+
+                {/* Tags de Status */}
+                <div className="space-y-2">
+                  <p className="text-[11px] font-bold text-gray-400 dark:text-white/40 uppercase tracking-wide">Tags</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {TAGS_STATUS.map(tag => {
+                      const ativa = getTag(d._tipo, d.id) === tag.key
+                      return (
+                        <button key={tag.key} onClick={() => setTagStatus(d._tipo, d.id, tag.key)}
+                          className="text-xs font-semibold px-2.5 py-1 rounded-full border-2 transition-all"
+                          style={ativa
+                            ? { backgroundColor: tag.color + '20', color: tag.color, borderColor: tag.color }
+                            : { backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
+                          {tag.label}
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
 
                 {editMode ? (
