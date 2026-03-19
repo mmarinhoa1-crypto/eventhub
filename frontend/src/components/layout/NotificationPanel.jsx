@@ -21,7 +21,7 @@ const TIPO_CONFIG = {
 }
 
 // Swipeable notification item
-function NotificationItem({ notif, onDismiss, onRead }) {
+function NotificationItem({ notif, onDismiss, onRead, onClose }) {
   const [startX, setStartX] = useState(null)
   const [offsetX, setOffsetX] = useState(0)
   const [swiping, setSwiping] = useState(false)
@@ -61,7 +61,7 @@ function NotificationItem({ notif, onDismiss, onRead }) {
     if (Math.abs(offsetX) > 5) return
     e.stopPropagation()
     onRead(notif.id)
-    if (notif.link) navigate(notif.link)
+    if (notif.link) { onClose(); navigate(notif.link) }
   }
 
   const opacity = dismissed ? 0 : Math.max(0, 1 - Math.abs(offsetX) / 150)
@@ -232,13 +232,13 @@ export default function NotificationPanel() {
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-2 pb-1 pt-1">Novas</p>
                 )}
                 {notifs.filter(n => !n.lida).map(n => (
-                  <NotificationItem key={n.id} notif={n} onDismiss={remover} onRead={marcarLida} />
+                  <NotificationItem key={n.id} notif={n} onDismiss={remover} onRead={marcarLida} onClose={() => setOpen(false)} />
                 ))}
                 {notifs.filter(n => n.lida).length > 0 && (
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-2 pb-1 pt-2">Anteriores</p>
                 )}
                 {notifs.filter(n => n.lida).map(n => (
-                  <NotificationItem key={n.id} notif={n} onDismiss={remover} onRead={marcarLida} />
+                  <NotificationItem key={n.id} notif={n} onDismiss={remover} onRead={marcarLida} onClose={() => setOpen(false)} />
                 ))}
               </>
             )}

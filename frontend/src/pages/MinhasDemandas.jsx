@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
-import { Calendar, Clock, CheckCircle, AlertCircle, FileText, Palette, Megaphone, ArrowRight, X as XIcon, Paperclip, ChevronLeft, ChevronRight, Plus, FolderOpen } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { Calendar, Clock, CheckCircle, AlertCircle, FileText, Palette, Megaphone, ArrowRight, X as XIcon, Paperclip, ChevronLeft, ChevronRight, Plus, FolderOpen, Download } from 'lucide-react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import api from '../api/client'
 import toast from 'react-hot-toast'
 import { useAuth } from '../hooks/useAuth'
@@ -117,6 +117,7 @@ export default function MinhasDemandas() {
   const [materiaisArquivos, setMateriaisArquivos] = useState({})
   const [loadingMateriais, setLoadingMateriais] = useState(false)
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const categoriasMateriaisOptions = ['Presskit', 'Vídeos YouTube', 'Logo Realização', 'Fotos e Vídeos Artistas', 'Artes Referência', 'Logo Patrocinadores', 'Outros']
 
   useEffect(() => {
@@ -152,6 +153,34 @@ export default function MinhasDemandas() {
       calendarScrollRef.current.scrollLeft = 0
     }
   }, [adminMonthDate, loading, view])
+
+  // Abrir demanda específica via query params (ex: /demandas?tipo=briefing&id=123)
+  useEffect(() => {
+    if (loading) return
+    const tipo = searchParams.get('tipo')
+    const id = searchParams.get('id')
+    if (!tipo || !id) return
+    const numId = Number(id)
+    let item = null
+    if (tipo === 'briefing') {
+      const b = data.briefings.find(x => x.id === numId)
+      if (b) item = { ...b, _tipo: 'briefing', _data: b.data_vencimento }
+    } else if (tipo === 'post') {
+      const p = data.posts.find(x => x.id === numId)
+      if (p) item = { ...p, _tipo: 'post', _data: p.data_publicacao }
+    }
+    if (item) {
+      if (isGestor) {
+        setAdminDetalhe(item)
+        carregarAdminArqs(item)
+      } else {
+        setDetalhe(item)
+        if (item._tipo === 'briefing') carregarArquivos(item.id)
+        else setArquivos([])
+      }
+      setSearchParams({}, { replace: true })
+    }
+  }, [loading, data.briefings.length, data.posts.length])
 
   async function carregarArquivos(briefingId) {
     try {
@@ -1012,8 +1041,8 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                 <div>
                                   <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Adicionar Arquivo</label>
                                   <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-gray-300 text-xs text-gray-400 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50/50 transition cursor-pointer">
-                                    <input type="file" accept="image/*,video/*,.pdf" className="hidden"
-                                      onChange={e => { const file = e.target.files[0]; if(file) { const tipo = d._tipo; const id = d.id; const endpoint = tipo === 'briefing' ? '/briefings/' + id + '/arquivos' : '/cronograma/' + id + '/arquivos'; const fd = new FormData(); fd.append('arquivo', file); api.post(endpoint, fd, {timeout:600000}).then(() => { toast.success('Arquivo enviado!'); carregarAdminArqs(d) }).catch(() => toast.error('Erro ao enviar')); } e.target.value='' }} />
+                                    <input type="file" accept="image/*,video/*,.pdf" multiple className="hidden"
+                                      onChange={e => { Array.from(e.target.files).forEach(file => { const tipo = d._tipo; const id = d.id; const endpoint = tipo === 'briefing' ? '/briefings/' + id + '/arquivos' : '/cronograma/' + id + '/arquivos'; const fd = new FormData(); fd.append('arquivo', file); api.post(endpoint, fd, {timeout:600000}).then(() => { toast.success('Arquivo enviado!'); carregarAdminArqs(d) }).catch(() => toast.error('Erro ao enviar')) }); e.target.value='' }} />
                                     <Paperclip size={13} /> Clique para anexar
                                   </label>
                                 </div>
@@ -2098,8 +2127,8 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Arquivos ({arquivos.length})</p>
                     <label className={'px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition ' + (uploading ? 'bg-gray-100 text-gray-400' : 'bg-blue-50 text-blue-600 hover:bg-blue-100')}>
                       {uploading ? 'Enviando...' : '+ Enviar'}
-                      <input type="file" className="hidden" disabled={uploading} accept="image/*,video/*,.pdf,.psd,.ai,.zip"
-                        onChange={e => { if(e.target.files[0]) uploadArquivo(d.id, e.target.files[0]); e.target.value='' }} />
+                      <input type="file" className="hidden" disabled={uploading} accept="image/*,video/*,.pdf,.psd,.ai,.zip" multiple
+                        onChange={e => { Array.from(e.target.files).forEach(file => uploadArquivo(d.id, file)); e.target.value='' }} />
                     </label>
                   </div>
                   {arquivos.length > 0 && (
@@ -2148,6 +2177,10 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
       {previewArquivo && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setPreviewArquivo(null)}>
           <div className="relative max-w-4xl max-h-[90vh]" onClick={e => e.stopPropagation()}>
+            <a href={'/api' + previewArquivo.url} download={previewArquivo.nome_original || previewArquivo.nome || 'arquivo'}
+              className="absolute -top-3 -left-3 w-8 h-8 bg-blue-500 hover:bg-blue-600 rounded-full shadow-lg flex items-center justify-center transition z-10">
+              <Download size={16} className="text-white" />
+            </a>
             <button onClick={() => setPreviewArquivo(null)} className="absolute -top-3 -right-3 w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-100 transition z-10">
               <XIcon size={16} className="text-gray-600" />
             </button>
@@ -2156,10 +2189,11 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
             ) : previewArquivo.tipo && previewArquivo.tipo.startsWith('video') ? (
               <video src={'/api' + previewArquivo.url} controls autoPlay className="max-w-full max-h-[85vh] rounded-lg shadow-2xl" />
             ) : (
-              <div className="bg-white rounded-lg p-8 text-center shadow-2xl">
+              <div className="bg-white dark:bg-[#1c1c24] rounded-lg p-8 text-center shadow-2xl">
                 <FileText size={48} className="text-gray-400 mx-auto mb-3" />
-                <p className="text-sm text-gray-600 mb-3">{previewArquivo.nome || 'Arquivo'}</p>
-                <a href={'/api' + previewArquivo.url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-500 hover:underline font-medium">Abrir arquivo</a>
+                <p className="text-sm text-gray-600 dark:text-white/60 mb-3">{previewArquivo.nome_original || previewArquivo.nome || 'Arquivo'}</p>
+                <a href={'/api' + previewArquivo.url} download={previewArquivo.nome_original || previewArquivo.nome || 'arquivo'}
+                  className="text-sm text-blue-500 hover:underline font-medium">Baixar arquivo</a>
               </div>
             )}
           </div>
