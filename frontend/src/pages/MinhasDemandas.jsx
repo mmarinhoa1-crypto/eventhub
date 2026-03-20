@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Calendar, Clock, CheckCircle, AlertCircle, FileText, Palette, Megaphone, ArrowRight, X as XIcon, Paperclip, ChevronLeft, ChevronRight, Plus, FolderOpen, Download } from 'lucide-react'
+import { Calendar, Clock, CheckCircle, AlertCircle, FileText, Palette, Megaphone, ArrowRight, X as XIcon, Paperclip, ChevronLeft, ChevronRight, Plus, FolderOpen, Download, Search } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import api from '../api/client'
 import toast from 'react-hot-toast'
@@ -56,9 +56,9 @@ const ETIQUETAS_PADRAO = [
 const TAGS_STATUS = [
   { key: 'atrasado',      label: 'Atrasado',      color: '#BE0000' },
   { key: 'pendente',      label: 'Pendente',      color: '#FFA447' },
-  { key: 'em_andamento',  label: 'Em Andamento',  color: '#FCB53B' },
+  { key: 'em_andamento',  label: 'Em Andamento',  color: '#FFDE42' },
   { key: 'recebido',      label: 'Recebido',      color: '#5459AC' },
-  { key: 'aprovado',      label: 'Aprovado',      color: '#725CAD' },
+  { key: 'aprovado',      label: 'Aprovado',      color: '#e49bcb' },
   { key: 'publicado',     label: 'Publicado',     color: '#6FAF4F' },
 ]
 
@@ -94,6 +94,7 @@ export default function MinhasDemandas() {
   const [filtroStatusAdmin, setFiltroStatusAdmin] = useState('todos')
   const [evDropOpen, setEvDropOpen] = useState(false)
   const [evSearch, setEvSearch] = useState('')
+  const [filtroBusca, setFiltroBusca] = useState('')
   const [view, setView] = useState('calendario')
   const [detalhe, setDetalhe] = useState(null)
   const [arquivos, setArquivos] = useState([])
@@ -561,6 +562,7 @@ export default function MinhasDemandas() {
         else if (filtroStatusAdmin === 'producao') filteredItems = filteredItems.filter(d => ['em_producao','em_revisao'].includes(d.status))
         else if (filtroStatusAdmin === 'atrasado') filteredItems = filteredItems.filter(d => { const dt = d._data?.slice(0,10); return dt && dt < hoje && !['concluido','aprovado','publicado','cancelado'].includes(d.status) })
         else if (filtroStatusAdmin === 'entregue') filteredItems = filteredItems.filter(d => ['aprovado','publicado','concluido'].includes(d.status))
+        if (filtroBusca.trim()) { const q = filtroBusca.toLowerCase(); filteredItems = filteredItems.filter(d => (d.titulo||'').toLowerCase().includes(q) || (d.evento_nome||'').toLowerCase().includes(q)) }
 
         const stConfig = {
           pendente: {bg:'bg-yellow-50',text:'text-yellow-700',border:'border-yellow-200',dot:'bg-yellow-500',label:'Pendente'},
@@ -610,6 +612,20 @@ export default function MinhasDemandas() {
                   <button key={f.id} onClick={() => setFiltroStatusAdmin(f.id)} className={'px-3 py-1.5 rounded-md text-xs font-bold transition-all ' + (filtroStatusAdmin === f.id ? (f.id === 'atrasado' ? 'bg-red-500 text-white' : 'bg-accent text-white') : (f.id === 'atrasado' ? 'text-red-500' : 'text-gray-500 hover:text-gray-700'))}>{f.l}</button>
                 ))}
               </div>
+            </div>
+
+            {/* Busca */}
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/40" />
+              <input
+                value={filtroBusca}
+                onChange={e => setFiltroBusca(e.target.value)}
+                placeholder="Buscar demanda por título..."
+                className="w-full pl-9 pr-8 py-2 rounded-lg border border-gray-200 dark:border-white/[0.10] bg-white dark:bg-white/[0.06] text-sm text-gray-700 dark:text-white/80 placeholder-gray-400 dark:placeholder-white/30 outline-none focus:ring-2 focus:ring-accent/40 transition"
+              />
+              {filtroBusca && (
+                <button onClick={() => setFiltroBusca('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70 text-sm font-bold">&times;</button>
+              )}
             </div>
 
             {/* Cards equipe */}
@@ -1193,6 +1209,20 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
               </button>
             </div>
 
+            {/* Busca (Designer) */}
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/40" />
+              <input
+                value={filtroBusca}
+                onChange={e => setFiltroBusca(e.target.value)}
+                placeholder="Buscar demanda por título..."
+                className="w-full pl-9 pr-8 py-2 rounded-lg border border-gray-200 dark:border-white/[0.10] bg-white dark:bg-white/[0.06] text-sm text-gray-700 dark:text-white/80 placeholder-gray-400 dark:placeholder-white/30 outline-none focus:ring-2 focus:ring-accent/40 transition"
+              />
+              {filtroBusca && (
+                <button onClick={() => setFiltroBusca('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70 text-sm font-bold">&times;</button>
+              )}
+            </div>
+
             {designerTab === 'briefings' && (() => {
               const year = adminMonthDate.getFullYear()
               const month = adminMonthDate.getMonth()
@@ -1202,7 +1232,8 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
               const todayStr = new Date().toISOString().split('T')[0]
               const monthDays = Array.from({ length: daysInMonth }, (_, i) => new Date(year, month, i + 1))
               const isCurrentMonth = year === new Date().getFullYear() && month === new Date().getMonth()
-              const allItems = bList.map(b => ({...b, _tipo:'briefing', _data: b.data_vencimento}))
+              let allItems = bList.map(b => ({...b, _tipo:'briefing', _data: b.data_vencimento}))
+              if (filtroBusca.trim()) { const q = filtroBusca.toLowerCase(); allItems = allItems.filter(d => (d.titulo||'').toLowerCase().includes(q) || (d.evento_nome||'').toLowerCase().includes(q)) }
               const dsStatusConf = {
                 pendente:     { label: 'Pendente',    cls: 'bg-yellow-100 text-yellow-700' },
                 em_andamento: { label: 'Em Produção', cls: 'bg-blue-100 text-blue-700' },
@@ -1430,6 +1461,18 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
               <option value="todos">Todos os eventos</option>
               {data.eventos.map(ev => <option key={ev.id} value={ev.id}>{ev.nome}</option>)}
             </select>
+            <div className="relative">
+              <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/40" />
+              <input
+                value={filtroBusca}
+                onChange={e => setFiltroBusca(e.target.value)}
+                placeholder="Buscar demanda..."
+                className="pl-8 pr-7 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.10] bg-white dark:bg-white/[0.06] text-xs font-semibold text-gray-600 dark:text-white/70 placeholder-gray-400 dark:placeholder-white/30 outline-none focus:ring-2 focus:ring-accent/40 transition w-48"
+              />
+              {filtroBusca && (
+                <button onClick={() => setFiltroBusca('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70 text-xs font-bold">&times;</button>
+              )}
+            </div>
             <div className="flex gap-1 flex-wrap">
               {[{key:'todas',label:'Todas'},{key:'pendentes',label:'Pendentes'},{key:'atrasadas',label:'Atrasados'},{key:'aprovados',label:'Aprovados'}].map(f => (
                 <button key={f.key} onClick={() => { setFiltro(f.key); setCalendarFilter(f.key === 'todas' ? 'todos' : f.key === 'pendentes' ? 'pendente' : f.key === 'atrasadas' ? 'atrasado' : f.key === 'aprovados' ? 'aprovado' : f.key) }} className={'px-3 py-1.5 rounded-lg text-xs font-semibold transition ' + (filtro === f.key ? 'bg-blue-500 text-white shadow-sm' : 'bg-gray-100 dark:bg-white/[0.06] text-gray-500 dark:text-white/50 hover:bg-gray-200 dark:hover:bg-white/[0.10]')}>
@@ -1462,10 +1505,11 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
           const monthDays = Array.from({ length: daysInMonth }, (_, i) => new Date(year, month, i + 1))
           const isCurrentMonth = year === new Date().getFullYear() && month === new Date().getMonth()
           const linkedPostIds2 = new Set(briefingsFiltrados.filter(b => b.cronograma_id).map(b => b.cronograma_id))
-          const allItems = [
+          let allItems = [
             ...briefingsFiltrados.map(b => ({...b, _tipo:'briefing', _data: b.data_vencimento})),
             ...postsFiltrados.filter(p => !linkedPostIds2.has(p.id)).map(p => ({...p, _tipo:'post', _data: p.data_publicacao}))
           ]
+          if (filtroBusca.trim()) { const q = filtroBusca.toLowerCase(); allItems = allItems.filter(d => (d.titulo||'').toLowerCase().includes(q) || (d.evento_nome||'').toLowerCase().includes(q)) }
           const smStatusConf = {
             pendente:     { label: 'Pendente',    cls: 'bg-yellow-100 text-yellow-700' },
             em_andamento: { label: 'Em Produção', cls: 'bg-blue-100 text-blue-700' },
