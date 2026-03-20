@@ -771,6 +771,11 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                         ))}
                                       </div>
                                     )}
+                                    {/* Uploads */}
+                                    <div className="flex items-center gap-1 text-[10px] text-gray-400 dark:text-white/40">
+                                      <Paperclip size={10} />
+                                      <span className="font-semibold">Uploads: {(cardArquivos[d._tipo + '-' + d.id] || []).length}</span>
+                                    </div>
                                   </div>
                                 </div>
                               )
@@ -1285,6 +1290,11 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                           ))}
                                         </div>
                                       )}
+                                      {/* Uploads */}
+                                      <div className="flex items-center gap-1 text-[10px] text-gray-400 dark:text-white/40">
+                                        <Paperclip size={10} />
+                                        <span className="font-semibold">Uploads: {(cardArquivos[d._tipo + '-' + d.id] || []).length}</span>
+                                      </div>
                                     </div>
                                   </div>
                                 )
@@ -1569,6 +1579,11 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                       ))}
                                     </div>
                                   )}
+                                  {/* Uploads */}
+                                  <div className="flex items-center gap-1 text-[10px] text-gray-400 dark:text-white/40">
+                                    <Paperclip size={10} />
+                                    <span className="font-semibold">Uploads: {(cardArquivos[d._tipo + '-' + d.id] || []).length}</span>
+                                  </div>
                                 </div>
                               </div>
                             )
@@ -2161,17 +2176,6 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
 
                 {/* Footer actions */}
                 <div className="border-t border-gray-100 pt-4 space-y-3">
-                  <div>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-2">Atualizar Status</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {[{key:'pendente',label:'Pendente'},{key:'em_andamento',label:'Em Produção'},{key:'em_revisao',label:'Em Revisão'},{key:'aprovado',label:'Aprovado'},{key:'publicado',label:'Publicado'}].map(s => (
-                        <button key={s.key} onClick={() => { atualizarStatus(d._tipo, d.id, s.key); setDetalhe({...d, status: s.key}) }}
-                          className={'px-3 py-1.5 rounded-lg text-xs font-bold transition ' + (d.status === s.key ? 'bg-blue-500 text-white shadow-sm' : 'bg-gray-100 dark:bg-white/[0.08] text-gray-600 dark:text-white/60 hover:bg-gray-200 dark:hover:bg-white/[0.12]')}>
-                          {s.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
                   <button onClick={() => { setDetalhe(null); navigate('/marketing?evento=' + d.id_evento) }}
                     className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition">
                     Abrir no Marketing
