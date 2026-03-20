@@ -139,7 +139,7 @@ await pool.query('DELETE FROM analises_marketing WHERE id_evento=$1 AND org_id=$
 await pool.query('DELETE FROM despesas WHERE id_evento=$1 AND org_id=$2',[id,org]);
 await pool.query('DELETE FROM fornecedores WHERE id_evento=$1 AND org_id=$2',[id,org]);
 await pool.query('DELETE FROM receitas WHERE id_evento=$1 AND org_id=$2',[id,org]);
-await pool.query('DELETE FROM contas_pagar WHERE id_evento=$1 AND org_id=$2',[id,org]);
+try { await pool.query('DELETE FROM contas_pagar WHERE id_evento=$1 AND org_id=$2',[id,org]); } catch(e) { /* tabela pode não existir */ }
 await pool.query('DELETE FROM itens_pedido WHERE pedido_id IN (SELECT id FROM pedidos_bebidas WHERE id_evento=$1 AND org_id=$2)',[id,org]);
 await pool.query('DELETE FROM pedidos_bebidas WHERE id_evento=$1 AND org_id=$2',[id,org]);
 await pool.query('DELETE FROM consumo_eventos WHERE id_evento=$1 AND org_id=$2',[id,org]);

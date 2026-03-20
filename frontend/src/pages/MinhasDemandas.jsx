@@ -688,7 +688,7 @@ export default function MinhasDemandas() {
                     {monthDays.map((day) => {
                       const dayStr = day.toISOString().split('T')[0]
                       const isToday = dayStr === todayStr
-                      const dayItems = filteredItems.filter(d => d._data?.slice(0,10) === dayStr).sort((a, b) => (a.status === 'publicado' ? 1 : 0) - (b.status === 'publicado' ? 1 : 0))
+                      const dayItems = filteredItems.filter(d => d._data?.slice(0,10) === dayStr).sort((a, b) => { const pa = (getTag(a._tipo, a.id) || a.status) === 'publicado' ? 1 : 0; const pb = (getTag(b._tipo, b.id) || b.status) === 'publicado' ? 1 : 0; return pa - pb })
                       const plataformaColor = { 'Instagram': '#e1306c', 'Facebook': '#1877f2', 'TikTok': '#010101', 'YouTube': '#ff0000', 'Twitter': '#1da1f2', 'LinkedIn': '#0a66c2' }
 const isDragTarget = dragOverDay === dayStr && draggedItem
                       return (
@@ -1259,7 +1259,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                     {monthDays.map((day) => {
                       const dayStr = day.toISOString().split('T')[0]
                       const isToday = dayStr === todayStr
-                      const dayItems = allItems.filter(d => d._data?.slice(0,10) === dayStr).sort((a, b) => (a.status === 'publicado' ? 1 : 0) - (b.status === 'publicado' ? 1 : 0))
+                      const dayItems = allItems.filter(d => d._data?.slice(0,10) === dayStr).sort((a, b) => { const pa = (getTag(a._tipo, a.id) || a.status) === 'publicado' ? 1 : 0; const pb = (getTag(b._tipo, b.id) || b.status) === 'publicado' ? 1 : 0; return pa - pb })
                       return (
                         <div
                           key={dayStr}
@@ -1481,17 +1481,6 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
               ))}
             </div>
           </div>
-          <div className="flex gap-1 bg-gray-100 dark:bg-white/[0.06] rounded-lg p-0.5">
-            <button onClick={() => setView('calendario')} className={'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition ' + (view === 'calendario' ? 'bg-white dark:bg-white/[0.10] text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-white/50 hover:text-gray-700 dark:hover:text-white/70')}>
-              <Calendar size={13} /> Calendario
-            </button>
-            <button onClick={() => setView('briefings')} className={'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition ' + (view === 'briefings' ? 'bg-white dark:bg-white/[0.10] text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-white/50 hover:text-gray-700 dark:hover:text-white/70')}>
-              <Palette size={13} /> Briefings
-            </button>
-            <button onClick={() => setView('posts')} className={'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition ' + (view === 'posts' ? 'bg-white dark:bg-white/[0.10] text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-white/50 hover:text-gray-700 dark:hover:text-white/70')}>
-              <Megaphone size={13} /> Posts
-            </button>
-          </div>
         </div>
 
         {/* Calendario mensal (SocialMedia) */}
@@ -1535,7 +1524,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                 {monthDays.map((day) => {
                   const dayStr = day.toISOString().split('T')[0]
                   const isToday = dayStr === todayStr
-                  const dayItems = allItems.filter(d => d._data?.slice(0,10) === dayStr).sort((a, b) => (a.status === 'publicado' ? 1 : 0) - (b.status === 'publicado' ? 1 : 0))
+                  const dayItems = allItems.filter(d => d._data?.slice(0,10) === dayStr).sort((a, b) => { const pa = (getTag(a._tipo, a.id) || a.status) === 'publicado' ? 1 : 0; const pb = (getTag(b._tipo, b.id) || b.status) === 'publicado' ? 1 : 0; return pa - pb })
                   const plataformaColor = { 'Instagram': '#e1306c', 'Facebook': '#1877f2', 'TikTok': '#010101', 'YouTube': '#ff0000', 'Twitter': '#1da1f2', 'LinkedIn': '#0a66c2' }
                   const isDragTarget = dragOverDay === dayStr && draggedItem
                   return (
