@@ -62,6 +62,17 @@ const TAGS_STATUS = [
   { key: 'publicado',     label: 'Publicado',     color: '#6FAF4F' },
 ]
 
+// Mapeamento automático: status da API → tag key
+const STATUS_TO_TAG = {
+  pendente: 'pendente',
+  em_andamento: 'em_andamento',
+  em_producao: 'em_andamento',
+  em_revisao: 'recebido',
+  aprovado: 'aprovado',
+  publicado: 'publicado',
+  concluido: 'publicado',
+}
+
 export default function MinhasDemandas() {
   const { usuario } = useAuth()
   const { tema } = useTema()
@@ -710,19 +721,10 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                               const isDraggingThis = draggedItem && draggedItem.id === d.id && draggedItem._tipo === d._tipo
                               const isSelected = adminDetalhe && adminDetalhe.id === d.id && adminDetalhe._tipo === d._tipo
 
-                              const statusConf = {
-                                pendente:     { label: 'Pendente',    cls: 'bg-yellow-100 text-yellow-700' },
-                                em_andamento: { label: 'Em Produção', cls: 'bg-blue-100 text-blue-700' },
-                                em_revisao:   { label: 'Em Revisão',  cls: 'bg-violet-100 text-violet-700' },
-                                aprovado:     { label: 'Aprovado',    cls: 'bg-green-100 text-green-700' },
-                                publicado:    { label: 'Publicado',   cls: 'bg-emerald-100 text-emerald-700' },
-                                concluido:    { label: 'Concluído',   cls: 'bg-green-100 text-green-700' },
-                              }
                               const cardTag = getTag(d._tipo, d.id)
-                              const tagConf = cardTag ? TAGS_STATUS.find(t => t.key === cardTag) : null
-                              const stConf = atrasado
-                                ? { label: 'Atrasado', cls: 'bg-red-100 text-red-700' }
-                                : (statusConf[d.status] || { label: d.status, cls: 'bg-gray-100 text-gray-500' })
+                              const autoTagKey = atrasado ? 'atrasado' : (STATUS_TO_TAG[d.status] || null)
+                              const activeTagKey = cardTag || autoTagKey
+                              const tagConf = activeTagKey ? TAGS_STATUS.find(t => t.key === activeTagKey) : null
                               const borderColor = tagConf ? tagConf.color : accentColor
 
                               return (
@@ -748,17 +750,16 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                             : <span key={etKey} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-white/[0.08] text-gray-500 dark:text-white/50">🏷️ {etKey}</span>
                                         })}
                                       </div>
-                                      {tagConf
-                                        ? <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: tagConf.color + '20', color: tagConf.color }}>{tagConf.label}</span>
-                                        : <span className={'text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ' + stConf.cls}>{stConf.label}</span>
-                                      }
+                                      {tagConf && (
+                                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: tagConf.color + '20', color: tagConf.color }}>{tagConf.label}</span>
+                                      )}
                                     </div>
 
                                     {/* Título */}
                                     <p className="text-sm font-semibold text-gray-900 dark:text-white/90 line-clamp-2 leading-snug">{d.titulo || 'Sem título'}</p>
 
                                     {/* Nome do evento */}
-                                    <p className="text-xs font-medium truncate" style={{ color: accentColor }}>{d.evento_nome}</p>
+                                    <p className="text-xs font-medium truncate" style={{ color: borderColor }}>{d.evento_nome}</p>
 
                                     {/* Formatos / Tipo de conteúdo */}
                                     {(d.formato || d.tipo_conteudo) && (
@@ -1251,10 +1252,9 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                               {dayItems.map(d => {
                                 const atrasado = dayStr < todayStr && !['concluido','aprovado','publicado','cancelado'].includes(d.status)
                                 const cardTag = getTag(d._tipo, d.id)
-                                const tagConf = cardTag ? TAGS_STATUS.find(t => t.key === cardTag) : null
-                                const stConf = atrasado
-                                  ? { label: 'Atrasado', cls: 'bg-red-100 text-red-700' }
-                                  : (dsStatusConf[d.status] || { label: d.status, cls: 'bg-gray-100 text-gray-500' })
+                                const autoTagKey = atrasado ? 'atrasado' : (STATUS_TO_TAG[d.status] || null)
+                                const activeTagKey = cardTag || autoTagKey
+                                const tagConf = activeTagKey ? TAGS_STATUS.find(t => t.key === activeTagKey) : null
                                 const borderColor = tagConf ? tagConf.color : '#8b5cf6'
                                 return (
                                   <div
@@ -1273,13 +1273,12 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                               : <span key={etKey} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-white/[0.08] text-gray-500 dark:text-white/50">🏷️ {etKey}</span>
                                           })}
                                         </div>
-                                        {tagConf
-                                          ? <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: tagConf.color + '20', color: tagConf.color }}>{tagConf.label}</span>
-                                          : <span className={'text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ' + stConf.cls}>{stConf.label}</span>
-                                        }
+                                        {tagConf && (
+                                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: tagConf.color + '20', color: tagConf.color }}>{tagConf.label}</span>
+                                        )}
                                       </div>
                                       <p className="text-sm font-semibold text-gray-900 dark:text-white/90 line-clamp-2 leading-snug">{d.titulo || 'Sem título'}</p>
-                                      <p className="text-xs font-medium truncate text-violet-600">{d.evento_nome}</p>
+                                      <p className="text-xs font-medium truncate" style={{ color: borderColor }}>{d.evento_nome}</p>
                                       {(d.formato || d.tipo_conteudo) && (
                                         <div className="flex gap-1 flex-wrap">
                                           {d.formato && d.formato.split(',').filter(Boolean).map(f => (
@@ -1536,10 +1535,9 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                             const accentColor = atrasado ? '#ef4444' : (d._tipo === 'briefing' ? '#8b5cf6' : (plataformaColor[d.plataforma] || '#6b7280'))
                             const isDraggingThis = draggedItem && draggedItem.id === d.id && draggedItem._tipo === d._tipo
                             const cardTag = getTag(d._tipo, d.id)
-                            const tagConf = cardTag ? TAGS_STATUS.find(t => t.key === cardTag) : null
-                            const stConf = atrasado
-                              ? { label: 'Atrasado', cls: 'bg-red-100 text-red-700' }
-                              : (smStatusConf[d.status] || { label: d.status, cls: 'bg-gray-100 text-gray-500' })
+                            const autoTagKey = atrasado ? 'atrasado' : (STATUS_TO_TAG[d.status] || null)
+                            const activeTagKey = cardTag || autoTagKey
+                            const tagConf = activeTagKey ? TAGS_STATUS.find(t => t.key === activeTagKey) : null
                             const borderColor = tagConf ? tagConf.color : accentColor
                             return (
                               <div
@@ -1562,13 +1560,12 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                           : <span key={etKey} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-white/[0.08] text-gray-500 dark:text-white/50">🏷️ {etKey}</span>
                                       })}
                                     </div>
-                                    {tagConf
-                                      ? <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: tagConf.color + '20', color: tagConf.color }}>{tagConf.label}</span>
-                                      : <span className={'text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ' + stConf.cls}>{stConf.label}</span>
-                                    }
+                                    {tagConf && (
+                                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: tagConf.color + '20', color: tagConf.color }}>{tagConf.label}</span>
+                                    )}
                                   </div>
                                   <p className="text-sm font-semibold text-gray-900 dark:text-white/90 line-clamp-2 leading-snug">{d.titulo || 'Sem título'}</p>
-                                  <p className="text-xs font-medium truncate" style={{ color: accentColor }}>{d.evento_nome}</p>
+                                  <p className="text-xs font-medium truncate" style={{ color: borderColor }}>{d.evento_nome}</p>
                                   {(d.formato || d.tipo_conteudo) && (
                                     <div className="flex gap-1 flex-wrap">
                                       {d.formato && d.formato.split(',').filter(Boolean).map(f => (
