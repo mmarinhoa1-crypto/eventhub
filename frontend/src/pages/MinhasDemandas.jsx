@@ -589,10 +589,13 @@ export default function MinhasDemandas() {
         if (filtroMembro !== 'todos') filteredItems = filteredItems.filter(d => { const r = getResponsavel(d); return r && r.id === Number(filtroMembro) })
         else if (filtroFuncao !== 'todos') filteredItems = filteredItems.filter(d => { const r = getResponsavel(d); return r && r.funcao === filtroFuncao })
         if (filtroEvento !== 'todos') filteredItems = filteredItems.filter(d => d.id_evento === Number(filtroEvento))
-        if (filtroStatusAdmin === 'pendente') filteredItems = filteredItems.filter(d => ['pendente','em_andamento'].includes(d.status))
-        else if (filtroStatusAdmin === 'producao') filteredItems = filteredItems.filter(d => ['em_producao','em_revisao'].includes(d.status))
-        else if (filtroStatusAdmin === 'atrasado') filteredItems = filteredItems.filter(d => { const dt = d._data?.slice(0,10); return dt && dt < hoje && !['concluido','aprovado','publicado','cancelado'].includes(d.status) })
-        else if (filtroStatusAdmin === 'entregue') filteredItems = filteredItems.filter(d => ['aprovado','publicado','concluido'].includes(d.status))
+        if (filtroStatusAdmin !== 'todos') {
+          filteredItems = filteredItems.filter(d => {
+            const tag = getTag(d._tipo, d.id)
+            const autoTag = (d._data?.slice(0,10) < hoje && !['concluido','aprovado','publicado','cancelado'].includes(d.status)) ? 'atrasado' : (STATUS_TO_TAG[d.status] || null)
+            return (tag || autoTag) === filtroStatusAdmin
+          })
+        }
         if (filtroBusca.trim()) { const q = filtroBusca.toLowerCase(); filteredItems = filteredItems.filter(d => (d.titulo||'').toLowerCase().includes(q) || (d.evento_nome||'').toLowerCase().includes(q)) }
 
         const stConfig = {
@@ -638,9 +641,14 @@ export default function MinhasDemandas() {
                   </div>
                 )}
               </div>
-              <div className="flex gap-1 bg-white rounded-lg p-0.5 border border-gray-200">
-                {[{id:'todos',l:'Todos'},{id:'pendente',l:'Pendentes'},{id:'producao',l:'Producao'},{id:'atrasado',l:'Atrasados'},{id:'entregue',l:'Entregues'}].map(f => (
-                  <button key={f.id} onClick={() => setFiltroStatusAdmin(f.id)} className={'px-3 py-1.5 rounded-md text-xs font-bold transition-all ' + (filtroStatusAdmin === f.id ? (f.id === 'atrasado' ? 'bg-red-500 text-white' : 'bg-accent text-white') : (f.id === 'atrasado' ? 'text-red-500' : 'text-gray-500 hover:text-gray-700'))}>{f.l}</button>
+              <div className="flex gap-1 flex-wrap">
+                <button onClick={() => setFiltroStatusAdmin('todos')} className={'px-3 py-1.5 rounded-md text-xs font-bold transition-all ' + (filtroStatusAdmin === 'todos' ? 'bg-accent text-white' : 'text-gray-500 hover:text-gray-700')}>Todos</button>
+                {TAGS_STATUS.map(tag => (
+                  <button key={tag.key} onClick={() => setFiltroStatusAdmin(tag.key)}
+                    className="px-3 py-1.5 rounded-md text-xs font-bold transition-all"
+                    style={filtroStatusAdmin === tag.key ? { backgroundColor: tag.color, color: '#fff' } : { color: 'var(--text-muted)' }}>
+                    {tag.label}
+                  </button>
                 ))}
               </div>
             </div>
@@ -1512,9 +1520,12 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
               )}
             </div>
             <div className="flex gap-1 flex-wrap">
-              {[{key:'todas',label:'Todas'},{key:'pendentes',label:'Pendentes'},{key:'atrasadas',label:'Atrasados'},{key:'aprovados',label:'Aprovados'}].map(f => (
-                <button key={f.key} onClick={() => { setFiltro(f.key); setCalendarFilter(f.key === 'todas' ? 'todos' : f.key === 'pendentes' ? 'pendente' : f.key === 'atrasadas' ? 'atrasado' : f.key === 'aprovados' ? 'aprovado' : f.key) }} className={'px-3 py-1.5 rounded-lg text-xs font-semibold transition ' + (filtro === f.key ? 'bg-blue-500 text-white shadow-sm' : 'bg-gray-100 dark:bg-white/[0.06] text-gray-500 dark:text-white/50 hover:bg-gray-200 dark:hover:bg-white/[0.10]')}>
-                  {f.label}
+              <button onClick={() => setFiltro('todas')} className={'px-3 py-1.5 rounded-lg text-xs font-semibold transition ' + (filtro === 'todas' ? 'bg-blue-500 text-white shadow-sm' : 'bg-gray-100 dark:bg-white/[0.06] text-gray-500 dark:text-white/50 hover:bg-gray-200 dark:hover:bg-white/[0.10]')}>Todas</button>
+              {TAGS_STATUS.map(tag => (
+                <button key={tag.key} onClick={() => setFiltro(tag.key)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+                  style={filtro === tag.key ? { backgroundColor: tag.color, color: '#fff', boxShadow: '0 1px 2px rgba(0,0,0,0.15)' } : { backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}>
+                  {tag.label}
                 </button>
               ))}
             </div>
@@ -1537,6 +1548,14 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
             ...postsFiltrados.filter(p => !linkedPostIds2.has(p.id)).map(p => ({...p, _tipo:'post', _data: p.data_publicacao}))
           ]
           if (filtroBusca.trim()) { const q = filtroBusca.toLowerCase(); allItems = allItems.filter(d => (d.titulo||'').toLowerCase().includes(q) || (d.evento_nome||'').toLowerCase().includes(q)) }
+          if (filtro !== 'todas') {
+            const hoje2 = new Date().toISOString().split('T')[0]
+            allItems = allItems.filter(d => {
+              const tag = getTag(d._tipo, d.id)
+              const autoTag = (d._data?.slice(0,10) < hoje2 && !['concluido','aprovado','publicado','cancelado'].includes(d.status)) ? 'atrasado' : (STATUS_TO_TAG[d.status] || null)
+              return (tag || autoTag) === filtro
+            })
+          }
           const smStatusConf = {
             pendente:     { label: 'Pendente',    cls: 'bg-yellow-100 text-yellow-700' },
             em_andamento: { label: 'Em Produção', cls: 'bg-blue-100 text-blue-700' },
