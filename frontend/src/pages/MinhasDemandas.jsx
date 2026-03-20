@@ -121,9 +121,7 @@ export default function MinhasDemandas() {
   const [etiquetasStore, setEtiquetasStore] = useState(() => {
     try { return JSON.parse(localStorage.getItem('eventhub_etiquetas') || '{}') } catch { return {} }
   })
-  const [tagsStore, setTagsStore] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('eventhub_tags') || '{}') } catch { return {} }
-  })
+  const [tagsStore, setTagsStore] = useState({})
   const [novoPostForm, setNovoPostForm] = useState({ titulo: '', plataforma: 'Instagram', data_publicacao: '', hora_publicacao: '', conteudo: '', tipo_conteudo: '', formato: '', descricao: '', referencia: '', musica: '', destino: 'social', status: 'pendente', collaborators: '', id_evento: '' })
   const [novoPostArquivos, setNovoPostArquivos] = useState([])
   const [criandoPost, setCriandoPost] = useState(false)
@@ -142,6 +140,13 @@ export default function MinhasDemandas() {
         api.get('/equipe/por-funcao/social_media').catch(() => ({data:[]})),
       ]).then(([d,s]) => setEquipe([...d.data.map(u=>({...u,funcao:'designer'})),...s.data.map(u=>({...u,funcao:'social_media'}))]))
     }
+    api.get('/tags-demandas').then(r => setTagsStore(r.data)).catch(() => {})
+    // Atualizar dados e tags a cada 30s para sincronizar entre usuários
+    const interval = setInterval(() => {
+      carregar()
+      api.get('/tags-demandas').then(r => setTagsStore(r.data)).catch(() => {})
+    }, 30000)
+    return () => clearInterval(interval)
   }, [])
 
   useEffect(() => {
@@ -391,9 +396,9 @@ export default function MinhasDemandas() {
   function setTagStatus(tipo, id, tagKey) {
     const key = (tipo || 'item') + '-' + id
     const current = tagsStore[key]
-    const novo = { ...tagsStore, [key]: current === tagKey ? null : tagKey }
-    setTagsStore(novo)
-    try { localStorage.setItem('eventhub_tags', JSON.stringify(novo)) } catch {}
+    const newTag = current === tagKey ? null : tagKey
+    setTagsStore(prev => ({ ...prev, [key]: newTag }))
+    api.put('/tags-demandas/' + tipo + '/' + id, { tag_key: newTag }).catch(() => {})
   }
 
   async function carregarComentarios(tipo, id, isAdmin = false) {
@@ -409,7 +414,10 @@ export default function MinhasDemandas() {
     try {
       const { data: result } = await api.post('/demandas/' + tipo + '/' + id + '/comentarios', { texto })
       toast.success('Comentário enviado!')
-      if (result.auto_tag) setTagStatus(tipo, id, result.auto_tag)
+      if (result.auto_tag) {
+        const key = (tipo || 'item') + '-' + id
+        setTagsStore(prev => ({ ...prev, [key]: result.auto_tag }))
+      }
       isAdmin ? setAdminNovoComentario('') : setNovoComentario('')
       carregarComentarios(tipo, id, isAdmin)
     } catch { toast.error('Erro ao enviar comentário') }
@@ -1182,7 +1190,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
 
                           {/* Comentários */}
                           <div className="border-t border-gray-100 dark:border-white/[0.08] pt-4 space-y-3">
-                            <p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide">Comentários ({adminComentarios.length})</p>
+                            <div className="flex items-center gap-2 flex-wrap"><p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide">Comentários ({adminComentarios.length})</p><span className="text-[10px] text-amber-500 dark:text-amber-400 font-medium">OBS: após realizar a alteração, altere a tag para "recebido"</span></div>
                             {adminComentarios.length > 0 && (
                               <div className="space-y-2 max-h-48 overflow-y-auto">
                                 {adminComentarios.map(c => (
@@ -1320,7 +1328,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                 return (
                                   <div
                                     key={'briefing-'+d.id}
-                                    onClick={() => { setDetalhe({...d}); carregarArquivos(d.id); setEditMode(false); setEditForm({}); carregarComentarios(d._tipo, d.id, false) }}
+                                    onClick={() => { setDetalhe({...d}); if(d._tipo === 'briefing') carregarArquivos(d.id); else setArquivos([]); setEditMode(false); setEditForm({}); carregarComentarios(d._tipo, d.id, false) }}
                                     className={'rounded-xl bg-white dark:bg-white/[0.06] border border-gray-100 dark:border-white/[0.08] cursor-pointer select-none transition-all duration-150 hover:shadow-md shadow-sm'}
                                     style={{ borderLeft: `4px solid ${borderColor}` }}
                                   >
@@ -2153,7 +2161,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
 
                 {/* Comentários */}
                 <div className="border-t border-gray-100 dark:border-white/[0.08] pt-4 space-y-3">
-                  <p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide">Comentários ({comentarios.length})</p>
+                  <div className="flex items-center gap-2 flex-wrap"><p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide">Comentários ({comentarios.length})</p><span className="text-[10px] text-amber-500 dark:text-amber-400 font-medium">OBS: após realizar a alteração, altere a tag para "recebido"</span></div>
                   {comentarios.length > 0 && (
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       {comentarios.map(c => (

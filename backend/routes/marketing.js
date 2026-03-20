@@ -1328,7 +1328,55 @@ router.post('/api/demandas/:tipo/:id/comentarios', auth, async (req, res) => {
       }
     } catch (e2) { console.error('Erro ao criar notificacoes de comentario:', e2.message); }
 
+    // Auto-set tag alteração no banco
+    try {
+      await pool.query(
+        'INSERT INTO tags_demandas(org_id, tipo, referencia_id, tag_key, atualizado_em) VALUES($1,$2,$3,$4,NOW()) ON CONFLICT(org_id, tipo, referencia_id) DO UPDATE SET tag_key=$4, atualizado_em=NOW()',
+        [req.user.org_id, tipo, refId, 'alteracao']
+      );
+    } catch {}
+
     res.json({ ...r.rows[0], auto_tag: 'alteracao' });
+  } catch (e) { res.status(500).json({ erro: e.message }); }
+});
+
+// === TAGS DE DEMANDAS (persistidas no banco) ===
+
+pool.query(`CREATE TABLE IF NOT EXISTS tags_demandas (
+  id SERIAL PRIMARY KEY,
+  org_id INTEGER NOT NULL,
+  tipo VARCHAR(20) NOT NULL,
+  referencia_id INTEGER NOT NULL,
+  tag_key VARCHAR(50) NOT NULL,
+  atualizado_em TIMESTAMP DEFAULT NOW(),
+  UNIQUE(org_id, tipo, referencia_id)
+)`).catch(() => {});
+
+// Buscar todas as tags da org
+router.get('/api/tags-demandas', auth, async (req, res) => {
+  try {
+    const r = await pool.query('SELECT tipo, referencia_id, tag_key FROM tags_demandas WHERE org_id=$1', [req.user.org_id]);
+    const map = {};
+    r.rows.forEach(row => { map[row.tipo + '-' + row.referencia_id] = row.tag_key; });
+    res.json(map);
+  } catch (e) { res.status(500).json({ erro: e.message }); }
+});
+
+// Definir/remover tag de uma demanda
+router.put('/api/tags-demandas/:tipo/:id', auth, async (req, res) => {
+  try {
+    const { tag_key } = req.body;
+    const tipo = req.params.tipo;
+    const refId = parseInt(req.params.id);
+    if (!tag_key) {
+      await pool.query('DELETE FROM tags_demandas WHERE org_id=$1 AND tipo=$2 AND referencia_id=$3', [req.user.org_id, tipo, refId]);
+    } else {
+      await pool.query(
+        'INSERT INTO tags_demandas(org_id, tipo, referencia_id, tag_key, atualizado_em) VALUES($1,$2,$3,$4,NOW()) ON CONFLICT(org_id, tipo, referencia_id) DO UPDATE SET tag_key=$4, atualizado_em=NOW()',
+        [req.user.org_id, tipo, refId, tag_key]
+      );
+    }
+    res.json({ sucesso: true });
   } catch (e) { res.status(500).json({ erro: e.message }); }
 });
 
