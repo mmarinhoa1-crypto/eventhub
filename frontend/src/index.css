@@ -154,6 +154,11 @@ html.dark textarea::placeholder {
   color: #6b6b78 !important;
 }
 
+html.dark select option {
+  background: #1c1c24 !important;
+  color: #f0f0ee !important;
+}
+
 /* Modais e painéis — fundo sólido no dark mode (previne conflito com html.dark .bg-white !important) */
 html.dark .dark\:bg-\[\#1c1c24\] {
   background: #1c1c24 !important;
