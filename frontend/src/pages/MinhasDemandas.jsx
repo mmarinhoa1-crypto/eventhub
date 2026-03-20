@@ -47,10 +47,7 @@ const ETIQUETAS_PADRAO = [
   { key: 'urgente',   label: 'Urgente',    color: '#dc2626', bg: '#fef2f2', border: '#fecaca',   darkColor: '#f87171', darkBg: 'rgba(220,38,38,0.18)',   darkBorder: 'rgba(220,38,38,0.35)' },
   { key: 'pausa',     label: 'Pausa',      color: '#d97706', bg: '#fffbeb', border: '#fde68a',   darkColor: '#fbbf24', darkBg: 'rgba(217,119,6,0.18)',   darkBorder: 'rgba(217,119,6,0.35)' },
   { key: 'em_foco',   label: 'Em Foco',    color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe',   darkColor: '#a78bfa', darkBg: 'rgba(124,58,237,0.18)',  darkBorder: 'rgba(124,58,237,0.35)' },
-  { key: 'revisao',   label: 'Revisão',    color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe',   darkColor: '#60a5fa', darkBg: 'rgba(37,99,235,0.18)',   darkBorder: 'rgba(37,99,235,0.35)' },
-  { key: 'pronto',    label: 'Pronto',     color: '#059669', bg: '#ecfdf5', border: '#a7f3d0',   darkColor: '#4ade80', darkBg: 'rgba(5,150,105,0.18)',   darkBorder: 'rgba(5,150,105,0.35)' },
-  { key: 'feedback',  label: 'Feedback',   color: '#ea580c', bg: '#fff7ed', border: '#fed7aa',   darkColor: '#fb923c', darkBg: 'rgba(234,88,12,0.18)',   darkBorder: 'rgba(234,88,12,0.35)' },
-  { key: 'aguardando',label: 'Aguardando', color: '#6b7280', bg: '#f9fafb', border: '#e5e7eb',   darkColor: '#a1a1aa', darkBg: 'rgba(107,114,128,0.18)', darkBorder: 'rgba(107,114,128,0.30)' },
+  { key: 'organico',  label: 'Orgânico',   color: '#10b981', bg: '#ecfdf5', border: '#a7f3d0',   darkColor: '#34d399', darkBg: 'rgba(16,185,129,0.18)',  darkBorder: 'rgba(16,185,129,0.35)' },
 ]
 
 const TAGS_STATUS = [
@@ -58,6 +55,7 @@ const TAGS_STATUS = [
   { key: 'pendente',      label: 'Pendente',      color: '#FFA447' },
   { key: 'em_andamento',  label: 'Em Andamento',  color: '#FFDE42' },
   { key: 'recebido',      label: 'Recebido',      color: '#5459AC' },
+  { key: 'alteracao',     label: 'Alteração',     color: '#dc0f72' },
   { key: 'aprovado',      label: 'Aprovado',      color: '#e49bcb' },
   { key: 'publicado',     label: 'Publicado',     color: '#6FAF4F' },
 ]
@@ -114,6 +112,10 @@ export default function MinhasDemandas() {
   const [cardArquivos, setCardArquivos] = useState({})
   const [previewArquivo, setPreviewArquivo] = useState(null)
   const [showNovoPost, setShowNovoPost] = useState(false)
+  const [comentarios, setComentarios] = useState([])
+  const [novoComentario, setNovoComentario] = useState('')
+  const [adminComentarios, setAdminComentarios] = useState([])
+  const [adminNovoComentario, setAdminNovoComentario] = useState('')
   const [draggedItem, setDraggedItem] = useState(null)
   const [dragOverDay, setDragOverDay] = useState(null)
   const [etiquetasStore, setEtiquetasStore] = useState(() => {
@@ -185,10 +187,12 @@ export default function MinhasDemandas() {
       if (isGestor) {
         setAdminDetalhe(item)
         carregarAdminArqs(item)
+        carregarComentarios(item._tipo, item.id, true)
       } else {
         setDetalhe(item)
         if (item._tipo === 'briefing') carregarArquivos(item.id)
         else setArquivos([])
+        carregarComentarios(item._tipo, item.id, false)
       }
       setSearchParams({}, { replace: true })
     }
@@ -390,6 +394,25 @@ export default function MinhasDemandas() {
     const novo = { ...tagsStore, [key]: current === tagKey ? null : tagKey }
     setTagsStore(novo)
     try { localStorage.setItem('eventhub_tags', JSON.stringify(novo)) } catch {}
+  }
+
+  async function carregarComentarios(tipo, id, isAdmin = false) {
+    try {
+      const { data } = await api.get('/demandas/' + tipo + '/' + id + '/comentarios')
+      isAdmin ? setAdminComentarios(data) : setComentarios(data)
+    } catch { isAdmin ? setAdminComentarios([]) : setComentarios([]) }
+  }
+
+  async function enviarComentario(tipo, id, isAdmin = false) {
+    const texto = isAdmin ? adminNovoComentario : novoComentario
+    if (!texto.trim()) return
+    try {
+      const { data: result } = await api.post('/demandas/' + tipo + '/' + id + '/comentarios', { texto })
+      toast.success('Comentário enviado!')
+      if (result.auto_tag) setTagStatus(tipo, id, result.auto_tag)
+      isAdmin ? setAdminNovoComentario('') : setNovoComentario('')
+      carregarComentarios(tipo, id, isAdmin)
+    } catch { toast.error('Erro ao enviar comentário') }
   }
 
   async function criarNovoPost() {
@@ -749,7 +772,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                   draggable
                                   onDragStart={e => { e.stopPropagation(); setDraggedItem({...d}) }}
                                   onDragEnd={() => { setDraggedItem(null); setDragOverDay(null) }}
-                                  onClick={e => { e.stopPropagation(); const next = isSelected ? null : d; setAdminDetalhe(next); if(next) { setAdminArquivos([]); carregarAdminArqs(next) } }}
+                                  onClick={e => { e.stopPropagation(); const next = isSelected ? null : d; setAdminDetalhe(next); if(next) { setAdminArquivos([]); carregarAdminArqs(next); carregarComentarios(next._tipo, next.id, true) } }}
                                   className={'rounded-xl bg-white dark:bg-white/[0.06] border cursor-pointer select-none transition-all duration-150 hover:shadow-md '
                                     + (isDraggingThis ? 'opacity-40 scale-95 ' : '')
                                     + (isSelected ? 'ring-2 ring-blue-500 shadow-md border-blue-200 ' : 'border-gray-100 dark:border-white/[0.08] shadow-sm ')}
@@ -898,25 +921,6 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                 )
                               })}
                             </div>
-                            {/* Etiqueta customizada */}
-                            {(() => {
-                              const customs = etqs.filter(e => !ETIQUETAS_PADRAO.find(p => p.key === e))
-                              return (
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  {customs.map(e => (
-                                    <span key={e} className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
-                                      🏷️ {e}
-                                      <button onClick={() => removeEtiqueta(d._tipo, d.id, e)} className="text-gray-400 hover:text-red-500 ml-0.5 font-bold">✕</button>
-                                    </span>
-                                  ))}
-                                  <input
-                                    placeholder="+ nova etiqueta"
-                                    className="text-xs border border-dashed border-gray-300 rounded-full px-3 py-1 outline-none focus:border-blue-400 w-32 text-gray-500"
-                                    onKeyDown={e => { if (e.key === 'Enter') { addEtiquetaCustom(d._tipo, d.id, e.target.value); e.target.value = '' } }}
-                                  />
-                                </div>
-                              )
-                            })()}
                           </div>
 
                           {/* Tags de Status */}
@@ -1176,6 +1180,32 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                             )}
                           </div>
 
+                          {/* Comentários */}
+                          <div className="border-t border-gray-100 dark:border-white/[0.08] pt-4 space-y-3">
+                            <p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide">Comentários ({adminComentarios.length})</p>
+                            {adminComentarios.length > 0 && (
+                              <div className="space-y-2 max-h-48 overflow-y-auto">
+                                {adminComentarios.map(c => (
+                                  <div key={c.id} className="bg-gray-50 dark:bg-white/[0.04] rounded-xl px-3 py-2">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="text-xs font-bold text-gray-700 dark:text-white/80">{c.usuario_nome}</span>
+                                      <span className="text-[10px] text-gray-400 dark:text-white/40">{new Date(c.criado_em).toLocaleDateString('pt-BR')} {new Date(c.criado_em).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span>
+                                    </div>
+                                    <p className="text-sm text-gray-600 dark:text-white/60 whitespace-pre-wrap">{c.texto}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            <div className="flex gap-2">
+                              <input value={adminNovoComentario} onChange={e => setAdminNovoComentario(e.target.value)}
+                                placeholder="Escreva um comentário..."
+                                className="flex-1 border border-gray-200 dark:border-white/[0.12] rounded-lg px-3 py-2 text-sm bg-white dark:bg-white/[0.04] text-gray-800 dark:text-white/80 focus:outline-none focus:ring-2 focus:ring-accent/40"
+                                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarComentario(d._tipo, d.id, true) } }} />
+                              <button onClick={() => enviarComentario(d._tipo, d.id, true)}
+                                className="px-4 py-2 bg-accent text-white rounded-lg text-xs font-bold hover:opacity-90 transition flex-shrink-0">Enviar</button>
+                            </div>
+                          </div>
+
                           <button onClick={() => { setAdminDetalhe(null); navigate('/marketing?evento='+d.id_evento) }}
                             className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition text-center">
                             Abrir no Marketing
@@ -1290,7 +1320,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                 return (
                                   <div
                                     key={'briefing-'+d.id}
-                                    onClick={() => { setDetalhe({...d}); carregarArquivos(d.id); setEditMode(false); setEditForm({}) }}
+                                    onClick={() => { setDetalhe({...d}); carregarArquivos(d.id); setEditMode(false); setEditForm({}); carregarComentarios(d._tipo, d.id, false) }}
                                     className={'rounded-xl bg-white dark:bg-white/[0.06] border border-gray-100 dark:border-white/[0.08] cursor-pointer select-none transition-all duration-150 hover:shadow-md shadow-sm'}
                                     style={{ borderLeft: `4px solid ${borderColor}` }}
                                   >
@@ -1578,7 +1608,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                 draggable
                                 onDragStart={e => { e.stopPropagation(); setDraggedItem({...d}) }}
                                 onDragEnd={() => { setDraggedItem(null); setDragOverDay(null) }}
-                                onClick={() => { setDetalhe({...d}); if(d._tipo === 'briefing') carregarArquivos(d.id); else setArquivos([]); setEditMode(false); setEditForm({}) }}
+                                onClick={() => { setDetalhe({...d}); if(d._tipo === 'briefing') carregarArquivos(d.id); else setArquivos([]); setEditMode(false); setEditForm({}); carregarComentarios(d._tipo, d.id, false) }}
                                 className={'rounded-xl bg-white dark:bg-white/[0.06] border cursor-pointer select-none transition-all duration-150 hover:shadow-md border-gray-100 dark:border-white/[0.08] shadow-sm '
                                   + (isDraggingThis ? 'opacity-40 scale-95 ' : '')}
                                 style={{ borderLeft: `4px solid ${borderColor}` }}
@@ -1871,24 +1901,6 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                       )
                     })}
                   </div>
-                  {(() => {
-                    const customs = etqs.filter(e => !ETIQUETAS_PADRAO.find(p => p.key === e))
-                    return (
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {customs.map(e => (
-                          <span key={e} className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
-                            🏷️ {e}
-                            <button onClick={() => removeEtiqueta(d._tipo, d.id, e)} className="text-gray-400 hover:text-red-500 font-bold ml-0.5">✕</button>
-                          </span>
-                        ))}
-                        <input
-                          placeholder="+ nova etiqueta"
-                          className="text-xs border border-dashed border-gray-300 rounded-full px-3 py-1 outline-none focus:border-blue-400 w-32 text-gray-500"
-                          onKeyDown={e => { if (e.key === 'Enter') { addEtiquetaCustom(d._tipo, d.id, e.target.value); e.target.value = '' } }}
-                        />
-                      </div>
-                    )
-                  })()}
                 </div>
 
                 {/* Tags de Status */}
@@ -2137,6 +2149,32 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                       })}
                     </div>
                   )}
+                </div>
+
+                {/* Comentários */}
+                <div className="border-t border-gray-100 dark:border-white/[0.08] pt-4 space-y-3">
+                  <p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide">Comentários ({comentarios.length})</p>
+                  {comentarios.length > 0 && (
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {comentarios.map(c => (
+                        <div key={c.id} className="bg-gray-50 dark:bg-white/[0.04] rounded-xl px-3 py-2">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-bold text-gray-700 dark:text-white/80">{c.usuario_nome}</span>
+                            <span className="text-[10px] text-gray-400 dark:text-white/40">{new Date(c.criado_em).toLocaleDateString('pt-BR')} {new Date(c.criado_em).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span>
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-white/60 whitespace-pre-wrap">{c.texto}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <input value={novoComentario} onChange={e => setNovoComentario(e.target.value)}
+                      placeholder="Escreva um comentário..."
+                      className="flex-1 border border-gray-200 dark:border-white/[0.12] rounded-lg px-3 py-2 text-sm bg-white dark:bg-white/[0.04] text-gray-800 dark:text-white/80 focus:outline-none focus:ring-2 focus:ring-accent/40"
+                      onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarComentario(d._tipo, d.id, false) } }} />
+                    <button onClick={() => enviarComentario(d._tipo, d.id, false)}
+                      className="px-4 py-2 bg-accent text-white rounded-lg text-xs font-bold hover:opacity-90 transition flex-shrink-0">Enviar</button>
+                  </div>
                 </div>
 
                 {/* Footer actions */}
