@@ -1263,6 +1263,75 @@ const data=await r.json();
 res.json({contract:data.content[0].text,supplier:s.name,event:s.event_name})}catch(e){console.error(e);res.status(500).json({error:e.message})}});
 
 
+// === COMENTÁRIOS DE DEMANDAS ===
+
+// Criar tabela se não existir
+pool.query(`CREATE TABLE IF NOT EXISTS comentarios_demandas (
+  id SERIAL PRIMARY KEY,
+  org_id INTEGER NOT NULL,
+  usuario_id INTEGER NOT NULL,
+  tipo VARCHAR(20) NOT NULL,
+  referencia_id INTEGER NOT NULL,
+  texto TEXT NOT NULL,
+  criado_em TIMESTAMP DEFAULT NOW()
+)`).catch(() => {});
+pool.query('CREATE INDEX IF NOT EXISTS idx_comentarios_demandas_ref ON comentarios_demandas(tipo, referencia_id)').catch(() => {});
+
+// Listar comentários de uma demanda
+router.get('/api/demandas/:tipo/:id/comentarios', auth, async (req, res) => {
+  try {
+    const r = await pool.query(
+      'SELECT c.*, u.nome as usuario_nome, u.funcao as usuario_funcao FROM comentarios_demandas c LEFT JOIN usuarios u ON c.usuario_id = u.id WHERE c.tipo=$1 AND c.referencia_id=$2 AND c.org_id=$3 ORDER BY c.criado_em ASC',
+      [req.params.tipo, req.params.id, req.user.org_id]
+    );
+    res.json(r.rows);
+  } catch (e) { res.status(500).json({ erro: e.message }); }
+});
+
+// Criar comentário + auto-tag alteração + notificar todos
+router.post('/api/demandas/:tipo/:id/comentarios', auth, async (req, res) => {
+  try {
+    const { texto } = req.body;
+    if (!texto || !texto.trim()) return res.status(400).json({ erro: 'Texto obrigatório' });
+    const tipo = req.params.tipo;
+    const refId = parseInt(req.params.id);
+
+    // Inserir comentário
+    const r = await pool.query(
+      'INSERT INTO comentarios_demandas(org_id, usuario_id, tipo, referencia_id, texto) VALUES($1,$2,$3,$4,$5) RETURNING *',
+      [req.user.org_id, req.user.id, tipo, refId, texto.trim()]
+    );
+
+    // Buscar título da demanda
+    let titulo = '';
+    try {
+      if (tipo === 'briefing') {
+        const b = await pool.query('SELECT titulo FROM briefings WHERE id=$1', [refId]);
+        titulo = b.rows[0]?.titulo || '';
+      } else {
+        const p = await pool.query('SELECT titulo FROM cronograma_marketing WHERE id=$1', [refId]);
+        titulo = p.rows[0]?.titulo || '';
+      }
+    } catch {}
+
+    // Notificar todos os usuários da org (exceto quem comentou)
+    try {
+      const usuarios = await pool.query('SELECT id FROM usuarios WHERE org_id=$1 AND id!=$2', [req.user.org_id, req.user.id]);
+      const tipoParam = tipo === 'briefing' ? 'briefing' : 'post';
+      for (const u of usuarios.rows) {
+        await pool.query(
+          'INSERT INTO notificacoes(org_id,usuario_id,tipo,titulo,mensagem,link,referencia_tipo,referencia_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8)',
+          [req.user.org_id, u.id, 'comentario_demanda', 'Novo comentário',
+           (req.user.nome || 'Usuário') + ' comentou em "' + titulo + '"',
+           '/demandas?tipo=' + tipoParam + '&id=' + refId, tipo, refId]
+        );
+      }
+    } catch (e2) { console.error('Erro ao criar notificacoes de comentario:', e2.message); }
+
+    res.json({ ...r.rows[0], auto_tag: 'alteracao' });
+  } catch (e) { res.status(500).json({ erro: e.message }); }
+});
+
 // === ALIASES ENGLISH ROUTES ===
 
   return router;
