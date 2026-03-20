@@ -688,7 +688,7 @@ export default function MinhasDemandas() {
                     {monthDays.map((day) => {
                       const dayStr = day.toISOString().split('T')[0]
                       const isToday = dayStr === todayStr
-                      const dayItems = filteredItems.filter(d => d._data?.slice(0,10) === dayStr).sort((a, b) => (a.status === 'publicado' ? 1 : 0) - (b.status === 'publicado' ? 1 : 0))
+                      const dayItems = filteredItems.filter(d => d._data?.slice(0,10) === dayStr).sort((a, b) => { const pa = (getTag(a._tipo, a.id) || a.status) === 'publicado' ? 1 : 0; const pb = (getTag(b._tipo, b.id) || b.status) === 'publicado' ? 1 : 0; return pa - pb })
                       const plataformaColor = { 'Instagram': '#e1306c', 'Facebook': '#1877f2', 'TikTok': '#010101', 'YouTube': '#ff0000', 'Twitter': '#1da1f2', 'LinkedIn': '#0a66c2' }
 const isDragTarget = dragOverDay === dayStr && draggedItem
                       return (
@@ -1259,7 +1259,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                     {monthDays.map((day) => {
                       const dayStr = day.toISOString().split('T')[0]
                       const isToday = dayStr === todayStr
-                      const dayItems = allItems.filter(d => d._data?.slice(0,10) === dayStr).sort((a, b) => (a.status === 'publicado' ? 1 : 0) - (b.status === 'publicado' ? 1 : 0))
+                      const dayItems = allItems.filter(d => d._data?.slice(0,10) === dayStr).sort((a, b) => { const pa = (getTag(a._tipo, a.id) || a.status) === 'publicado' ? 1 : 0; const pb = (getTag(b._tipo, b.id) || b.status) === 'publicado' ? 1 : 0; return pa - pb })
                       return (
                         <div
                           key={dayStr}
@@ -1481,17 +1481,6 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
               ))}
             </div>
           </div>
-          <div className="flex gap-1 bg-gray-100 dark:bg-white/[0.06] rounded-lg p-0.5">
-            <button onClick={() => setView('calendario')} className={'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition ' + (view === 'calendario' ? 'bg-white dark:bg-white/[0.10] text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-white/50 hover:text-gray-700 dark:hover:text-white/70')}>
-              <Calendar size={13} /> Calendario
-            </button>
-            <button onClick={() => setView('briefings')} className={'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition ' + (view === 'briefings' ? 'bg-white dark:bg-white/[0.10] text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-white/50 hover:text-gray-700 dark:hover:text-white/70')}>
-              <Palette size={13} /> Briefings
-            </button>
-            <button onClick={() => setView('posts')} className={'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition ' + (view === 'posts' ? 'bg-white dark:bg-white/[0.10] text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-white/50 hover:text-gray-700 dark:hover:text-white/70')}>
-              <Megaphone size={13} /> Posts
-            </button>
-          </div>
         </div>
 
         {/* Calendario mensal (SocialMedia) */}
@@ -1535,7 +1524,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                 {monthDays.map((day) => {
                   const dayStr = day.toISOString().split('T')[0]
                   const isToday = dayStr === todayStr
-                  const dayItems = allItems.filter(d => d._data?.slice(0,10) === dayStr).sort((a, b) => (a.status === 'publicado' ? 1 : 0) - (b.status === 'publicado' ? 1 : 0))
+                  const dayItems = allItems.filter(d => d._data?.slice(0,10) === dayStr).sort((a, b) => { const pa = (getTag(a._tipo, a.id) || a.status) === 'publicado' ? 1 : 0; const pb = (getTag(b._tipo, b.id) || b.status) === 'publicado' ? 1 : 0; return pa - pb })
                   const plataformaColor = { 'Instagram': '#e1306c', 'Facebook': '#1877f2', 'TikTok': '#010101', 'YouTube': '#ff0000', 'Twitter': '#1da1f2', 'LinkedIn': '#0a66c2' }
                   const isDragTarget = dragOverDay === dayStr && draggedItem
                   return (
@@ -1641,71 +1630,6 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
 
 
         {/* Briefings list */}
-        {view === 'briefings' && (
-          <div className="space-y-3">
-            {briefingsFiltrados.length === 0 && <div className="bg-white dark:bg-white/[0.04] rounded-xl border border-gray-100 dark:border-white/[0.08] p-12 text-center"><Palette size={32} className="text-gray-200 dark:text-white/20 mx-auto mb-3" /><p className="text-sm text-gray-400 dark:text-white/40 font-medium">Nenhum briefing encontrado</p></div>}
-            {[...briefingsFiltrados].sort((a,b) => (a.data_vencimento||'9999') < (b.data_vencimento||'9999') ? -1 : 1).map(b => {
-              const atrasado = isAtrasado(b, 'data_vencimento')
-              const tipos = (b.tipo_conteudo || '').split(',').filter(Boolean)
-              const formatos = (b.formato || '').split(',').filter(Boolean)
-              return (
-                <div key={b.id} onClick={() => { setDetalhe({_tipo:'briefing',...b}); carregarArquivos(b.id); setEditMode(false); setEditForm({}) }}
-                  className={'bg-white dark:bg-white/[0.04] rounded-xl border overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer ' + (atrasado ? 'border-red-200 dark:border-red-500/30' : 'border-gray-100 dark:border-white/[0.08] hover:border-blue-200 dark:hover:border-blue-500/30')}>
-                  <div className={'h-1 ' + (atrasado ? 'bg-red-500' : b.status === 'aprovado' ? 'bg-green-500' : b.status === 'em_revisao' ? 'bg-blue-500' : b.status === 'em_andamento' ? 'bg-blue-500' : 'bg-yellow-400')} />
-                  <div className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-gray-900 dark:text-white/90 text-sm truncate">{b.titulo}</h4>
-                        <p className="text-xs text-blue-500 font-medium">{b.evento_nome}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className={'text-[10px] font-bold px-2 py-0.5 rounded-full border ' + (statusColors[b.status] || 'bg-gray-100 text-gray-600 border-gray-200')}>{statusLabels[b.status] || b.status}</span>
-                          {atrasado && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200">ATRASADO</span>}
-                        </div>
-                      </div>
-                      <ArrowRight size={16} className="text-gray-300 flex-shrink-0 mt-1" />
-                    </div>
-                    {b.descricao && <p className="text-xs text-gray-500 dark:text-white/50 line-clamp-2 mb-3">{b.descricao}</p>}
-                    <div className="flex flex-wrap gap-1.5 mb-2">
-                      {tipos.map(t => { const cfg = tipoConteudoConfig[t] || { icon: '📋', color: 'bg-gray-100 text-gray-600' }; return <span key={t} className={'text-[10px] font-bold px-2 py-0.5 rounded-full ' + cfg.color}>{cfg.icon} {t}</span> })}
-                      {formatos.map(f => { const cfg = formatoConfig[f] || { icon: '📄', color: 'bg-gray-100 text-gray-600' }; return <span key={f} className={'text-[10px] font-bold px-2 py-0.5 rounded-full ' + cfg.color}>{cfg.icon} {f}</span> })}
-                    </div>
-                    <div className="flex items-center gap-3 text-xs text-gray-400">
-                      {b.data_vencimento && <span className="flex items-center gap-1"><Calendar size={11} /> {fmtData(b.data_vencimento)}</span>}
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
-
-        {/* Posts list */}
-        {view === 'posts' && (
-          <div className="space-y-3">
-            {postsFiltrados.length === 0 && <div className="bg-white dark:bg-white/[0.04] rounded-xl border border-gray-100 dark:border-white/[0.08] p-12 text-center"><Megaphone size={32} className="text-gray-200 dark:text-white/20 mx-auto mb-3" /><p className="text-sm text-gray-400 dark:text-white/40 font-medium">Nenhum post encontrado</p></div>}
-            {postsFiltrados.map(p => (
-              <div key={p.id} onClick={() => { setDetalhe({_tipo:'post',...p}); setArquivos([]); setEditMode(false); setEditForm({}) }}
-                className="bg-white dark:bg-white/[0.04] rounded-xl border border-gray-100 dark:border-white/[0.08] shadow-sm p-4 hover:shadow-md hover:border-blue-200 dark:hover:border-blue-500/30 transition cursor-pointer">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-bold text-gray-900 dark:text-white/90 text-sm">{p.titulo}</h3>
-                      <span className={'text-[10px] font-bold px-2 py-0.5 rounded-full border ' + (statusColors[p.status] || 'bg-gray-100 text-gray-600 border-gray-200')}>{statusLabels[p.status] || p.status}</span>
-                      {p.plataforma && <span className="text-[10px] bg-pink-100 text-pink-700 px-2 py-0.5 rounded-full font-bold">{p.plataforma}</span>}
-                    </div>
-                    <p className="text-xs text-blue-500 font-medium mb-1">{p.evento_nome}</p>
-                    {p.conteudo && <p className="text-xs text-gray-500 dark:text-white/50 line-clamp-2">{p.conteudo}</p>}
-                    <div className="flex gap-3 mt-2 text-xs text-gray-400">
-                      {p.data_publicacao && <span className="flex items-center gap-1"><Calendar size={11} /> {fmtData(p.data_publicacao)}</span>}
-                      {p.hora_publicacao && <span className="flex items-center gap-1"><Clock size={11} /> {p.hora_publicacao?.slice(0,5)}</span>}
-                    </div>
-                  </div>
-                  <ArrowRight size={16} className="text-gray-300 flex-shrink-0 mt-1" />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
         </>
       )}
 
