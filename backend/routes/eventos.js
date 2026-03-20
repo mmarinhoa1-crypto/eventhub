@@ -129,21 +129,25 @@ res.json(r.rows[0])}catch(e){res.status(500).json({erro:e.message})}});
 router.delete('/api/eventos/:id',auth,async(req,res)=>{try{
 if(req.user.funcao!=='admin'&&req.user.funcao!=='diretor')return res.status(403).json({erro:'Sem permissao'});
 const id=parseInt(req.params.id);const org=req.user.org_id;
-await pool.query('DELETE FROM arquivos WHERE evento_id=$1 OR briefing_id IN (SELECT id FROM briefings WHERE id_evento=$1 AND org_id=$2) OR cronograma_id IN (SELECT id FROM cronograma_marketing WHERE id_evento=$1 AND org_id=$2)',[id,org]);
-await pool.query('DELETE FROM briefings WHERE id_evento=$1 AND org_id=$2',[id,org]);
-await pool.query('DELETE FROM cronograma_marketing WHERE id_evento=$1 AND org_id=$2',[id,org]);
-await pool.query('DELETE FROM planejamento_semanal WHERE id_evento=$1 AND org_id=$2',[id,org]);
-await pool.query('DELETE FROM materiais_marketing WHERE id_evento=$1 AND org_id=$2',[id,org]);
-await pool.query('DELETE FROM campanhas WHERE evento_id=$1 AND org_id=$2',[id,org]);
-await pool.query('DELETE FROM analises_marketing WHERE id_evento=$1 AND org_id=$2',[id,org]);
-await pool.query('DELETE FROM despesas WHERE id_evento=$1 AND org_id=$2',[id,org]);
-await pool.query('DELETE FROM fornecedores WHERE id_evento=$1 AND org_id=$2',[id,org]);
-await pool.query('DELETE FROM receitas WHERE id_evento=$1 AND org_id=$2',[id,org]);
-try { await pool.query('DELETE FROM contas_pagar WHERE id_evento=$1 AND org_id=$2',[id,org]); } catch(e) { /* tabela pode não existir */ }
-await pool.query('DELETE FROM itens_pedido WHERE pedido_id IN (SELECT id FROM pedidos_bebidas WHERE id_evento=$1 AND org_id=$2)',[id,org]);
-await pool.query('DELETE FROM pedidos_bebidas WHERE id_evento=$1 AND org_id=$2',[id,org]);
-await pool.query('DELETE FROM consumo_eventos WHERE id_evento=$1 AND org_id=$2',[id,org]);
-await pool.query('DELETE FROM setores_consumo WHERE id_evento=$1 AND org_id=$2',[id,org]);
+// Deletar dados relacionados ao evento (ignora tabelas/colunas que não existem)
+const delQueries = [
+  'DELETE FROM arquivos WHERE evento_id=$1 OR briefing_id IN (SELECT id FROM briefings WHERE id_evento=$1 AND org_id=$2) OR cronograma_id IN (SELECT id FROM cronograma_marketing WHERE id_evento=$1 AND org_id=$2)',
+  'DELETE FROM briefings WHERE id_evento=$1 AND org_id=$2',
+  'DELETE FROM cronograma_marketing WHERE id_evento=$1 AND org_id=$2',
+  'DELETE FROM planejamento_semanal WHERE id_evento=$1 AND org_id=$2',
+  'DELETE FROM materiais_marketing WHERE id_evento=$1 AND org_id=$2',
+  'DELETE FROM campanhas WHERE evento_id=$1 AND org_id=$2',
+  'DELETE FROM analises_marketing WHERE id_evento=$1 AND org_id=$2',
+  'DELETE FROM despesas WHERE id_evento=$1 AND org_id=$2',
+  'DELETE FROM fornecedores WHERE id_evento=$1 AND org_id=$2',
+  'DELETE FROM receitas WHERE id_evento=$1 AND org_id=$2',
+  'DELETE FROM contas_pagar WHERE id_evento=$1 AND org_id=$2',
+  'DELETE FROM itens_pedido WHERE pedido_id IN (SELECT id FROM pedidos_bebidas WHERE id_evento=$1 AND org_id=$2)',
+  'DELETE FROM pedidos_bebidas WHERE id_evento=$1 AND org_id=$2',
+  'DELETE FROM consumo_eventos WHERE id_evento=$1 AND org_id=$2',
+  'DELETE FROM setores_consumo WHERE id_evento=$1 AND org_id=$2',
+];
+for (const q of delQueries) { try { await pool.query(q, [id, org]); } catch(e) { /* tabela ou coluna pode não existir */ } }
 const r=await pool.query('DELETE FROM eventos WHERE id=$1 AND org_id=$2 RETURNING id',[id,org]);
 if(!r.rows.length)return res.status(404).json({erro:'Evento nao encontrado'});
 res.json({sucesso:true})}catch(e){res.status(500).json({erro:e.message})}});
