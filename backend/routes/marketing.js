@@ -24,7 +24,7 @@ res.json(r.rows[0])}catch(e){res.status(500).json({erro:e.message})}});
 
 router.patch('/api/briefings/:id',auth,async(req,res)=>{try{
 const b=req.body;const fields=[];const vals=[];let idx=1;
-['titulo','tipo','descricao','publico_alvo','mensagem_chave','referencias_visuais','dimensoes','status','atribuido_para','data_vencimento','hora_vencimento','feedback','tipo_conteudo','formato','referencia','musica','legenda'].forEach(function(k){if(b[k]!==undefined){fields.push(k+'=$'+idx);vals.push(b[k]);idx++}});
+['titulo','tipo','descricao','publico_alvo','mensagem_chave','referencias_visuais','dimensoes','status','atribuido_para','data_vencimento','hora_vencimento','feedback','tipo_conteudo','formato','referencia','musica','legenda','id_evento'].forEach(function(k){if(b[k]!==undefined){fields.push(k+'=$'+idx);vals.push(b[k]);idx++}});
 fields.push('atualizado_em=NOW()');
 vals.push(parseInt(req.params.id));vals.push(req.user.org_id);
 const r=await pool.query('UPDATE briefings SET '+fields.join(',')+' WHERE id=$'+idx+' AND org_id=$'+(idx+1)+' RETURNING *',vals);
@@ -89,7 +89,7 @@ if(ativo&&br.rows.length===0){
 
 router.patch('/api/cronograma/:id',auth,async(req,res)=>{try{
 const b=req.body;const fields=[];const vals=[];let idx=1;
-['titulo','plataforma','data_publicacao','hora_publicacao','conteudo','hashtags','formato','status','feedback','auto_publish','boost_enabled','boost_budget','boost_duration','boost_age_min','boost_age_max','boost_cities','collaborators'].forEach(function(k){if(b[k]!==undefined){fields.push(k+'=$'+idx);vals.push(b[k]);idx++}});
+['titulo','plataforma','data_publicacao','hora_publicacao','conteudo','hashtags','formato','status','feedback','auto_publish','boost_enabled','boost_budget','boost_duration','boost_age_min','boost_age_max','boost_cities','collaborators','id_evento'].forEach(function(k){if(b[k]!==undefined){fields.push(k+'=$'+idx);vals.push(b[k]);idx++}});
 vals.push(parseInt(req.params.id));vals.push(req.user.org_id);
 const r=await pool.query('UPDATE cronograma_marketing SET '+fields.join(',')+' WHERE id=$'+idx+' AND org_id=$'+(idx+1)+' RETURNING *',vals);
 const updated=r.rows[0];
@@ -1376,6 +1376,39 @@ router.put('/api/tags-demandas/:tipo/:id', auth, async (req, res) => {
         [req.user.org_id, tipo, refId, tag_key]
       );
     }
+    res.json({ sucesso: true });
+  } catch (e) { res.status(500).json({ erro: e.message }); }
+});
+
+// === ORDEM DOS CARDS (persistida no banco) ===
+
+pool.query(`CREATE TABLE IF NOT EXISTS ordem_cards (
+  id SERIAL PRIMARY KEY,
+  org_id INTEGER NOT NULL,
+  dia VARCHAR(10) NOT NULL,
+  ordem JSONB NOT NULL DEFAULT '[]',
+  atualizado_em TIMESTAMP DEFAULT NOW(),
+  UNIQUE(org_id, dia)
+)`).catch(() => {});
+
+// Buscar todas as ordens da org
+router.get('/api/ordem-cards', auth, async (req, res) => {
+  try {
+    const r = await pool.query('SELECT dia, ordem FROM ordem_cards WHERE org_id=$1', [req.user.org_id]);
+    const map = {};
+    r.rows.forEach(row => { map[row.dia] = row.ordem; });
+    res.json(map);
+  } catch (e) { res.status(500).json({ erro: e.message }); }
+});
+
+// Salvar ordem de um dia
+router.put('/api/ordem-cards/:dia', auth, async (req, res) => {
+  try {
+    const { ordem } = req.body;
+    await pool.query(
+      'INSERT INTO ordem_cards(org_id, dia, ordem, atualizado_em) VALUES($1,$2,$3,NOW()) ON CONFLICT(org_id, dia) DO UPDATE SET ordem=$3, atualizado_em=NOW()',
+      [req.user.org_id, req.params.dia, JSON.stringify(ordem)]
+    );
     res.json({ sucesso: true });
   } catch (e) { res.status(500).json({ erro: e.message }); }
 });

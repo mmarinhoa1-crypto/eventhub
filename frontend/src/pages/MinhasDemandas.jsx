@@ -118,6 +118,8 @@ export default function MinhasDemandas() {
   const [adminNovoComentario, setAdminNovoComentario] = useState('')
   const [draggedItem, setDraggedItem] = useState(null)
   const [dragOverDay, setDragOverDay] = useState(null)
+  const [cardOrder, setCardOrder] = useState({})
+  const [dragOverCard, setDragOverCard] = useState(null)
   const [etiquetasStore, setEtiquetasStore] = useState(() => {
     try { return JSON.parse(localStorage.getItem('eventhub_etiquetas') || '{}') } catch { return {} }
   })
@@ -141,10 +143,12 @@ export default function MinhasDemandas() {
       ]).then(([d,s]) => setEquipe([...d.data.map(u=>({...u,funcao:'designer'})),...s.data.map(u=>({...u,funcao:'social_media'}))]))
     }
     api.get('/tags-demandas').then(r => setTagsStore(r.data)).catch(() => {})
+    api.get('/ordem-cards').then(r => setCardOrder(r.data)).catch(() => {})
     // Atualizar dados e tags a cada 30s para sincronizar entre usuários
     const interval = setInterval(() => {
       carregar()
       api.get('/tags-demandas').then(r => setTagsStore(r.data)).catch(() => {})
+      api.get('/ordem-cards').then(r => setCardOrder(r.data)).catch(() => {})
     }, 30000)
     return () => clearInterval(interval)
   }, [])
@@ -421,6 +425,48 @@ export default function MinhasDemandas() {
       isAdmin ? setAdminNovoComentario('') : setNovoComentario('')
       carregarComentarios(tipo, id, isAdmin)
     } catch { toast.error('Erro ao enviar comentário') }
+  }
+
+  function sortDayItems(items, dayStr) {
+    const orderKey = dayStr
+    const order = cardOrder[orderKey]
+    if (!order || !order.length) return items
+    const orderMap = {}
+    order.forEach((id, idx) => { orderMap[id] = idx })
+    return [...items].sort((a, b) => {
+      const idA = a._tipo + '-' + a.id
+      const idB = b._tipo + '-' + b.id
+      const oA = orderMap[idA] !== undefined ? orderMap[idA] : 9999
+      const oB = orderMap[idB] !== undefined ? orderMap[idB] : 9999
+      return oA - oB
+    })
+  }
+
+  function handleCardDragOver(e, itemId) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (dragOverCard !== itemId) setDragOverCard(itemId)
+  }
+
+  function handleCardDrop(e, targetItem, dayStr, dayItems) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!draggedItem) return
+    const dragId = draggedItem._tipo + '-' + draggedItem.id
+    const targetId = targetItem._tipo + '-' + targetItem.id
+    if (dragId === targetId) return
+    // Só reordenar se estiver no mesmo dia
+    if (draggedItem._data?.slice(0,10) !== dayStr) return
+    const currentOrder = dayItems.map(d => d._tipo + '-' + d.id)
+    const fromIdx = currentOrder.indexOf(dragId)
+    const toIdx = currentOrder.indexOf(targetId)
+    if (fromIdx < 0 || toIdx < 0) return
+    currentOrder.splice(fromIdx, 1)
+    currentOrder.splice(toIdx, 0, dragId)
+    const novo = { ...cardOrder, [dayStr]: currentOrder }
+    setCardOrder(novo)
+    api.put('/ordem-cards/' + dayStr, { ordem: currentOrder }).catch(() => {})
+    setDragOverCard(null)
   }
 
   async function criarNovoPost() {
@@ -735,7 +781,7 @@ export default function MinhasDemandas() {
                     {monthDays.map((day) => {
                       const dayStr = day.toISOString().split('T')[0]
                       const isToday = dayStr === todayStr
-                      const dayItems = filteredItems.filter(d => d._data?.slice(0,10) === dayStr).sort((a, b) => { const pa = (getTag(a._tipo, a.id) || a.status) === 'publicado' ? 1 : 0; const pb = (getTag(b._tipo, b.id) || b.status) === 'publicado' ? 1 : 0; return pa - pb })
+                      const dayItems = sortDayItems(filteredItems.filter(d => d._data?.slice(0,10) === dayStr).sort((a, b) => { const pa = (getTag(a._tipo, a.id) || a.status) === 'publicado' ? 1 : 0; const pb = (getTag(b._tipo, b.id) || b.status) === 'publicado' ? 1 : 0; return pa - pb }), dayStr)
                       const plataformaColor = { 'Instagram': '#e1306c', 'Facebook': '#1877f2', 'TikTok': '#010101', 'YouTube': '#ff0000', 'Twitter': '#1da1f2', 'LinkedIn': '#0a66c2' }
 const isDragTarget = dragOverDay === dayStr && draggedItem
                       return (
@@ -795,10 +841,13 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                   key={d._tipo+'-'+d.id}
                                   draggable
                                   onDragStart={e => { e.stopPropagation(); setDraggedItem({...d}) }}
-                                  onDragEnd={() => { setDraggedItem(null); setDragOverDay(null) }}
+                                  onDragEnd={() => { setDraggedItem(null); setDragOverDay(null); setDragOverCard(null) }}
+                                  onDragOver={e => handleCardDragOver(e, d._tipo+'-'+d.id)}
+                                  onDrop={e => handleCardDrop(e, d, dayStr, dayItems)}
                                   onClick={e => { e.stopPropagation(); const next = isSelected ? null : d; setAdminDetalhe(next); if(next) { setAdminArquivos([]); carregarAdminArqs(next); carregarComentarios(next._tipo, next.id, true) } }}
-                                  className={'rounded-xl bg-white dark:bg-white/[0.06] border cursor-pointer select-none transition-all duration-150 hover:shadow-md '
+                                  className={'rounded-xl bg-white dark:bg-white/[0.06] border cursor-grab select-none transition-all duration-150 hover:shadow-md '
                                     + (isDraggingThis ? 'opacity-40 scale-95 ' : '')
+                                    + (dragOverCard === d._tipo+'-'+d.id && !isDraggingThis ? 'ring-2 ring-inset ring-blue-400 ' : '')
                                     + (isSelected ? 'ring-2 ring-blue-500 shadow-md border-blue-200 ' : 'border-gray-100 dark:border-white/[0.08] shadow-sm ')}
                                   style={{ borderLeft: `4px solid ${borderColor}` }}
                                 >
@@ -897,6 +946,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                     hora_publicacao: d.hora_publicacao||'', collaborators: d.collaborators||'',
                                     tipo_conteudo: d.tipo_conteudo||'', formato: d.formato||'',
                                     plataforma: d.plataforma||'Instagram', status: d.status||'pendente',
+                                    id_evento: d.id_evento||'',
                                     aparecer_designer: d._tipo === 'briefing'
                                       ? true
                                       : !!(data.briefings.find(b => b.cronograma_id === d.id)),
@@ -975,6 +1025,14 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                   <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Título</label>
                                   <input value={adminEditForm.titulo||''} onChange={e => setAdminEditForm({...adminEditForm, titulo: e.target.value})}
                                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+                                </div>
+
+                                <div>
+                                  <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Evento</label>
+                                  <select value={adminEditForm.id_evento||''} onChange={e => setAdminEditForm({...adminEditForm, id_evento: e.target.value})}
+                                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
+                                    {data.eventos.map(ev => <option key={ev.id} value={ev.id}>{ev.nome}</option>)}
+                                  </select>
                                 </div>
 
                                 <div>
@@ -1311,7 +1369,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                     {monthDays.map((day) => {
                       const dayStr = day.toISOString().split('T')[0]
                       const isToday = dayStr === todayStr
-                      const dayItems = allItems.filter(d => d._data?.slice(0,10) === dayStr).sort((a, b) => { const pa = (getTag(a._tipo, a.id) || a.status) === 'publicado' ? 1 : 0; const pb = (getTag(b._tipo, b.id) || b.status) === 'publicado' ? 1 : 0; return pa - pb })
+                      const dayItems = sortDayItems(allItems.filter(d => d._data?.slice(0,10) === dayStr).sort((a, b) => { const pa = (getTag(a._tipo, a.id) || a.status) === 'publicado' ? 1 : 0; const pb = (getTag(b._tipo, b.id) || b.status) === 'publicado' ? 1 : 0; return pa - pb }), dayStr)
                       return (
                         <div
                           key={dayStr}
@@ -1342,8 +1400,14 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                 return (
                                   <div
                                     key={'briefing-'+d.id}
+                                    draggable
+                                    onDragStart={e => { e.stopPropagation(); setDraggedItem({...d}) }}
+                                    onDragEnd={() => { setDraggedItem(null); setDragOverCard(null) }}
+                                    onDragOver={e => handleCardDragOver(e, d._tipo+'-'+d.id)}
+                                    onDrop={e => handleCardDrop(e, d, dayStr, dayItems)}
                                     onClick={() => { setDetalhe({...d}); if(d._tipo === 'briefing') carregarArquivos(d.id); else setArquivos([]); setEditMode(false); setEditForm({}); carregarComentarios(d._tipo, d.id, false) }}
-                                    className={'rounded-xl bg-white dark:bg-white/[0.06] border border-gray-100 dark:border-white/[0.08] cursor-pointer select-none transition-all duration-150 hover:shadow-md shadow-sm'}
+                                    className={'rounded-xl bg-white dark:bg-white/[0.06] border border-gray-100 dark:border-white/[0.08] cursor-grab select-none transition-all duration-150 hover:shadow-md shadow-sm '
+                                      + (dragOverCard === d._tipo+'-'+d.id ? 'ring-2 ring-inset ring-blue-400 ' : '')}
                                     style={{ borderLeft: `4px solid ${borderColor}` }}
                                   >
                                     <div className="px-3 py-2.5 space-y-2">
@@ -1594,7 +1658,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                 {monthDays.map((day) => {
                   const dayStr = day.toISOString().split('T')[0]
                   const isToday = dayStr === todayStr
-                  const dayItems = allItems.filter(d => d._data?.slice(0,10) === dayStr).sort((a, b) => { const pa = (getTag(a._tipo, a.id) || a.status) === 'publicado' ? 1 : 0; const pb = (getTag(b._tipo, b.id) || b.status) === 'publicado' ? 1 : 0; return pa - pb })
+                  const dayItems = sortDayItems(allItems.filter(d => d._data?.slice(0,10) === dayStr).sort((a, b) => { const pa = (getTag(a._tipo, a.id) || a.status) === 'publicado' ? 1 : 0; const pb = (getTag(b._tipo, b.id) || b.status) === 'publicado' ? 1 : 0; return pa - pb }), dayStr)
                   const plataformaColor = { 'Instagram': '#e1306c', 'Facebook': '#1877f2', 'TikTok': '#010101', 'YouTube': '#ff0000', 'Twitter': '#1da1f2', 'LinkedIn': '#0a66c2' }
                   const isDragTarget = dragOverDay === dayStr && draggedItem
                   return (
@@ -1647,10 +1711,13 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                 key={d._tipo+'-'+d.id}
                                 draggable
                                 onDragStart={e => { e.stopPropagation(); setDraggedItem({...d}) }}
-                                onDragEnd={() => { setDraggedItem(null); setDragOverDay(null) }}
+                                onDragEnd={() => { setDraggedItem(null); setDragOverDay(null); setDragOverCard(null) }}
+                                onDragOver={e => handleCardDragOver(e, d._tipo+'-'+d.id)}
+                                onDrop={e => handleCardDrop(e, d, dayStr, dayItems)}
                                 onClick={() => { setDetalhe({...d}); if(d._tipo === 'briefing') carregarArquivos(d.id); else setArquivos([]); setEditMode(false); setEditForm({}); carregarComentarios(d._tipo, d.id, false) }}
-                                className={'rounded-xl bg-white dark:bg-white/[0.06] border cursor-pointer select-none transition-all duration-150 hover:shadow-md border-gray-100 dark:border-white/[0.08] shadow-sm '
-                                  + (isDraggingThis ? 'opacity-40 scale-95 ' : '')}
+                                className={'rounded-xl bg-white dark:bg-white/[0.06] border cursor-grab select-none transition-all duration-150 hover:shadow-md border-gray-100 dark:border-white/[0.08] shadow-sm '
+                                  + (isDraggingThis ? 'opacity-40 scale-95 ' : '')
+                                  + (dragOverCard === d._tipo+'-'+d.id && !isDraggingThis ? 'ring-2 ring-inset ring-blue-400 ' : '')}
                                 style={{ borderLeft: `4px solid ${borderColor}` }}
                               >
                                 <div className="px-3 py-2.5 space-y-2">
@@ -1908,6 +1975,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                           hora_publicacao: d.hora_publicacao||'', collaborators: d.collaborators||'',
                           tipo_conteudo: d.tipo_conteudo||'', formato: d.formato||'',
                           plataforma: d.plataforma||'Instagram', status: d.status||'pendente',
+                          id_evento: d.id_evento||'',
                           aparecer_designer: d._tipo === 'briefing'
                             ? true
                             : !!(data.briefings.find(b => b.cronograma_id === d.id)),
@@ -1970,6 +2038,14 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                       <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Título</label>
                       <input value={editForm.titulo||''} onChange={e => setEditForm({...editForm, titulo: e.target.value})}
                         className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Evento</label>
+                      <select value={editForm.id_evento||''} onChange={e => setEditForm({...editForm, id_evento: e.target.value})}
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
+                        {data.eventos.map(ev => <option key={ev.id} value={ev.id}>{ev.nome}</option>)}
+                      </select>
                     </div>
 
                     <div>

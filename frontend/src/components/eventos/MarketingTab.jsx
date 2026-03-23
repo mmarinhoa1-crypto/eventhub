@@ -888,14 +888,14 @@ export default function MarketingTab({ eventoId }) {
                       <span className="bg-white/25 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">{items.length}</span>
                     </div>
                     {/* Column Body */}
-                    <div className="bg-gray-50/80 rounded-b-xl p-2.5 space-y-2.5 border border-t-0 border-gray-200" style={{ minHeight: 420 }}>
+                    <div className="bg-gray-50/80 dark:bg-white/[0.03] rounded-b-xl p-2.5 space-y-2.5 border border-t-0 border-gray-200 dark:border-white/[0.08]" style={{ minHeight: 420 }}>
                       {[...items].sort((a,b) => (a.data_vencimento||'9999') < (b.data_vencimento||'9999') ? -1 : 1).map(b => {
                         const isAtrasado = b.data_vencimento && new Date(b.data_vencimento + 'T23:59:59') < new Date() && !['aprovado','publicado','cancelado'].includes(b.status)
                         return (
-                          <div key={b.id} className={`bg-white rounded-xl border ${isAtrasado ? 'border-red-300 ring-1 ring-red-200' : 'border-gray-200'} hover:shadow-md transition-all`}>
+                          <div key={b.id} className={`bg-white dark:bg-white/[0.06] rounded-xl border ${isAtrasado ? 'border-red-300 dark:border-red-500/30 ring-1 ring-red-200 dark:ring-red-500/20' : 'border-gray-200 dark:border-white/[0.08]'} hover:shadow-md transition-all`}>
                             <div className="p-3 space-y-2">
                               <div className="flex items-start justify-between gap-1">
-                                <h4 onClick={() => { carregarArquivos(b.id); setBriefingDetalhe(b) }} className="font-bold text-gray-900 text-xs leading-tight flex-1 cursor-pointer hover:text-blue-600 transition">{b.titulo}</h4>
+                                <h4 onClick={() => { carregarArquivos(b.id); setBriefingDetalhe(b) }} className="font-bold text-gray-900 dark:text-white/90 text-xs leading-tight flex-1 cursor-pointer hover:text-blue-600 transition">{b.titulo}</h4>
                                 {isAtrasado && <span className="text-[9px] font-bold text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-500/20 px-1.5 py-0.5 rounded-full whitespace-nowrap">ATRASADO</span>}
                               </div>
                               {b.data_vencimento && (
@@ -914,11 +914,11 @@ export default function MarketingTab({ eventoId }) {
                                   <span key={fm} className="px-1.5 py-0.5 bg-violet-50 dark:bg-violet-500/10 text-blue-600 dark:text-blue-400 rounded text-[10px] font-bold">{fm === 'FEED' ? '📱' : fm === 'STORIES' ? '📲' : fm === 'CARROSSEL' ? '🔄' : '🎥'} {fm}</span>
                                 ))}</div>
                               )}
-                              {b.descricao && <p className="text-[11px] text-gray-500 line-clamp-2">{b.descricao}</p>}
+                              {b.descricao && <p className="text-[11px] text-gray-500 dark:text-white/50 line-clamp-2">{b.descricao}</p>}
                               {b.musica && (
                                 <div className="flex items-center gap-1">
                                   <span className="text-[10px]">🎵</span>
-                                  <span className="text-[10px] text-gray-500 truncate">{b.musica}</span>
+                                  <span className="text-[10px] text-gray-500 dark:text-white/50 truncate">{b.musica}</span>
                                 </div>
                               )}
                               {/* Arquivos */}
@@ -931,11 +931,11 @@ export default function MarketingTab({ eventoId }) {
                                           <img src={'/api' + arq.url} className="w-16 h-16 rounded-lg object-cover border border-gray-200 hover:shadow-md transition" />
                                         </div>
                                       ) : arq.tipo && arq.tipo.startsWith('video') ? (
-                                        <div onClick={(e) => { e.stopPropagation(); setPreviewArquivo(arq) }} className="w-16 h-16 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center cursor-pointer hover:shadow-md transition">
+                                        <div onClick={(e) => { e.stopPropagation(); setPreviewArquivo(arq) }} className="w-16 h-16 rounded-lg bg-gray-100 dark:bg-white/[0.06] border border-gray-200 dark:border-white/[0.08] flex items-center justify-center cursor-pointer hover:shadow-md transition">
                                           <span className="text-lg">🎬</span>
                                         </div>
                                       ) : (
-                                        <a href={'/api' + arq.url} download onClick={(e) => { e.stopPropagation() }} className="w-16 h-16 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center hover:shadow-md transition">
+                                        <a href={'/api' + arq.url} download onClick={(e) => { e.stopPropagation() }} className="w-16 h-16 rounded-lg bg-gray-100 dark:bg-white/[0.06] border border-gray-200 dark:border-white/[0.08] flex items-center justify-center hover:shadow-md transition">
                                           <FileText size={14} className="text-gray-400" />
                                         </a>
                                       )}
@@ -950,31 +950,31 @@ export default function MarketingTab({ eventoId }) {
                                 onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-blue-400','bg-blue-50') }}
                                 onDragLeave={(e) => { e.preventDefault(); e.currentTarget.classList.remove('border-blue-400','bg-blue-50') }}
                                 onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove('border-blue-400','bg-blue-50'); const file = e.dataTransfer.files[0]; if(file) uploadArquivo(b.id, file) }}
-                                className={`relative w-full flex items-center justify-center gap-1.5 py-2.5 rounded-lg border-2 border-dashed border-gray-200 text-[10px] font-semibold text-gray-400 hover:text-blue-500 hover:border-blue-300 hover:bg-blue-50/50 transition cursor-pointer ${uploading === b.id ? 'opacity-50 pointer-events-none' : ''}`}>
+                                className={`relative w-full flex items-center justify-center gap-1.5 py-2.5 rounded-lg border-2 border-dashed border-gray-200 dark:border-white/[0.10] text-[10px] font-semibold text-gray-400 dark:text-white/40 hover:text-blue-500 hover:border-blue-300 hover:bg-blue-50/50 transition cursor-pointer ${uploading === b.id ? 'opacity-50 pointer-events-none' : ''}`}>
                                 <input type="file" accept="image/*,video/*,.pdf"
                                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                   onChange={(e) => { const file = e.target.files[0]; if(file) uploadArquivo(b.id, file); e.target.value='' }} />
                                 {uploading === b.id ? <span className="animate-spin">⏳</span> : <><Paperclip size={10} /> Upload arte</>}
                               </div>
                               {/* Card Actions */}
-                              <div className="flex items-center justify-between pt-1.5 border-t border-gray-100">
+                              <div className="flex items-center justify-between pt-1.5 border-t border-gray-100 dark:border-white/[0.06]">
                                 <div className="flex gap-0.5">
                                   {colIdx > 0 && (
-                                    <button onClick={() => atualizarBriefing(b.id, { status: statusFlow[colIdx - 1] })} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition" title={`Mover para ${kanbanColumns[colIdx - 1].label}`}>
+                                    <button onClick={() => atualizarBriefing(b.id, { status: statusFlow[colIdx - 1] })} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-white/[0.08] text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70 transition" title={`Mover para ${kanbanColumns[colIdx - 1].label}`}>
                                       <ArrowLeft size={13} />
                                     </button>
                                   )}
                                   {colIdx < kanbanColumns.length - 1 && (
-                                    <button onClick={() => atualizarBriefing(b.id, { status: statusFlow[colIdx + 1] })} className="p-1 rounded hover:bg-blue-100 text-blue-400 hover:text-blue-600 transition" title={`Mover para ${kanbanColumns[colIdx + 1].label}`}>
+                                    <button onClick={() => atualizarBriefing(b.id, { status: statusFlow[colIdx + 1] })} className="p-1 rounded hover:bg-blue-100 dark:hover:bg-blue-500/20 text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition" title={`Mover para ${kanbanColumns[colIdx + 1].label}`}>
                                       <ArrowRight size={13} />
                                     </button>
                                   )}
                                 </div>
                                 <div className="flex gap-0.5">
-                                  {!isDesigner && <button onClick={() => duplicarBriefing(b)} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition" title="Duplicar briefing">
+                                  {!isDesigner && <button onClick={() => duplicarBriefing(b)} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-white/[0.08] text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70 transition" title="Duplicar briefing">
                                     <Copy size={13} />
                                   </button>}
-                                  {!isDesigner && <button onClick={() => removerBriefing(b.id)} className="p-1 rounded hover:bg-red-100 text-gray-400 hover:text-red-500 transition" title="Remover">
+                                  {!isDesigner && <button onClick={() => removerBriefing(b.id)} className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-500/20 text-gray-400 dark:text-white/40 hover:text-red-500 transition" title="Remover">
                                     <Trash2 size={13} />
                                   </button>}
                                 </div>
@@ -1171,19 +1171,19 @@ export default function MarketingTab({ eventoId }) {
                         </div>
                         <div className="space-y-2 flex-1 overflow-y-auto" style={{ maxHeight: 320 }}>
                           {posts.map(c => (
-                            <div key={c.id} className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+                            <div key={c.id} className="bg-white dark:bg-white/[0.06] rounded-lg border border-gray-200 dark:border-white/[0.08] overflow-hidden hover:shadow-md transition-shadow">
                               <div className={`${plataformaColors[c.plataforma] || 'bg-gray-500'} px-2 py-1 flex items-center justify-between`}>
                                 <span className="text-white text-[10px] font-bold">{c.plataforma}</span>
                                 <span className={`w-2 h-2 rounded-full ${statusDot[c.status] || 'bg-gray-300'}`} title={c.status} />
                               </div>
                               <div className="p-2 space-y-1">
-                                <p className="text-xs font-semibold text-gray-900 line-clamp-2">{c.titulo}</p>
+                                <p className="text-xs font-semibold text-gray-900 dark:text-white/90 line-clamp-2">{c.titulo}</p>
                                 {c.hora_publicacao && (
                                   <div className="flex items-center gap-1 text-[10px] text-gray-500">
                                     <Clock size={9} /> {c.hora_publicacao.slice(0,5)}
                                   </div>
                                 )}
-                                {c.conteudo && <p className="text-[10px] text-gray-400 line-clamp-2">{c.conteudo}</p>}
+                                {c.conteudo && <p className="text-[10px] text-gray-400 dark:text-white/40 line-clamp-2">{c.conteudo}</p>}
                                 {c.formato && <span className="inline-block text-[10px] font-medium text-blue-600 dark:text-blue-400 bg-violet-50 dark:bg-violet-500/10 px-1.5 py-0.5 rounded">{c.formato}</span>}
                                 {(cronogramaArquivos[c.id] || []).length > 0 && (
                                   <div className="flex flex-wrap gap-1">
