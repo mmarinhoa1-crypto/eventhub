@@ -868,7 +868,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                   }
 
                   return (
-                    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setAdminDetalhe(null)}>
+                    <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4" onClick={() => setAdminDetalhe(null)}>
                       <div className="bg-white dark:bg-[#1c1c24] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-auto shadow-2xl" onClick={e => e.stopPropagation()}>
 
                         {/* Header */}
@@ -1706,7 +1706,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
 
       {/* ===== NOVO POST MODAL ===== */}
       {showNovoPost && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowNovoPost(false)}>
+        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4" onClick={() => setShowNovoPost(false)}>
           <div className="bg-white dark:bg-[#1c1c24] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-auto shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="sticky top-0 bg-white dark:bg-[#1c1c24] border-b border-gray-100 dark:border-white/[0.08] p-4 flex items-center justify-between rounded-t-2xl z-10">
               <div>
@@ -1878,7 +1878,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
         }
 
         return (
-          <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setDetalhe(null)}>
+          <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4" onClick={() => setDetalhe(null)}>
             <div className="bg-white dark:bg-[#1c1c24] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-auto shadow-2xl" onClick={e => e.stopPropagation()}>
 
               {/* Header */}
@@ -2231,7 +2231,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
         )
       })()}
       {previewArquivo && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setPreviewArquivo(null)}>
+        <div className="fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4" onClick={() => setPreviewArquivo(null)}>
           <div className="relative max-w-4xl max-h-[90vh]" onClick={e => e.stopPropagation()}>
             <a href={'/api' + previewArquivo.url} download={previewArquivo.nome_original || previewArquivo.nome || 'arquivo'}
               className="absolute -top-3 -left-3 w-8 h-8 bg-blue-500 hover:bg-blue-600 rounded-full shadow-lg flex items-center justify-center transition z-10">
