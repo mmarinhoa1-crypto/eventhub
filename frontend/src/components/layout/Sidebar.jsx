@@ -192,7 +192,8 @@ export default function Sidebar() {
               {/* Links */}
               <div className="p-3 space-y-1">
                 {mainLinks.filter(l => l.roles.includes(funcao)).map(({ to, label }) => (
-                  <NavLink key={to} to={to} end={to === '/'} onClick={() => setMobileOpen(false)} className={({ isActive }) => `${mobileLinkBase} ${isActive ? mobileLinkActive : mobileLinkInactive}`}>{label}</NavLink>
+                  <button key={to} onClick={() => { navigate(to); setMobileOpen(false) }}
+                    className={`${mobileLinkBase} w-full text-left ${location.pathname === to ? mobileLinkActive : mobileLinkInactive}`}>{label}</button>
                 ))}
 
                 {showMarketing && (
@@ -204,7 +205,8 @@ export default function Sidebar() {
                     {openMenu === 'marketing' && (
                       <div className="mt-1 space-y-0.5">
                         {marketingSubLinks.filter(l => l.roles.includes(funcao)).map(({ to, label }) => (
-                          <NavLink key={to} to={to} end={to === '/marketing'} onClick={() => setMobileOpen(false)} className={({ isActive }) => `${mobileSubLinkBase} ${isActive ? mobileLinkActive : mobileLinkInactive}`}>{label}</NavLink>
+                          <button key={to} onClick={() => { navigate(to); setMobileOpen(false) }}
+                            className={`${mobileSubLinkBase} w-full text-left ${location.pathname === to ? mobileLinkActive : mobileLinkInactive}`}>{label}</button>
                         ))}
                       </div>
                     )}
@@ -220,7 +222,8 @@ export default function Sidebar() {
                     {openMenu === 'financeiro' && (
                       <div className="mt-1 space-y-0.5">
                         {financeiroSubLinks.map(({ to, label }) => (
-                          <NavLink key={to} to={to} end={to === '/financeiro'} onClick={() => setMobileOpen(false)} className={({ isActive }) => `${mobileSubLinkBase} ${isActive ? mobileLinkActive : mobileLinkInactive}`}>{label}</NavLink>
+                          <button key={to} onClick={() => { navigate(to); setMobileOpen(false) }}
+                            className={`${mobileSubLinkBase} w-full text-left ${location.pathname === to ? mobileLinkActive : mobileLinkInactive}`}>{label}</button>
                         ))}
                       </div>
                     )}
@@ -228,7 +231,8 @@ export default function Sidebar() {
                 )}
 
                 {showEquipe && (
-                  <NavLink to="/equipe" onClick={() => setMobileOpen(false)} className={({ isActive }) => `${mobileLinkBase} ${isActive ? mobileLinkActive : mobileLinkInactive}`}>Equipe</NavLink>
+                  <button onClick={() => { navigate('/equipe'); setMobileOpen(false) }}
+                    className={`${mobileLinkBase} w-full text-left ${location.pathname === '/equipe' ? mobileLinkActive : mobileLinkInactive}`}>Equipe</button>
                 )}
               </div>
 
