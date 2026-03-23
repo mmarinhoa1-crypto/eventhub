@@ -34,14 +34,26 @@ const statusColors = {
 
 const plataformas = ['Instagram', 'Facebook', 'TikTok', 'YouTube', 'Twitter/X', 'LinkedIn', 'WhatsApp']
 
-const kanbanColumns = [
-  { key: 'pendente', label: 'Pendente', gradient: 'from-yellow-400 to-orange-500' },
-  { key: 'em_andamento', label: 'Em Produção', gradient: 'from-blue-400 to-blue-600' },
-  { key: 'em_revisao', label: 'Revisão', gradient: 'from-blue-400 to-blue-600' },
-  { key: 'aprovado', label: 'Aprovado', gradient: 'from-green-400 to-emerald-600' },
-  { key: 'publicado', label: 'Publicado', gradient: 'from-teal-400 to-cyan-600' },
+const TAGS_STATUS = [
+  { key: 'atrasado',      label: 'Atrasado',      color: '#BE0000' },
+  { key: 'pendente',      label: 'Pendente',      color: '#FFA447' },
+  { key: 'em_andamento',  label: 'Em Andamento',  color: '#FFDE42' },
+  { key: 'recebido',      label: 'Recebido',      color: '#5459AC' },
+  { key: 'alteracao',     label: 'Alteração',     color: '#dc0f72' },
+  { key: 'aprovado',      label: 'Aprovado',      color: '#e49bcb' },
+  { key: 'publicado',     label: 'Publicado',     color: '#6FAF4F' },
 ]
-const statusFlow = ['pendente', 'em_andamento', 'em_revisao', 'aprovado', 'publicado']
+const STATUS_TO_TAG = {
+  pendente: 'pendente',
+  em_andamento: 'em_andamento',
+  em_producao: 'em_andamento',
+  em_revisao: 'recebido',
+  aprovado: 'aprovado',
+  publicado: 'publicado',
+  concluido: 'publicado',
+}
+const kanbanColumns = TAGS_STATUS
+const statusFlow = TAGS_STATUS.map(t => t.key)
 
 const plataformaColors = {
   'Instagram': 'bg-gradient-to-r from-blue-500 to-blue-500',
@@ -74,6 +86,7 @@ export default function MarketingTab({ eventoId }) {
   const canApprovePlan = isDiretor || isAdmin
   const [briefings, setBriefings] = useState([])
   const [cronograma, setCronograma] = useState([])
+  const [tagsStore, setTagsStore] = useState({})
   const [loading, setLoading] = useState(true)
   const [gerandoIA, setGerandoIA] = useState(false)
   const [showBriefingForm, setShowBriefingForm] = useState(false)
@@ -144,7 +157,16 @@ export default function MarketingTab({ eventoId }) {
   useEffect(() => {
     carregarDados()
     carregarIgConnection()
+    api.get('/tags-demandas').then(r => setTagsStore(r.data)).catch(() => {})
   }, [eventoId])
+
+  function getEffectiveTag(b) {
+    const tag = tagsStore['briefing-' + b.id]
+    if (tag) return tag
+    const isAtrasado = b.data_vencimento && new Date(b.data_vencimento + 'T23:59:59') < new Date() && !['aprovado','publicado','cancelado'].includes(b.status)
+    if (isAtrasado) return 'atrasado'
+    return STATUS_TO_TAG[b.status] || 'pendente'
+  }
 
   async function carregarDados() {
     try {
@@ -879,16 +901,16 @@ export default function MarketingTab({ eventoId }) {
           ) : (
             <div className="flex gap-3 overflow-x-auto pb-4">
               {kanbanColumns.map((col, colIdx) => {
-                const items = briefingsFiltrados.filter(b => b.status === col.key)
+                const items = briefingsFiltrados.filter(b => getEffectiveTag(b) === col.key)
                 return (
-                  <div key={col.key} className="flex-shrink-0 w-72">
+                  <div key={col.key} className="flex-shrink-0 w-72 flex flex-col" style={{ height: 520 }}>
                     {/* Column Header */}
-                    <div className={`bg-gradient-to-r ${col.gradient} rounded-t-xl px-4 py-2.5 flex items-center justify-between`}>
+                    <div className="rounded-t-xl px-4 py-2.5 flex items-center justify-between" style={{ backgroundColor: col.color }}>
                       <span className="text-white font-bold text-sm">{col.label}</span>
                       <span className="bg-white/25 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">{items.length}</span>
                     </div>
                     {/* Column Body */}
-                    <div className="bg-gray-50/80 dark:bg-white/[0.03] rounded-b-xl p-2.5 space-y-2.5 border border-t-0 border-gray-200 dark:border-white/[0.08]" style={{ minHeight: 420 }}>
+                    <div className="bg-gray-50/80 dark:bg-white/[0.03] rounded-b-xl p-2.5 space-y-2.5 border border-t-0 border-gray-200 dark:border-white/[0.08] flex-1 overflow-y-auto">
                       {[...items].sort((a,b) => (a.data_vencimento||'9999') < (b.data_vencimento||'9999') ? -1 : 1).map(b => {
                         const isAtrasado = b.data_vencimento && new Date(b.data_vencimento + 'T23:59:59') < new Date() && !['aprovado','publicado','cancelado'].includes(b.status)
                         return (
@@ -960,12 +982,12 @@ export default function MarketingTab({ eventoId }) {
                               <div className="flex items-center justify-between pt-1.5 border-t border-gray-100 dark:border-white/[0.06]">
                                 <div className="flex gap-0.5">
                                   {colIdx > 0 && (
-                                    <button onClick={() => atualizarBriefing(b.id, { status: statusFlow[colIdx - 1] })} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-white/[0.08] text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70 transition" title={`Mover para ${kanbanColumns[colIdx - 1].label}`}>
+                                    <button onClick={() => { api.put('/tags-demandas/briefing/' + b.id, { tag_key: statusFlow[colIdx - 1] }).then(() => { setTagsStore(prev => ({...prev, ['briefing-'+b.id]: statusFlow[colIdx - 1]})) }).catch(() => {}) }} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-white/[0.08] text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70 transition" title={`Mover para ${kanbanColumns[colIdx - 1].label}`}>
                                       <ArrowLeft size={13} />
                                     </button>
                                   )}
                                   {colIdx < kanbanColumns.length - 1 && (
-                                    <button onClick={() => atualizarBriefing(b.id, { status: statusFlow[colIdx + 1] })} className="p-1 rounded hover:bg-blue-100 dark:hover:bg-blue-500/20 text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition" title={`Mover para ${kanbanColumns[colIdx + 1].label}`}>
+                                    <button onClick={() => { api.put('/tags-demandas/briefing/' + b.id, { tag_key: statusFlow[colIdx + 1] }).then(() => { setTagsStore(prev => ({...prev, ['briefing-'+b.id]: statusFlow[colIdx + 1]})) }).catch(() => {}) }} className="p-1 rounded hover:bg-blue-100 dark:hover:bg-blue-500/20 text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition" title={`Mover para ${kanbanColumns[colIdx + 1].label}`}>
                                       <ArrowRight size={13} />
                                     </button>
                                   )}
