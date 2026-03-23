@@ -98,7 +98,7 @@ try{
     await pool.query('INSERT INTO notificacoes(org_id,usuario_id,tipo,titulo,mensagem,link,referencia_tipo,referencia_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8)',
       [req.user.org_id,u.id,'novo_evento','Novo evento criado',
        (req.user.nome||'Admin')+' criou o evento "'+nome+'"'+(dataStr?' para '+dataStr:''),
-       '/eventos','evento',evento.id]);
+       '/demandas','evento',evento.id]);
   }
 }catch(e2){console.error('Erro ao criar notificacoes de evento:',e2.message)}
 res.json(evento)}catch(e){res.status(500).json({erro:e.message})}});
