@@ -33,6 +33,7 @@ export default function Sidebar() {
   const [openMenu, setOpenMenu] = useState(null)
   const [mobileOpen, setMobileOpen] = useState(false)
   const navRef = useRef(null)
+  const mobileDrawerRef = useRef(null)
 
   const isDark = tema === 'dark'
 
@@ -45,6 +46,8 @@ export default function Sidebar() {
 
   useEffect(() => {
     function handleClickOutside(e) {
+      // Ignorar cliques dentro do drawer mobile
+      if (mobileDrawerRef.current && mobileDrawerRef.current.contains(e.target)) return
       if (navRef.current && !navRef.current.contains(e.target)) {
         setOpenMenu(null)
       }
@@ -179,7 +182,7 @@ export default function Sidebar() {
         {mobileOpen && (
           <>
             <div className="fixed inset-0 bg-black/40 z-[55]" onClick={() => setMobileOpen(false)} />
-            <div className="fixed top-0 right-0 w-72 h-full z-[56] overflow-y-auto shadow-2xl" style={{ ...submenuStyle, borderRadius: 0, borderLeft: '1px solid var(--sidebar-submenu-border)' }}>
+            <div ref={mobileDrawerRef} className="fixed top-0 right-0 w-72 h-full z-[56] overflow-y-auto shadow-2xl" style={{ ...submenuStyle, borderRadius: 0, borderLeft: '1px solid var(--sidebar-submenu-border)' }}>
               {/* Drawer header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-white/[0.08]">
                 <div>
