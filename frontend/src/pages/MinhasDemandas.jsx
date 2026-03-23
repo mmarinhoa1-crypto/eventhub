@@ -503,6 +503,7 @@ export default function MinhasDemandas() {
   }
 
   const hoje = new Date().toISOString().split('T')[0]
+  const eventosAtivos = data.eventos.filter(ev => !ev.data_evento || ev.data_evento >= hoje)
 
   function isAtrasado(item, campoData) {
     const d = item[campoData] || ''
@@ -630,12 +631,12 @@ export default function MinhasDemandas() {
                 {evDropOpen && (
                   <div className="absolute top-full left-0 mt-1 w-full bg-white rounded-lg border border-gray-200 shadow-lg z-50 max-h-48 overflow-auto">
                     <div onMouseDown={e => { e.preventDefault(); setFiltroEvento('todos'); setEvSearch(''); setEvDropOpen(false) }} className={'px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 transition ' + (filtroEvento === 'todos' ? 'text-blue-600 font-bold bg-blue-50' : 'text-gray-600')}>Todos os eventos</div>
-                    {data.eventos.filter(ev => !evSearch || ev.nome.toLowerCase().includes(evSearch.toLowerCase())).map(ev => (
+                    {eventosAtivos.filter(ev => !evSearch || ev.nome.toLowerCase().includes(evSearch.toLowerCase())).map(ev => (
                       <div key={ev.id} onMouseDown={e => { e.preventDefault(); setFiltroEvento(String(ev.id)); setEvSearch(''); setEvDropOpen(false) }} className={'px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 transition ' + (filtroEvento === String(ev.id) ? 'text-blue-600 font-bold bg-blue-50' : 'text-gray-700')}>
                         {ev.nome}
                       </div>
                     ))}
-                    {data.eventos.filter(ev => !evSearch || ev.nome.toLowerCase().includes(evSearch.toLowerCase())).length === 0 && (
+                    {eventosAtivos.filter(ev => !evSearch || ev.nome.toLowerCase().includes(evSearch.toLowerCase())).length === 0 && (
                       <div className="px-3 py-2 text-xs text-gray-400">Nenhum evento encontrado</div>
                     )}
                   </div>
@@ -1097,21 +1098,19 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                 </div>
 
                                 {/* Toggle: Aparecer para o Designer */}
-                                {(isAdmin || isSocialMedia) && d._tipo === 'post' && (
-                                  <div className="flex items-center justify-between p-3 rounded-xl border border-gray-200 dark:border-white/[0.10] bg-gray-50 dark:bg-white/[0.04]">
-                                    <div>
-                                      <p className="text-sm font-semibold text-gray-800 dark:text-white/80">🎨 Aparecer para o Designer?</p>
-                                      <p className="text-[10px] text-gray-400 dark:text-white/40 mt-0.5">O designer do evento também visualiza essa demanda</p>
-                                    </div>
-                                    <button
-                                      type="button"
-                                      onClick={() => setAdminEditForm(f => ({...f, aparecer_designer: !f.aparecer_designer}))}
-                                      className={'relative w-11 h-6 rounded-full overflow-hidden transition-colors flex-shrink-0 ' + (adminEditForm.aparecer_designer ? 'bg-blue-600' : 'bg-gray-300')}
-                                    >
-                                      <span className={'absolute left-0.5 top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ' + (adminEditForm.aparecer_designer ? 'translate-x-5' : 'translate-x-0')} />
-                                    </button>
+                                <div className="flex items-center justify-between p-3 rounded-xl border border-gray-200 dark:border-white/[0.10] bg-gray-50 dark:bg-white/[0.04]">
+                                  <div>
+                                    <p className="text-sm font-semibold text-gray-800 dark:text-white/80">🎨 Aparecer para o Designer?</p>
+                                    <p className="text-[10px] text-gray-400 dark:text-white/40 mt-0.5">O designer do evento também visualiza essa demanda</p>
                                   </div>
-                                )}
+                                  <button
+                                    type="button"
+                                    onClick={() => setAdminEditForm(f => ({...f, aparecer_designer: !f.aparecer_designer}))}
+                                    className={'relative w-11 h-6 rounded-full overflow-hidden transition-colors flex-shrink-0 ' + (adminEditForm.aparecer_designer ? 'bg-blue-600' : 'bg-gray-300')}
+                                  >
+                                    <span className={'absolute left-0.5 top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ' + (adminEditForm.aparecer_designer ? 'translate-x-5' : 'translate-x-0')} />
+                                  </button>
+                                </div>
                               </div>
 
                               <button onClick={adminSalvarEdicao}
@@ -1399,7 +1398,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                 <div className="flex items-center gap-3">
                   <select value={filtroEvento} onChange={e => setFiltroEvento(e.target.value)} className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.10] bg-white dark:bg-white/[0.06] text-sm font-semibold text-gray-600 dark:text-white/70 outline-none">
                     <option value="todos">Todos os eventos</option>
-                    {data.eventos.map(ev => <option key={ev.id} value={ev.id}>{ev.nome}</option>)}
+                    {eventosAtivos.map(ev => <option key={ev.id} value={ev.id}>{ev.nome}</option>)}
                   </select>
                   <button onClick={() => carregarMateriais()} className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.10] bg-white dark:bg-white/[0.06] text-xs font-bold text-blue-600 hover:bg-blue-50 dark:hover:bg-white/[0.10] transition">Atualizar</button>
                 </div>
@@ -1512,7 +1511,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
           <div className="flex gap-2 items-center flex-wrap">
             <select value={filtroEvento} onChange={e => setFiltroEvento(e.target.value)} className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.10] bg-white dark:bg-white/[0.06] text-xs font-semibold text-gray-600 dark:text-white/70 outline-none cursor-pointer flex-shrink-0">
               <option value="todos">Todos os eventos</option>
-              {data.eventos.map(ev => <option key={ev.id} value={ev.id}>{ev.nome}</option>)}
+              {eventosAtivos.map(ev => <option key={ev.id} value={ev.id}>{ev.nome}</option>)}
             </select>
             <div className="relative flex-1 min-w-[140px]">
               <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/40" />
@@ -1722,7 +1721,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                 <select value={novoPostForm.id_evento} onChange={e => setNovoPostForm({...novoPostForm, id_evento: e.target.value})}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
                   <option value="">Selecione um evento</option>
-                  {data.eventos.map(ev => <option key={ev.id} value={ev.id}>{ev.nome}</option>)}
+                  {eventosAtivos.map(ev => <option key={ev.id} value={ev.id}>{ev.nome}</option>)}
                 </select>
               </div>
               {/* Aparecer para o Designer */}
@@ -2087,22 +2086,20 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                       </div>
                     </div>
 
-                    {/* Toggle: Aparecer para o Designer (social_media + posts) */}
-                    {isSocialMedia && d._tipo === 'post' && (
-                      <div className="flex items-center justify-between p-3 rounded-xl border border-gray-200 bg-gray-50">
-                        <div>
-                          <p className="text-sm font-semibold text-gray-800">🎨 Aparecer para o Designer?</p>
-                          <p className="text-[10px] text-gray-400 mt-0.5">O designer do evento também visualiza essa demanda</p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setEditForm(f => ({...f, aparecer_designer: !f.aparecer_designer}))}
-                          className={'relative w-11 h-6 rounded-full overflow-hidden transition-colors flex-shrink-0 ' + (editForm.aparecer_designer ? 'bg-blue-600' : 'bg-gray-300')}
-                        >
-                          <span className={'absolute left-0.5 top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ' + (editForm.aparecer_designer ? 'translate-x-5' : 'translate-x-0')} />
-                        </button>
+                    {/* Toggle: Aparecer para o Designer */}
+                    <div className="flex items-center justify-between p-3 rounded-xl border border-gray-200 dark:border-white/[0.10] bg-gray-50 dark:bg-white/[0.04]">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800 dark:text-white/80">🎨 Aparecer para o Designer?</p>
+                        <p className="text-[10px] text-gray-400 dark:text-white/40 mt-0.5">O designer do evento também visualiza essa demanda</p>
                       </div>
-                    )}
+                      <button
+                        type="button"
+                        onClick={() => setEditForm(f => ({...f, aparecer_designer: !f.aparecer_designer}))}
+                        className={'relative w-11 h-6 rounded-full overflow-hidden transition-colors flex-shrink-0 ' + (editForm.aparecer_designer ? 'bg-blue-600' : 'bg-gray-300')}
+                      >
+                        <span className={'absolute left-0.5 top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ' + (editForm.aparecer_designer ? 'translate-x-5' : 'translate-x-0')} />
+                      </button>
+                    </div>
 
                     <button onClick={salvarEdicao}
                       className="w-full px-4 py-2.5 bg-green-500 text-white rounded-xl text-sm font-bold hover:bg-green-600 transition">
