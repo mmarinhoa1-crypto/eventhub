@@ -53,8 +53,12 @@ export default function Sidebar() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Fechar menus ao navegar
-  useEffect(() => { setOpenMenu(null); setMobileOpen(false) }, [location.pathname])
+  // Fechar menus ao navegar (com delay para não cancelar a navegação)
+  useEffect(() => {
+    setMobileOpen(false)
+    // Não resetar openMenu no mobile para permitir clique nos sublinks
+    if (!mobileOpen) setOpenMenu(null)
+  }, [location.pathname])
 
   function toggleMenu(name) {
     setOpenMenu(prev => (prev === name ? null : name))

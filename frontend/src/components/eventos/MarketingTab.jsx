@@ -2423,7 +2423,7 @@ export default function MarketingTab({ eventoId }) {
 
       {/* Modal Conectar Instagram */}
       {showIGModal && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => { setShowIGModal(false); setShowAddToken(false) }}>
+        <div className="fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4" onClick={() => { setShowIGModal(false); setShowAddToken(false) }}>
           <div className="bg-white rounded-2xl max-w-md w-full max-h-[85vh] overflow-auto" onClick={e => e.stopPropagation()}>
             <div className="p-4 border-b bg-gradient-to-r from-violet-50 to-violet-50 flex items-center justify-between rounded-t-2xl">
               <div className="flex items-center gap-2">

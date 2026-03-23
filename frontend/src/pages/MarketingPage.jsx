@@ -658,7 +658,7 @@ export default function MarketingPage() {
 
     {/* Modal Conectar Instagram */}
     {igConnectEvento && (
-      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => { setIgConnectEvento(null); setIgTokenInput('') }}>
+      <div className="fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4" onClick={() => { setIgConnectEvento(null); setIgTokenInput('') }}>
         <div className="bg-white dark:bg-[rgba(19,19,22,0.98)] rounded-2xl max-w-sm w-full max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
           <div className="p-4 border-b dark:border-white/[0.08] bg-gradient-to-r from-violet-50 to-violet-50 dark:from-violet-500/10 dark:to-violet-500/10 flex items-center justify-between rounded-t-2xl">
             <div className="flex items-center gap-2">
