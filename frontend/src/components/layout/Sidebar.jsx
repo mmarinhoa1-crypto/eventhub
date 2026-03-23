@@ -53,12 +53,8 @@ export default function Sidebar() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Fechar menus ao navegar (com delay para não cancelar a navegação)
-  useEffect(() => {
-    setMobileOpen(false)
-    // Não resetar openMenu no mobile para permitir clique nos sublinks
-    if (!mobileOpen) setOpenMenu(null)
-  }, [location.pathname])
+  // Fechar submenus desktop ao navegar
+  useEffect(() => { setOpenMenu(null) }, [location.pathname])
 
   function toggleMenu(name) {
     setOpenMenu(prev => (prev === name ? null : name))
@@ -182,8 +178,8 @@ export default function Sidebar() {
         {/* Mobile drawer */}
         {mobileOpen && (
           <>
-            <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setMobileOpen(false)} />
-            <div className="fixed top-0 right-0 w-72 h-full z-50 overflow-y-auto shadow-2xl" style={{ ...submenuStyle, borderRadius: 0, borderLeft: '1px solid var(--sidebar-submenu-border)' }}>
+            <div className="fixed inset-0 bg-black/40 z-[55]" onClick={() => setMobileOpen(false)} />
+            <div className="fixed top-0 right-0 w-72 h-full z-[56] overflow-y-auto shadow-2xl" style={{ ...submenuStyle, borderRadius: 0, borderLeft: '1px solid var(--sidebar-submenu-border)' }}>
               {/* Drawer header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-white/[0.08]">
                 <div>
@@ -196,19 +192,19 @@ export default function Sidebar() {
               {/* Links */}
               <div className="p-3 space-y-1">
                 {mainLinks.filter(l => l.roles.includes(funcao)).map(({ to, label }) => (
-                  <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => `${mobileLinkBase} ${isActive ? mobileLinkActive : mobileLinkInactive}`}>{label}</NavLink>
+                  <NavLink key={to} to={to} end={to === '/'} onClick={() => setMobileOpen(false)} className={({ isActive }) => `${mobileLinkBase} ${isActive ? mobileLinkActive : mobileLinkInactive}`}>{label}</NavLink>
                 ))}
 
                 {showMarketing && (
                   <div>
-                    <button onClick={() => toggleMenu(openMenu === 'marketing' ? null : 'marketing')}
+                    <button onClick={() => setOpenMenu(openMenu === 'marketing' ? null : 'marketing')}
                       className={`${mobileLinkBase} w-full text-left flex items-center justify-between ${isMarketingActive ? mobileLinkActive : mobileLinkInactive}`}>
                       Marketing <ChevronDown size={14} className={'transition-transform duration-200 ' + (openMenu === 'marketing' ? 'rotate-180' : '')} />
                     </button>
                     {openMenu === 'marketing' && (
                       <div className="mt-1 space-y-0.5">
                         {marketingSubLinks.filter(l => l.roles.includes(funcao)).map(({ to, label }) => (
-                          <NavLink key={to} to={to} end={to === '/marketing'} className={({ isActive }) => `${mobileSubLinkBase} ${isActive ? mobileLinkActive : mobileLinkInactive}`}>{label}</NavLink>
+                          <NavLink key={to} to={to} end={to === '/marketing'} onClick={() => setMobileOpen(false)} className={({ isActive }) => `${mobileSubLinkBase} ${isActive ? mobileLinkActive : mobileLinkInactive}`}>{label}</NavLink>
                         ))}
                       </div>
                     )}
@@ -217,14 +213,14 @@ export default function Sidebar() {
 
                 {showFinanceiro && (
                   <div>
-                    <button onClick={() => toggleMenu(openMenu === 'financeiro' ? null : 'financeiro')}
+                    <button onClick={() => setOpenMenu(openMenu === 'financeiro' ? null : 'financeiro')}
                       className={`${mobileLinkBase} w-full text-left flex items-center justify-between ${isFinanceiroActive ? mobileLinkActive : mobileLinkInactive}`}>
                       Financeiro <ChevronDown size={14} className={'transition-transform duration-200 ' + (openMenu === 'financeiro' ? 'rotate-180' : '')} />
                     </button>
                     {openMenu === 'financeiro' && (
                       <div className="mt-1 space-y-0.5">
                         {financeiroSubLinks.map(({ to, label }) => (
-                          <NavLink key={to} to={to} end={to === '/financeiro'} className={({ isActive }) => `${mobileSubLinkBase} ${isActive ? mobileLinkActive : mobileLinkInactive}`}>{label}</NavLink>
+                          <NavLink key={to} to={to} end={to === '/financeiro'} onClick={() => setMobileOpen(false)} className={({ isActive }) => `${mobileSubLinkBase} ${isActive ? mobileLinkActive : mobileLinkInactive}`}>{label}</NavLink>
                         ))}
                       </div>
                     )}
@@ -232,7 +228,7 @@ export default function Sidebar() {
                 )}
 
                 {showEquipe && (
-                  <NavLink to="/equipe" className={({ isActive }) => `${mobileLinkBase} ${isActive ? mobileLinkActive : mobileLinkInactive}`}>Equipe</NavLink>
+                  <NavLink to="/equipe" onClick={() => setMobileOpen(false)} className={({ isActive }) => `${mobileLinkBase} ${isActive ? mobileLinkActive : mobileLinkInactive}`}>Equipe</NavLink>
                 )}
               </div>
 
