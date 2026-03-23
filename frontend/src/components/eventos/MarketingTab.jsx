@@ -1110,9 +1110,11 @@ export default function MarketingTab({ eventoId }) {
             </Card>
 
             {showCronogramaForm && (
-              <Card>
-                <CronogramaForm onSubmit={(form, files) => { setCronogramaFormDate(null); adicionarCronograma(form, files) }} onCancel={() => { setShowCronogramaForm(false); setCronogramaFormDate(null) }} initialDate={cronogramaFormDate} />
-              </Card>
+              <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4" onClick={() => { setShowCronogramaForm(false); setCronogramaFormDate(null) }}>
+                <div className="bg-white dark:bg-[#1c1c24] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-auto shadow-2xl" onClick={e => e.stopPropagation()}>
+                  <CronogramaForm onSubmit={(form, files) => { setCronogramaFormDate(null); adicionarCronograma(form, files) }} onCancel={() => { setShowCronogramaForm(false); setCronogramaFormDate(null) }} initialDate={cronogramaFormDate} />
+                </div>
+              </div>
             )}
 
             {/* Calendar Grid */}
@@ -1161,13 +1163,13 @@ export default function MarketingTab({ eventoId }) {
                     const posts = postsForDate(day)
                     const isToday = day.toDateString() === today.toDateString()
                     return (
-                      <div key={idx} className={`p-2 ${isToday ? 'bg-blue-50/50 dark:bg-blue-500/10' : ''}`} style={{ minHeight: 380 }}>
+                      <div key={idx} className={`flex flex-col p-2 ${isToday ? 'bg-blue-50/50 dark:bg-blue-500/10' : ''}`} style={{ minHeight: 380 }}>
                         <div className="text-center mb-3">
                           <span className={`text-sm font-bold w-8 h-8 flex items-center justify-center rounded-full mx-auto ${isToday ? 'bg-blue-600 text-white' : 'text-gray-700 dark:text-white/70'}`}>
                             {day.getDate()}
                           </span>
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-2 flex-1 overflow-y-auto" style={{ maxHeight: 320 }}>
                           {posts.map(c => (
                             <div key={c.id} className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
                               <div className={`${plataformaColors[c.plataforma] || 'bg-gray-500'} px-2 py-1 flex items-center justify-between`}>
@@ -1299,12 +1301,9 @@ export default function MarketingTab({ eventoId }) {
                               </div>
                             </div>
                           ))}
-                          {posts.length === 0 && (
-                            <div onClick={() => { const d = day; const dateStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); setCronogramaFormDate(dateStr); setShowCronogramaForm(true) }} className="flex flex-col items-center justify-center py-6 text-gray-300 hover:text-blue-400 cursor-pointer transition group">
-                              <Plus size={20} className="group-hover:scale-110 transition-transform" />
-                              <span className="text-[10px] mt-1 opacity-0 group-hover:opacity-100 transition">Novo post</span>
-                            </div>
-                          )}
+                          <div onClick={() => { const d = day; const dateStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); setCronogramaFormDate(dateStr); setShowCronogramaForm(true) }} className="flex items-center justify-center py-2 rounded-lg border-2 border-dashed border-gray-200 dark:border-white/[0.10] text-gray-300 dark:text-white/20 hover:border-blue-400 hover:text-blue-400 cursor-pointer transition group">
+                            <Plus size={14} className="group-hover:scale-110 transition-transform" />
+                          </div>
                         </div>
                       </div>
                     )
@@ -2929,9 +2928,17 @@ function CronogramaForm({ onSubmit, onCancel, initialDate }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="p-5 border-b border-gray-100 bg-gradient-to-r from-blue-50/50 to-violet-50/50 space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="sticky top-0 bg-white dark:bg-[#1c1c24] border-b border-gray-100 dark:border-white/[0.08] px-5 py-4 flex items-center justify-between rounded-t-2xl z-10">
+        <div>
+          <h3 className="font-extrabold text-gray-900 dark:text-white/90">Novo Post</h3>
+          <p className="text-xs text-gray-400 dark:text-white/40">Criar novo post no cronograma</p>
+        </div>
+        <button type="button" onClick={onCancel} className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-white/[0.08] flex items-center justify-center text-gray-400 dark:text-white/50 hover:text-gray-600 dark:hover:text-white/80 text-lg font-bold">&times;</button>
+      </div>
+      <div className="px-5 space-y-4 pb-5">
       <div>
-        <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2 block">Destino</label>
+        <label className="text-[11px] font-semibold text-gray-400 dark:text-white/40 uppercase tracking-wide mb-2 block">Destino</label>
         <div className="flex gap-2">
           <button type="button" onClick={() => setForm({...form, destino: 'social'})} className={'flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold border-2 transition ' + (form.destino === 'social' ? 'border-accent bg-accent text-white shadow-md' : 'border-gray-200 bg-white text-gray-500 hover:border-accent/50')}>
             📲 Social Media
@@ -3054,8 +3061,9 @@ function CronogramaForm({ onSubmit, onCancel, initialDate }) {
         )}
       </div>
       <div className="flex gap-2 pt-1">
-        <button type="submit" className="flex items-center gap-1.5 px-5 py-2 bg-accent text-white rounded-lg text-sm font-semibold hover:bg-accent/90 transition shadow-md">Salvar</button>
-        <button type="button" onClick={onCancel} className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-semibold hover:bg-gray-200 transition">Cancelar</button>
+        <button type="submit" className="flex items-center gap-1.5 px-5 py-2.5 bg-accent text-white rounded-xl text-sm font-bold hover:bg-accent/90 transition shadow-md flex-1">Criar Post</button>
+        <button type="button" onClick={onCancel} className="px-4 py-2.5 bg-gray-100 dark:bg-white/[0.08] text-gray-600 dark:text-white/60 rounded-xl text-sm font-bold hover:bg-gray-200 dark:hover:bg-white/[0.12] transition">Cancelar</button>
+      </div>
       </div>
     </form>
   )
