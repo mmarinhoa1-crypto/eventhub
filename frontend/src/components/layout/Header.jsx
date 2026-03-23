@@ -8,8 +8,8 @@ export default function Header() {
   const { tema, alternarTema } = useTema()
 
   return (
-    <header className="h-16 bg-white dark:bg-[rgba(19,19,22,0.85)] dark:backdrop-blur-xl border-b border-gray-200 dark:border-white/[0.08] flex items-center justify-between px-6 sticky top-0 z-40 transition-colors duration-300">
-      <div className="flex items-center gap-2.5 bg-gray-50 dark:bg-white/[0.05] rounded-xl px-4 py-2 border border-gray-100 dark:border-white/[0.06] w-80">
+    <header className="h-14 md:h-16 bg-white dark:bg-[rgba(19,19,22,0.85)] dark:backdrop-blur-xl border-b border-gray-200 dark:border-white/[0.08] flex items-center justify-between px-3 md:px-6 sticky top-0 z-40 transition-colors duration-300">
+      <div className="flex items-center gap-2.5 bg-gray-50 dark:bg-white/[0.05] rounded-xl px-3 md:px-4 py-2 border border-gray-100 dark:border-white/[0.06] w-40 md:w-80">
         <Search size={16} className="text-gray-400 dark:text-white/30" />
         <input
           type="text"
@@ -29,10 +29,10 @@ export default function Header() {
 
         <NotificationPanel />
 
-        <div className="w-px h-7 bg-gray-200 dark:bg-white/15" />
+        <div className="w-px h-7 bg-gray-200 dark:bg-white/15 hidden md:block" />
 
         <div className="flex items-center gap-3">
-          <div className="text-right">
+          <div className="text-right hidden md:block">
             <p className="text-sm font-semibold text-gray-900 dark:text-white/90">{usuario?.nome}</p>
             <p className="text-[11px] text-gray-400 dark:text-white/40">{organizacao?.nome}</p>
           </div>

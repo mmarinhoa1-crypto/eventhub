@@ -380,7 +380,7 @@ export default function MarketingPage() {
             <Megaphone size={24} className="text-blue-600 dark:text-blue-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Marketing</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900">Marketing</h1>
             <p className="text-sm text-gray-500">{activePageTab === 'eventos' ? 'Selecione um evento para gerenciar briefings' : 'Aprovações de planejamentos de todos os eventos'}</p>
           </div>
         </div>
@@ -585,10 +585,10 @@ export default function MarketingPage() {
               ) : (
                 <div className="cursor-pointer flex items-center" onClick={() => abrirEvento(ev.id)}>
                   <div className={'w-1.5 self-stretch rounded-l-2xl flex-shrink-0 ' + (isPast ? 'bg-gray-300' : '')} style={isPast ? {} : {background:'linear-gradient(180deg, #2563eb, #3b82f6)'}} />
-                  <div className="flex-1 px-5 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-4 min-w-0 flex-1">
+                  <div className="flex-1 px-3 md:px-5 py-3 md:py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3 md:gap-4 min-w-0 flex-1">
                       <div className="min-w-0">
-                        <h4 className={'font-bold text-base truncate ' + (isPast ? 'text-gray-500' : 'text-gray-900')}>{ev.nome}</h4>
+                        <h4 className={'font-bold text-sm md:text-base truncate ' + (isPast ? 'text-gray-500' : 'text-gray-900')}>{ev.nome}</h4>
                         <div className="flex items-center gap-3 mt-1 flex-wrap">
                           {ev.data_evento && <span className="flex items-center gap-1 text-xs text-gray-400"><Calendar size={12} /> {fmtData(ev.data_evento)}</span>}
                           {ev.cidade && <span className="flex items-center gap-1 text-xs text-gray-400"><MapPin size={12} /> {ev.cidade}</span>}
@@ -603,7 +603,7 @@ export default function MarketingPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 flex-shrink-0 ml-4">
+                    <div className="flex items-center gap-2 md:gap-3 flex-shrink-0 ml-2 md:ml-4">
                       {!isPast && !igConnections[ev.id] && (
                         <button onClick={(e) => { e.stopPropagation(); setIgConnectEvento(ev.id) }} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-purple-50 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/30 hover:bg-purple-100 dark:hover:bg-purple-500/20 transition" title="Conectar Instagram">
                           <Instagram size={12} className="text-purple-500 dark:text-purple-400" />

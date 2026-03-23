@@ -555,7 +555,7 @@ export default function MinhasDemandas() {
             {isDesigner ? <Palette size={24} className="text-blue-600" /> : <Megaphone size={24} className="text-blue-600" />}
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white/90">Minhas Demandas</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white/90">Minhas Demandas</h1>
             <p className="text-sm text-gray-500 dark:text-white/50">{isDesigner ? 'Briefings e artes para criar' : isSocialMedia ? 'Posts e conteudos para publicar' : 'Acompanhe as entregas da equipe'}</p>
           </div>
         </div>
@@ -641,7 +641,14 @@ export default function MinhasDemandas() {
                   </div>
                 )}
               </div>
-              <div className="flex gap-1 flex-wrap">
+              {/* Filtro tags — select no mobile, botões no desktop */}
+              <select value={filtroStatusAdmin} onChange={e => setFiltroStatusAdmin(e.target.value)}
+                className="md:hidden px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.10] bg-white dark:bg-white/[0.06] text-xs font-bold text-gray-600 dark:text-white/70 outline-none cursor-pointer"
+                style={filtroStatusAdmin !== 'todos' ? { borderColor: TAGS_STATUS.find(t => t.key === filtroStatusAdmin)?.color || '', color: TAGS_STATUS.find(t => t.key === filtroStatusAdmin)?.color || '' } : {}}>
+                <option value="todos">Todas as tags</option>
+                {TAGS_STATUS.map(tag => <option key={tag.key} value={tag.key}>{tag.label}</option>)}
+              </select>
+              <div className="hidden md:flex gap-1 flex-wrap">
                 <button onClick={() => setFiltroStatusAdmin('todos')} className={'px-3 py-1.5 rounded-md text-xs font-bold transition-all ' + (filtroStatusAdmin === 'todos' ? 'bg-accent text-white' : 'text-gray-500 hover:text-gray-700')}>Todos</button>
                 {TAGS_STATUS.map(tag => (
                   <button key={tag.key} onClick={() => setFiltroStatusAdmin(tag.key)}
@@ -1501,34 +1508,41 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
       {/* ===== FILTERS & VIEWS (SocialMedia only) ===== */}
       {!isGestor && !isDesigner && (
         <>
-        <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="space-y-2">
           <div className="flex gap-2 items-center flex-wrap">
-            <select value={filtroEvento} onChange={e => setFiltroEvento(e.target.value)} className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.10] bg-white dark:bg-white/[0.06] text-xs font-semibold text-gray-600 dark:text-white/70 outline-none cursor-pointer">
+            <select value={filtroEvento} onChange={e => setFiltroEvento(e.target.value)} className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.10] bg-white dark:bg-white/[0.06] text-xs font-semibold text-gray-600 dark:text-white/70 outline-none cursor-pointer flex-shrink-0">
               <option value="todos">Todos os eventos</option>
               {data.eventos.map(ev => <option key={ev.id} value={ev.id}>{ev.nome}</option>)}
             </select>
-            <div className="relative">
+            <div className="relative flex-1 min-w-[140px]">
               <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/40" />
               <input
                 value={filtroBusca}
                 onChange={e => setFiltroBusca(e.target.value)}
                 placeholder="Buscar demanda..."
-                className="pl-8 pr-7 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.10] bg-white dark:bg-white/[0.06] text-xs font-semibold text-gray-600 dark:text-white/70 placeholder-gray-400 dark:placeholder-white/30 outline-none focus:ring-2 focus:ring-accent/40 transition w-48"
+                className="pl-8 pr-7 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.10] bg-white dark:bg-white/[0.06] text-xs font-semibold text-gray-600 dark:text-white/70 placeholder-gray-400 dark:placeholder-white/30 outline-none focus:ring-2 focus:ring-accent/40 transition w-full"
               />
               {filtroBusca && (
                 <button onClick={() => setFiltroBusca('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70 text-xs font-bold">&times;</button>
               )}
             </div>
-            <div className="flex gap-1 flex-wrap">
-              <button onClick={() => setFiltro('todas')} className={'px-3 py-1.5 rounded-lg text-xs font-semibold transition ' + (filtro === 'todas' ? 'bg-blue-500 text-white shadow-sm' : 'bg-gray-100 dark:bg-white/[0.06] text-gray-500 dark:text-white/50 hover:bg-gray-200 dark:hover:bg-white/[0.10]')}>Todas</button>
-              {TAGS_STATUS.map(tag => (
-                <button key={tag.key} onClick={() => setFiltro(tag.key)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold transition"
-                  style={filtro === tag.key ? { backgroundColor: tag.color, color: '#fff', boxShadow: '0 1px 2px rgba(0,0,0,0.15)' } : { backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}>
-                  {tag.label}
-                </button>
-              ))}
-            </div>
+          </div>
+          {/* Filtro tags — select no mobile, botões no desktop */}
+          <select value={filtro} onChange={e => setFiltro(e.target.value)}
+            className="md:hidden px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.10] bg-white dark:bg-white/[0.06] text-xs font-semibold text-gray-600 dark:text-white/70 outline-none cursor-pointer"
+            style={filtro !== 'todas' ? { borderColor: TAGS_STATUS.find(t => t.key === filtro)?.color || '', color: TAGS_STATUS.find(t => t.key === filtro)?.color || '' } : {}}>
+            <option value="todas">Todas as tags</option>
+            {TAGS_STATUS.map(tag => <option key={tag.key} value={tag.key}>{tag.label}</option>)}
+          </select>
+          <div className="hidden md:flex gap-1 flex-wrap">
+            <button onClick={() => setFiltro('todas')} className={'px-3 py-1.5 rounded-lg text-xs font-semibold transition flex-shrink-0 ' + (filtro === 'todas' ? 'bg-blue-500 text-white shadow-sm' : 'bg-gray-100 dark:bg-white/[0.06] text-gray-500 dark:text-white/50 hover:bg-gray-200 dark:hover:bg-white/[0.10]')}>Todas</button>
+            {TAGS_STATUS.map(tag => (
+              <button key={tag.key} onClick={() => setFiltro(tag.key)}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex-shrink-0"
+                style={filtro === tag.key ? { backgroundColor: tag.color, color: '#fff', boxShadow: '0 1px 2px rgba(0,0,0,0.15)' } : { backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}>
+                {tag.label}
+              </button>
+            ))}
           </div>
         </div>
 
