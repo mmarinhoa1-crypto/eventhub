@@ -1,6 +1,6 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useRef, useEffect } from 'react'
-import { Sun, Moon, ChevronDown } from 'lucide-react'
+import { Sun, Moon, ChevronDown, Menu, X } from 'lucide-react'
 import NotificationPanel from './NotificationPanel'
 import { useAuth } from '../../hooks/useAuth'
 import { useTema } from '../../contexts/ThemeContext'
@@ -31,6 +31,7 @@ export default function Sidebar() {
   const navigate = useNavigate()
 
   const [openMenu, setOpenMenu] = useState(null)
+  const [mobileOpen, setMobileOpen] = useState(false)
   const navRef = useRef(null)
 
   const isDark = tema === 'dark'
@@ -52,7 +53,8 @@ export default function Sidebar() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  useEffect(() => { setOpenMenu(null) }, [location.pathname])
+  // Fechar menus ao navegar
+  useEffect(() => { setOpenMenu(null); setMobileOpen(false) }, [location.pathname])
 
   function toggleMenu(name) {
     setOpenMenu(prev => (prev === name ? null : name))
@@ -63,7 +65,7 @@ export default function Sidebar() {
     navigate('/entrar')
   }
 
-  // Estilos da barra glass — via CSS variables definidas no index.css
+  // Estilos da barra glass
   const barStyle = {
     background: 'var(--sidebar-bar-bg)',
     backdropFilter: 'blur(32px)',
@@ -90,117 +92,154 @@ export default function Sidebar() {
   const divider = 'bg-black/10 dark:bg-white/15'
   const sairClass = `${linkBase} text-red-400 hover:text-red-600 hover:bg-red-50 dark:text-red-400/80 dark:hover:text-red-300 dark:hover:bg-red-500/10`
 
+  // Mobile drawer link styles
+  const mobileLinkBase = 'block px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200'
+  const mobileLinkActive = 'bg-accent/10 text-accent'
+  const mobileLinkInactive = 'text-gray-600 dark:text-white/70 hover:bg-gray-100 dark:hover:bg-white/[0.06]'
+  const mobileSubLinkBase = 'block px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-150'
+
   return (
-    <nav
-      ref={navRef}
-      className="fixed top-4 left-1/2 -translate-x-1/2 z-50"
-      style={{ maxWidth: 'calc(100vw - 0.5rem)' }}
-    >
-      {/* Submenus — sobem acima da barra */}
-      {openMenu === 'marketing' && showMarketing && (
-        <div
-          className="absolute top-full mt-3 left-1/2 -translate-x-1/2 rounded-2xl overflow-hidden shadow-2xl min-w-[180px]"
-          style={submenuStyle}
-        >
-          <div className="px-2 py-2 space-y-0.5">
-            {marketingSubLinks
-              .filter(l => l.roles.includes(funcao))
-              .map(({ to, label }) => (
-                <NavLink key={to} to={to} end={to === '/marketing'}
-                  className={({ isActive }) => `${subLinkBase} ${isActive ? subLinkActive : subLinkInactive}`}
-                >
-                  {label}
-                </NavLink>
-              ))}
-          </div>
-        </div>
-      )}
-
-      {openMenu === 'financeiro' && showFinanceiro && (
-        <div
-          className="absolute top-full mt-3 left-1/2 -translate-x-1/2 rounded-2xl overflow-hidden shadow-2xl min-w-[180px]"
-          style={submenuStyle}
-        >
-          <div className="px-2 py-2 space-y-0.5">
-            {financeiroSubLinks.map(({ to, label }) => (
-              <NavLink key={to} to={to} end={to === '/financeiro'}
-                className={({ isActive }) => `${subLinkBase} ${isActive ? subLinkActive : subLinkInactive}`}
-              >
-                {label}
-              </NavLink>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Barra principal */}
-      <div
-        className="flex items-center gap-0.5 px-2.5 py-2.5 rounded-2xl shadow-2xl"
-        style={barStyle}
+    <>
+      {/* ===== DESKTOP NAVBAR ===== */}
+      <nav
+        ref={navRef}
+        className="fixed top-4 left-1/2 -translate-x-1/2 z-50 hidden md:block"
+        style={{ maxWidth: 'calc(100vw - 0.5rem)' }}
       >
-        {/* Logo 314 */}
-        <img src="/logo-rosa.png" alt="314 Produções" className="h-7 w-auto flex-shrink-0" />
-        <div className={`w-px h-5 mx-0.5 ${divider}`} />
+        {/* Submenus desktop */}
+        {openMenu === 'marketing' && showMarketing && (
+          <div className="absolute top-full mt-3 left-1/2 -translate-x-1/2 rounded-2xl overflow-hidden shadow-2xl min-w-[180px]" style={submenuStyle}>
+            <div className="px-2 py-2 space-y-0.5">
+              {marketingSubLinks.filter(l => l.roles.includes(funcao)).map(({ to, label }) => (
+                <NavLink key={to} to={to} end={to === '/marketing'} className={({ isActive }) => `${subLinkBase} ${isActive ? subLinkActive : subLinkInactive}`}>{label}</NavLink>
+              ))}
+            </div>
+          </div>
+        )}
+        {openMenu === 'financeiro' && showFinanceiro && (
+          <div className="absolute top-full mt-3 left-1/2 -translate-x-1/2 rounded-2xl overflow-hidden shadow-2xl min-w-[180px]" style={submenuStyle}>
+            <div className="px-2 py-2 space-y-0.5">
+              {financeiroSubLinks.map(({ to, label }) => (
+                <NavLink key={to} to={to} end={to === '/financeiro'} className={({ isActive }) => `${subLinkBase} ${isActive ? subLinkActive : subLinkInactive}`}>{label}</NavLink>
+              ))}
+            </div>
+          </div>
+        )}
 
-        {/* Links de navegação */}
-        {mainLinks
-          .filter(l => l.roles.includes(funcao))
-          .map(({ to, label }) => (
-            <NavLink key={to} to={to} end={to === '/'}
-              className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}
-            >
-              {label}
-            </NavLink>
+        {/* Barra principal desktop */}
+        <div className="flex items-center gap-0.5 px-2.5 py-2.5 rounded-2xl shadow-2xl" style={barStyle}>
+          <img src="/logo-rosa.png" alt="314 Produções" className="h-7 w-auto flex-shrink-0" />
+          <div className={`w-px h-5 mx-0.5 ${divider}`} />
+          {mainLinks.filter(l => l.roles.includes(funcao)).map(({ to, label }) => (
+            <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}>{label}</NavLink>
           ))}
-
-        {showMarketing && (
-          <button
-            onClick={() => toggleMenu('marketing')}
-            className={`${linkBase} flex items-center gap-1 ${isMarketingActive || openMenu === 'marketing' ? linkActive : linkInactive}`}
-          >
-            Marketing
-            <ChevronDown size={12} className={'transition-transform duration-200 ' + (openMenu === 'marketing' ? 'rotate-180' : '')} />
+          {showMarketing && (
+            <button onClick={() => toggleMenu('marketing')} className={`${linkBase} flex items-center gap-1 ${isMarketingActive || openMenu === 'marketing' ? linkActive : linkInactive}`}>
+              Marketing <ChevronDown size={12} className={'transition-transform duration-200 ' + (openMenu === 'marketing' ? 'rotate-180' : '')} />
+            </button>
+          )}
+          {showFinanceiro && (
+            <button onClick={() => toggleMenu('financeiro')} className={`${linkBase} flex items-center gap-1 ${isFinanceiroActive || openMenu === 'financeiro' ? linkActive : linkInactive}`}>
+              Financeiro <ChevronDown size={12} className={'transition-transform duration-200 ' + (openMenu === 'financeiro' ? 'rotate-180' : '')} />
+            </button>
+          )}
+          {showEquipe && (
+            <NavLink to="/equipe" className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}>Equipe</NavLink>
+          )}
+          <div className={`w-px h-5 mx-0.5 ${divider}`} />
+          <NotificationPanel />
+          <button onClick={alternarTema} className={iconBtn} title={isDark ? 'Modo claro' : 'Modo escuro'}>
+            {isDark ? <Sun size={16} /> : <Moon size={16} />}
           </button>
+          <div className={`w-px h-5 mx-0.5 ${divider}`} />
+          <span className="text-xs font-medium px-1 text-gray-400 dark:text-white/40">{usuario?.nome?.split(' ')[0] || 'Usuário'}</span>
+          <button onClick={handleSair} className={sairClass}>Sair</button>
+        </div>
+      </nav>
+
+      {/* ===== MOBILE NAVBAR ===== */}
+      <nav className="fixed top-0 left-0 right-0 z-50 md:hidden">
+        <div className="flex items-center justify-between px-4 py-3" style={barStyle}>
+          {/* Logo */}
+          <img src="/logo-rosa.png" alt="314 Produções" className="h-6 w-auto flex-shrink-0" />
+
+          {/* Notificação + Theme + Hamburguer */}
+          <div className="flex items-center gap-1">
+            <NotificationPanel />
+            <button onClick={alternarTema} className={iconBtn} title={isDark ? 'Modo claro' : 'Modo escuro'}>
+              {isDark ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+            <button onClick={() => setMobileOpen(!mobileOpen)} className={iconBtn}>
+              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile drawer */}
+        {mobileOpen && (
+          <>
+            <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setMobileOpen(false)} />
+            <div className="fixed top-0 right-0 w-72 h-full z-50 overflow-y-auto shadow-2xl" style={{ ...submenuStyle, borderRadius: 0, borderLeft: '1px solid var(--sidebar-submenu-border)' }}>
+              {/* Drawer header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-white/[0.08]">
+                <div>
+                  <p className="text-sm font-bold text-gray-900 dark:text-white/90">{usuario?.nome || 'Usuário'}</p>
+                  <p className="text-[11px] text-gray-400 dark:text-white/40">{funcao === 'admin' ? 'Administrador' : funcao === 'diretor' ? 'Diretor' : funcao === 'designer' ? 'Designer' : funcao === 'social_media' ? 'Social Media' : funcao}</p>
+                </div>
+                <button onClick={() => setMobileOpen(false)} className={iconBtn}><X size={18} /></button>
+              </div>
+
+              {/* Links */}
+              <div className="p-3 space-y-1">
+                {mainLinks.filter(l => l.roles.includes(funcao)).map(({ to, label }) => (
+                  <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => `${mobileLinkBase} ${isActive ? mobileLinkActive : mobileLinkInactive}`}>{label}</NavLink>
+                ))}
+
+                {showMarketing && (
+                  <div>
+                    <button onClick={() => toggleMenu(openMenu === 'marketing' ? null : 'marketing')}
+                      className={`${mobileLinkBase} w-full text-left flex items-center justify-between ${isMarketingActive ? mobileLinkActive : mobileLinkInactive}`}>
+                      Marketing <ChevronDown size={14} className={'transition-transform duration-200 ' + (openMenu === 'marketing' ? 'rotate-180' : '')} />
+                    </button>
+                    {openMenu === 'marketing' && (
+                      <div className="mt-1 space-y-0.5">
+                        {marketingSubLinks.filter(l => l.roles.includes(funcao)).map(({ to, label }) => (
+                          <NavLink key={to} to={to} end={to === '/marketing'} className={({ isActive }) => `${mobileSubLinkBase} ${isActive ? mobileLinkActive : mobileLinkInactive}`}>{label}</NavLink>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {showFinanceiro && (
+                  <div>
+                    <button onClick={() => toggleMenu(openMenu === 'financeiro' ? null : 'financeiro')}
+                      className={`${mobileLinkBase} w-full text-left flex items-center justify-between ${isFinanceiroActive ? mobileLinkActive : mobileLinkInactive}`}>
+                      Financeiro <ChevronDown size={14} className={'transition-transform duration-200 ' + (openMenu === 'financeiro' ? 'rotate-180' : '')} />
+                    </button>
+                    {openMenu === 'financeiro' && (
+                      <div className="mt-1 space-y-0.5">
+                        {financeiroSubLinks.map(({ to, label }) => (
+                          <NavLink key={to} to={to} end={to === '/financeiro'} className={({ isActive }) => `${mobileSubLinkBase} ${isActive ? mobileLinkActive : mobileLinkInactive}`}>{label}</NavLink>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {showEquipe && (
+                  <NavLink to="/equipe" className={({ isActive }) => `${mobileLinkBase} ${isActive ? mobileLinkActive : mobileLinkInactive}`}>Equipe</NavLink>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-white/[0.08]">
+                <button onClick={handleSair} className="w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition">Sair</button>
+              </div>
+            </div>
+          </>
         )}
-
-        {showFinanceiro && (
-          <button
-            onClick={() => toggleMenu('financeiro')}
-            className={`${linkBase} flex items-center gap-1 ${isFinanceiroActive || openMenu === 'financeiro' ? linkActive : linkInactive}`}
-          >
-            Financeiro
-            <ChevronDown size={12} className={'transition-transform duration-200 ' + (openMenu === 'financeiro' ? 'rotate-180' : '')} />
-          </button>
-        )}
-
-        {showEquipe && (
-          <NavLink to="/equipe"
-            className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}
-          >
-            Equipe
-          </NavLink>
-        )}
-
-        <div className={`w-px h-5 mx-0.5 ${divider}`} />
-
-        {/* Notificação */}
-        <NotificationPanel />
-
-        {/* Toggle tema */}
-        <button onClick={alternarTema} className={iconBtn} title={isDark ? 'Modo claro' : 'Modo escuro'}>
-          {isDark ? <Sun size={16} /> : <Moon size={16} />}
-        </button>
-
-        <div className={`w-px h-5 mx-0.5 ${divider}`} />
-
-        <span className="text-xs font-medium px-1 hidden sm:block text-gray-400 dark:text-white/40">
-          {usuario?.nome?.split(' ')[0] || 'Usuário'}
-        </span>
-
-        <button onClick={handleSair} className={sairClass}>
-          Sair
-        </button>
-      </div>
-    </nav>
+      </nav>
+    </>
   )
 }

@@ -1118,7 +1118,7 @@ export default function MarketingTab({ eventoId }) {
             {/* Calendar Grid */}
             <Card>
               {/* Day name headers */}
-              <div className="grid grid-cols-7 border-b border-gray-200">
+              <div className="grid grid-cols-7 border-b border-gray-200 overflow-x-auto" style={{ minWidth: 700 }}>
                 {dayNames.map(d => (
                   <div key={d} className="text-center text-xs font-semibold text-gray-400 uppercase tracking-wider py-3">{d}</div>
                 ))}
@@ -1126,7 +1126,7 @@ export default function MarketingTab({ eventoId }) {
 
               {calendarView === 'month' ? (
                 /* ===== MONTH VIEW ===== */
-                <div className="grid grid-cols-7">
+                <div className="grid grid-cols-7 overflow-x-auto" style={{ minWidth: 700 }}>
                   {days.map((dayObj, idx) => {
                     const posts = postsForDate(dayObj.date)
                     const isToday = dayObj.date.toDateString() === today.toDateString()
@@ -1156,7 +1156,7 @@ export default function MarketingTab({ eventoId }) {
                 </div>
               ) : (
                 /* ===== WEEK VIEW ===== */
-                <div className="grid grid-cols-7 divide-x divide-gray-100">
+                <div className="grid grid-cols-7 divide-x divide-gray-100 overflow-x-auto" style={{ minWidth: 700 }}>
                   {weekDays.map((day, idx) => {
                     const posts = postsForDate(day)
                     const isToday = day.toDateString() === today.toDateString()

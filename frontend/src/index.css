@@ -299,3 +299,72 @@ html.modal-open { overflow: hidden; }
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
 }
+
+/* ===== RESPONSIVIDADE MOBILE ===== */
+@media (max-width: 768px) {
+  /* Layout geral */
+  main.flex-1 {
+    padding: 1rem !important;
+    padding-top: 5rem !important;
+  }
+
+  /* Header */
+  header.sticky {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    gap: 0.5rem;
+  }
+
+
+  /* Modais — full width no mobile */
+  .fixed.inset-0 > div[class*="max-w-2xl"],
+  .fixed.inset-0 > div[class*="max-w-4xl"] {
+    max-width: 100% !important;
+    margin: 0 !important;
+    border-radius: 1rem !important;
+  }
+
+  /* Cards do calendário */
+  div[style*="minWidth: 285"] {
+    min-width: 260px !important;
+  }
+
+  /* Grids — forçar 2 colunas no mobile */
+  .grid.grid-cols-2.md\:grid-cols-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  /* Títulos menores */
+  h1.text-2xl {
+    font-size: 1.25rem !important;
+  }
+
+  /* Notification panel */
+  div[class*="w-[360px]"] {
+    width: calc(100vw - 2rem) !important;
+    right: -1rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Layout muito pequeno */
+  main.flex-1 {
+    padding: 0.75rem !important;
+    padding-top: 4.5rem !important;
+  }
+
+
+  /* Stats cards — 1 coluna */
+  .grid.grid-cols-2 {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Calendar cards menores */
+  div[style*="minWidth: 285"],
+  div[style*="minWidth: 260"] {
+    min-width: 220px !important;
+  }
+  div[style*="height: 520"] {
+    height: 420px !important;
+  }
+}
