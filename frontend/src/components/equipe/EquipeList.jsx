@@ -21,6 +21,7 @@ const funcaoLabels = {
   viewer: 'Visualizador',
   social_media: 'Social Media',
   diretor: 'Diretor',
+  gestor_trafego: 'Gestor de Tráfego',
 }
 
 export default function EquipeList({ membros, onUpdate }) {
@@ -121,6 +122,7 @@ export default function EquipeList({ membros, onUpdate }) {
                     <option value="designer">Designer</option>
                     <option value="social_media">Social Media</option>
                     <option value="diretor">Diretor</option>
+                    <option value="gestor_trafego">Gestor de Tráfego</option>
                     <option value="viewer">Visualizador</option>
                   </select>
                 </td>

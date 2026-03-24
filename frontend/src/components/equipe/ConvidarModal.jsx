@@ -13,11 +13,13 @@ const funcoesPorPerfil = {
     { value: 'designer', label: 'Designer' },
     { value: 'social_media', label: 'Social Media' },
     { value: 'diretor', label: 'Diretor' },
+    { value: 'gestor_trafego', label: 'Gestor de Tráfego' },
     { value: 'viewer', label: 'Visualizador' },
   ],
   diretor: [
     { value: 'designer', label: 'Designer' },
     { value: 'social_media', label: 'Social Media' },
+    { value: 'gestor_trafego', label: 'Gestor de Tráfego' },
   ],
 }
 
