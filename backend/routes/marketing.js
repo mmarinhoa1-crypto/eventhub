@@ -60,14 +60,12 @@ const b=req.body;
 const r=await pool.query('INSERT INTO cronograma_marketing(org_id,id_evento,titulo,plataforma,data_publicacao,hora_publicacao,conteudo,hashtags,formato,status,collaborators) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *',
 [req.user.org_id,req.params.id,b.titulo,b.plataforma||'',b.data_publicacao||'',b.hora_publicacao||'',b.conteudo||'',b.hashtags||'',b.formato||'',b.status||'pendente',b.collaborators||'']);
 const post=r.rows[0];
-// Criar briefing automaticamente para o designer (somente se destino=design)
-if(b.destino==='design'){
+// Criar briefing automaticamente vinculado ao post (sempre)
 try{
 const brf=await pool.query('INSERT INTO briefings(org_id,id_evento,titulo,tipo,descricao,status,data_vencimento,hora_vencimento,tipo_conteudo,formato,referencia,musica,cronograma_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id',
 [req.user.org_id,req.params.id,post.titulo,'post',b.descricao||post.conteudo||'','pendente',post.data_publicacao||'',post.hora_publicacao||'',b.tipo_conteudo||'',b.formato||'',b.referencia||'',b.musica||'',post.id]);
 post.briefing_id=brf.rows[0].id;
 }catch(e2){console.log('Erro ao criar briefing automatico:',e2.message)}
-}
 res.json(post)}catch(e){res.status(500).json({erro:e.message})}});
 
 // Toggle visibilidade do briefing para o designer
