@@ -199,8 +199,7 @@ export default function MinhasDemandas() {
         carregarComentarios(item._tipo, item.id, true)
       } else {
         setDetalhe(item)
-        if (item._tipo === 'briefing') carregarArquivos(item.id)
-        else setArquivos([])
+        carregarArquivosDetalhe(item._tipo, item.id)
         carregarComentarios(item._tipo, item.id, false)
       }
       setSearchParams({}, { replace: true })
@@ -210,6 +209,14 @@ export default function MinhasDemandas() {
   async function carregarArquivos(briefingId) {
     try {
       const { data } = await api.get('/briefings/' + briefingId + '/arquivos')
+      setArquivos(data)
+    } catch { setArquivos([]) }
+  }
+
+  async function carregarArquivosDetalhe(tipo, id) {
+    try {
+      const endpoint = tipo === 'briefing' ? '/briefings/' + id + '/arquivos' : '/cronograma/' + id + '/arquivos'
+      const { data } = await api.get(endpoint)
       setArquivos(data)
     } catch { setArquivos([]) }
   }
@@ -224,23 +231,24 @@ export default function MinhasDemandas() {
     finally { setAdminLoadArqs(false) }
   }
 
-  async function uploadArquivo(briefingId, file) {
+  async function uploadArquivo(tipo, id, file) {
     setUploading(true)
     try {
       const formData = new FormData()
       formData.append('arquivo', file)
-      await api.post('/briefings/' + briefingId + '/arquivos', formData)
+      const endpoint = tipo === 'briefing' ? '/briefings/' + id + '/arquivos' : '/cronograma/' + id + '/arquivos'
+      await api.post(endpoint, formData, { timeout: 600000 })
       toast.success('Arquivo enviado!')
-      carregarArquivos(briefingId)
+      carregarArquivosDetalhe(tipo, id)
     } catch { toast.error('Erro ao enviar arquivo') }
     finally { setUploading(false) }
   }
 
-  async function deletarArquivo(arquivoId, briefingId) {
+  async function deletarArquivo(arquivoId, tipo, id) {
     try {
       await api.delete('/arquivos/' + arquivoId)
       toast.success('Arquivo removido')
-      carregarArquivos(briefingId)
+      carregarArquivosDetalhe(tipo, id)
     } catch { toast.error('Erro ao remover') }
   }
 
@@ -1405,7 +1413,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                     onDragEnd={() => { setDraggedItem(null); setDragOverCard(null) }}
                                     onDragOver={e => handleCardDragOver(e, d._tipo+'-'+d.id)}
                                     onDrop={e => handleCardDrop(e, d, dayStr, dayItems)}
-                                    onClick={() => { setDetalhe({...d}); if(d._tipo === 'briefing') carregarArquivos(d.id); else setArquivos([]); setEditMode(false); setEditForm({}); carregarComentarios(d._tipo, d.id, false) }}
+                                    onClick={() => { setDetalhe({...d}); carregarArquivosDetalhe(d._tipo, d.id); setEditMode(false); setEditForm({}); carregarComentarios(d._tipo, d.id, false) }}
                                     className={'rounded-xl bg-white dark:bg-white/[0.06] border border-gray-100 dark:border-white/[0.08] cursor-grab select-none transition-all duration-150 hover:shadow-md shadow-sm '
                                       + (dragOverCard === d._tipo+'-'+d.id ? 'ring-2 ring-inset ring-blue-400 ' : '')}
                                     style={{ borderLeft: `4px solid ${borderColor}` }}
@@ -1714,7 +1722,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                 onDragEnd={() => { setDraggedItem(null); setDragOverDay(null); setDragOverCard(null) }}
                                 onDragOver={e => handleCardDragOver(e, d._tipo+'-'+d.id)}
                                 onDrop={e => handleCardDrop(e, d, dayStr, dayItems)}
-                                onClick={() => { setDetalhe({...d}); if(d._tipo === 'briefing') carregarArquivos(d.id); else setArquivos([]); setEditMode(false); setEditForm({}); carregarComentarios(d._tipo, d.id, false) }}
+                                onClick={() => { setDetalhe({...d}); carregarArquivosDetalhe(d._tipo, d.id); setEditMode(false); setEditForm({}); carregarComentarios(d._tipo, d.id, false) }}
                                 className={'rounded-xl bg-white dark:bg-white/[0.06] border cursor-grab select-none transition-all duration-150 hover:shadow-md border-gray-100 dark:border-white/[0.08] shadow-sm '
                                   + (isDraggingThis ? 'opacity-40 scale-95 ' : '')
                                   + (dragOverCard === d._tipo+'-'+d.id && !isDraggingThis ? 'ring-2 ring-inset ring-blue-400 ' : '')}
@@ -2238,7 +2246,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                     <label className={'px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition ' + (uploading ? 'bg-gray-100 text-gray-400' : 'bg-blue-50 text-blue-600 hover:bg-blue-100')}>
                       {uploading ? 'Enviando...' : '+ Enviar'}
                       <input type="file" className="hidden" disabled={uploading} accept="image/*,video/*,.pdf,.psd,.ai,.zip" multiple
-                        onChange={e => { Array.from(e.target.files).forEach(file => uploadArquivo(d.id, file)); e.target.value='' }} />
+                        onChange={e => { Array.from(e.target.files).forEach(file => uploadArquivo(d._tipo, d.id, file)); e.target.value='' }} />
                     </label>
                   </div>
                   {arquivos.length > 0 && (
@@ -2256,7 +2264,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                               className="absolute bottom-1 right-1 w-7 h-7 bg-blue-500 hover:bg-blue-600 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition z-10">
                               <Download size={13} className="text-white" />
                             </a>
-                            <button onClick={e => { e.stopPropagation(); deletarArquivo(a.id, d.id) }}
+                            <button onClick={e => { e.stopPropagation(); deletarArquivo(a.id, d._tipo, d.id) }}
                               className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-xs font-bold">✕</button>
                           </div>
                         )
