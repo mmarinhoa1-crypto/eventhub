@@ -130,9 +130,9 @@ for(const c of cronSemBriefing.rows){
   criados++;
 }
 
-// 2. Briefings sem cronograma vinculado → criar cronograma
+// 2. Briefings sem cronograma vinculado (ou vinculado a outro evento) → criar cronograma
 const briefSemCron=await pool.query(
-  'SELECT b.* FROM briefings b WHERE b.id_evento=$1 AND b.org_id=$2 AND (b.cronograma_id IS NULL OR NOT EXISTS (SELECT 1 FROM cronograma_marketing c WHERE c.id=b.cronograma_id AND c.org_id=$2))',
+  'SELECT b.* FROM briefings b WHERE b.id_evento=$1 AND b.org_id=$2 AND (b.cronograma_id IS NULL OR NOT EXISTS (SELECT 1 FROM cronograma_marketing c WHERE c.id=b.cronograma_id AND c.id_evento=$1 AND c.org_id=$2))',
   [eventoId,orgId]);
 for(const b of briefSemCron.rows){
   const cr=await pool.query('INSERT INTO cronograma_marketing(org_id,id_evento,titulo,plataforma,data_publicacao,hora_publicacao,conteudo,hashtags,formato,status,collaborators) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id',
