@@ -113,6 +113,37 @@ res.json({sucesso:true})}catch(e){res.status(500).json({erro:e.message})}});
 
 
 
+// === SINCRONIZAR DEMANDAS (briefing <-> cronograma) ===
+// Garante que todo cronograma tem um briefing vinculado e vice-versa
+router.post('/api/eventos/:id/sync-demandas',auth,async(req,res)=>{try{
+const orgId=req.user.org_id;
+const eventoId=req.params.id;
+let criados=0;
+
+// 1. Cronogramas sem briefing vinculado → criar briefing
+const cronSemBriefing=await pool.query(
+  'SELECT c.* FROM cronograma_marketing c WHERE c.id_evento=$1 AND c.org_id=$2 AND NOT EXISTS (SELECT 1 FROM briefings b WHERE b.cronograma_id=c.id AND b.org_id=$2)',
+  [eventoId,orgId]);
+for(const c of cronSemBriefing.rows){
+  await pool.query('INSERT INTO briefings(org_id,id_evento,titulo,tipo,descricao,status,data_vencimento,hora_vencimento,tipo_conteudo,formato,referencia,musica,cronograma_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)',
+    [orgId,eventoId,c.titulo,'post',c.descricao||c.conteudo||'',c.status||'pendente',c.data_publicacao||'',c.hora_publicacao||'',c.tipo_conteudo||'',c.formato||'',c.referencia||'',c.musica||'',c.id]);
+  criados++;
+}
+
+// 2. Briefings sem cronograma vinculado → criar cronograma
+const briefSemCron=await pool.query(
+  'SELECT b.* FROM briefings b WHERE b.id_evento=$1 AND b.org_id=$2 AND (b.cronograma_id IS NULL OR NOT EXISTS (SELECT 1 FROM cronograma_marketing c WHERE c.id=b.cronograma_id AND c.org_id=$2))',
+  [eventoId,orgId]);
+for(const b of briefSemCron.rows){
+  const cr=await pool.query('INSERT INTO cronograma_marketing(org_id,id_evento,titulo,plataforma,data_publicacao,hora_publicacao,conteudo,hashtags,formato,status,collaborators) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id',
+    [orgId,eventoId,b.titulo,b.plataforma||'Instagram',b.data_vencimento||'',b.hora_vencimento||'',b.descricao||b.legenda||'','',b.formato||'',b.status||'pendente','']);
+  await pool.query('UPDATE briefings SET cronograma_id=$1 WHERE id=$2',[cr.rows[0].id,b.id]);
+  criados++;
+}
+
+res.json({sucesso:true,criados})
+}catch(e){console.error('Erro sync-demandas:',e);res.status(500).json({erro:e.message})}});
+
 // === INSTAGRAM ACCOUNTS MANAGEMENT ===
 // Listar todas as contas de Instagram da org
 router.get('/api/instagram/accounts',auth,async(req,res)=>{try{

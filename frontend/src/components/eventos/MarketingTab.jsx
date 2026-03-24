@@ -170,6 +170,8 @@ export default function MarketingTab({ eventoId }) {
 
   async function carregarDados() {
     try {
+      // Sincronizar demandas: garante que todo item existe em ambas as tabelas
+      await api.post(`/eventos/${eventoId}/sync-demandas`).catch(() => {})
       const [bRes, cRes, campRes, anRes, planRes, matArqRes, cronArqRes] = await Promise.all([
         api.get(`/eventos/${eventoId}/briefings`),
         api.get(`/eventos/${eventoId}/cronograma`),
