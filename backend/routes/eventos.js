@@ -36,7 +36,8 @@ router.get('/api/eventos',auth,async(req,res)=>{try{
 let q='SELECT e.*,COALESCE(SUM(d.valor),0) as total,COUNT(d.id) as quantidade FROM eventos e LEFT JOIN despesas d ON d.id_evento=e.id WHERE e.org_id=$1';
 const params=[req.user.org_id];
 if(req.user.funcao==='designer'){q+=' AND e.designer_id=$2';params.push(req.user.id)}
-if(req.user.funcao==='social_media'){q+=' AND e.social_media_id=$2';params.push(req.user.id)}
+else if(req.user.funcao==='social_media'){q+=' AND e.social_media_id=$2';params.push(req.user.id)}
+// gestor_trafego vê todos os eventos da org (somente leitura no frontend)
 q+=' GROUP BY e.id ORDER BY e.data_evento ASC';
 const r=await pool.query(q,params);
 res.json(r.rows)}catch(e){res.status(500).json({erro:e.message})}});
@@ -86,7 +87,7 @@ const r=await pool.query('SELECT * FROM despesas WHERE id_evento=$1 AND org_id=$
 res.json(r.rows)}catch(e){res.status(500).json({erro:e.message})}});
 
 router.post('/api/eventos',auth,async(req,res)=>{try{
-if(req.user.funcao==='designer'||req.user.funcao==='social_media')return res.status(403).json({erro:'Sem permissao'});
+if(req.user.funcao==='designer'||req.user.funcao==='social_media'||req.user.funcao==='gestor_trafego')return res.status(403).json({erro:'Sem permissao'});
 const{nome,id_grupo,orcamento,data_evento,hora_evento,hora_abertura,local_evento,cidade,descricao,publico_alvo,capacidade,atracoes,tipo_evento,info_lotes,observacoes,data_abertura_vendas,hora_abertura_vendas,promo_abertura,pontos_venda,classificacao,instagram,designer,social_media,diretor,designer_id,social_media_id,diretor_id}=req.body;
 const r=await pool.query('INSERT INTO eventos(org_id,nome,id_grupo,orcamento,data_evento,hora_evento,hora_abertura,local_evento,cidade,descricao,publico_alvo,capacidade,atracoes,tipo_evento,info_lotes,observacoes,data_abertura_vendas,hora_abertura_vendas,promo_abertura,pontos_venda,classificacao,instagram,designer,social_media,diretor,designer_id,social_media_id,diretor_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28) RETURNING *',[req.user.org_id,nome,id_grupo||'',parseFloat(orcamento)||0,data_evento||'',hora_evento||'',hora_abertura||'',local_evento||'',cidade||'',descricao||'',publico_alvo||'',parseInt(capacidade)||0,atracoes||'',tipo_evento||'',info_lotes||'',observacoes||'',data_abertura_vendas||'',hora_abertura_vendas||'',promo_abertura||'',pontos_venda||'',classificacao||'',instagram||'',designer||'',social_media||'',diretor||'',designer_id?parseInt(designer_id):null,social_media_id?parseInt(social_media_id):null,diretor_id?parseInt(diretor_id):null]);
 const evento=r.rows[0];

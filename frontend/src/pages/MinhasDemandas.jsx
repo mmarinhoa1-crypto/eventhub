@@ -80,6 +80,8 @@ export default function MinhasDemandas() {
   const isSocialMedia = funcao === 'social_media'
   const isAdmin = funcao === 'admin'
   const isDiretor = funcao === 'diretor'
+  const isGestorTrafego = funcao === 'gestor_trafego'
+  const isReadOnly = isGestorTrafego
   const isGestor = isAdmin || isDiretor
 
   const [data, setData] = useState({ briefings: [], posts: [], eventos: [] })
@@ -824,12 +826,12 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
 
                           <div className="p-2 space-y-2 flex-1 flex flex-col min-h-0">
                             {/* Add button */}
-                            <div
+                            {!isReadOnly && <div
                               onClick={() => { setNovoPostForm(f => ({...f, id_evento: data.eventos.length === 1 ? String(data.eventos[0].id) : '', data_publicacao: dayStr})); setShowNovoPost(true) }}
                               className="flex items-center justify-center py-1.5 rounded-lg border-2 border-dashed border-gray-200 dark:border-white/[0.10] text-gray-300 dark:text-white/20 hover:border-blue-400 hover:text-blue-400 hover:bg-blue-50/50 transition cursor-pointer group"
                             >
                               <Plus size={13} className="group-hover:scale-110 transition-transform" />
-                            </div>
+                            </div>}
 
                             <div className="overflow-y-auto space-y-2 flex-1 min-h-0">
                             {dayItems.map(d => {
@@ -1698,12 +1700,12 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                         )}
                       </div>
                       <div className="p-2 space-y-2 flex-1 flex flex-col min-h-0">
-                        <div
+                        {!isReadOnly && <div
                           onClick={() => { setNovoPostForm(f => ({...f, id_evento: data.eventos.length === 1 ? String(data.eventos[0].id) : '', data_publicacao: dayStr})); setShowNovoPost(true) }}
                           className="flex items-center justify-center py-1.5 rounded-lg border-2 border-dashed border-gray-200 dark:border-white/[0.10] text-gray-300 dark:text-white/20 hover:border-blue-400 hover:text-blue-400 hover:bg-blue-50/50 transition cursor-pointer group"
                         >
                           <Plus size={13} className="group-hover:scale-110 transition-transform" />
-                        </div>
+                        </div>}
                         <div className="overflow-y-auto space-y-2 flex-1 min-h-0">
                           {dayItems.map(d => {
                             const atrasado = dayStr < todayStr && !['concluido','aprovado','publicado','cancelado'].includes(d.status)
@@ -1971,7 +1973,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                   <p className="text-xs text-blue-500 font-medium">{d.evento_nome}</p>
                 </div>
                 <div className="flex items-center gap-2 ml-3 flex-shrink-0">
-                  <button
+                  {!isReadOnly && <button
                     onClick={() => {
                       if (editMode) { setEditMode(false); setEditForm({}) }
                       else {
@@ -1993,7 +1995,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                     className={'text-xs px-3 py-1.5 rounded-lg font-bold transition ' + (editMode ? 'bg-gray-100 dark:bg-white/[0.08] text-gray-600 dark:text-white/60 hover:bg-gray-200 dark:hover:bg-white/[0.12]' : 'bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/25')}
                   >
                     {editMode ? 'Cancelar' : '✏️ Editar'}
-                  </button>
+                  </button>}
                   <button onClick={() => setDetalhe(null)}
                     className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-white/[0.08] flex items-center justify-center text-gray-400 dark:text-white/50 hover:text-gray-600 dark:hover:text-white/80 hover:bg-gray-200 dark:hover:bg-white/[0.12] transition font-bold">✕</button>
                 </div>
@@ -2026,8 +2028,8 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                     {TAGS_STATUS.map(tag => {
                       const ativa = getTag(d._tipo, d.id) === tag.key
                       return (
-                        <button key={tag.key} onClick={() => setTagStatus(d._tipo, d.id, tag.key)}
-                          className="text-xs font-semibold px-2.5 py-1 rounded-full border-2 transition-all"
+                        <button key={tag.key} onClick={() => !isReadOnly && setTagStatus(d._tipo, d.id, tag.key)} disabled={isReadOnly}
+                          className="text-xs font-semibold px-2.5 py-1 rounded-full border-2 transition-all disabled:cursor-not-allowed"
                           style={ativa
                             ? { backgroundColor: tag.color + '20', color: tag.color, borderColor: tag.color }
                             : { backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-muted)', borderColor: 'var(--border)' }}>

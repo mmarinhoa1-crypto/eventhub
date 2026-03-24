@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Download, Pencil, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, DollarSign, Wallet, PiggyBank, Megaphone, Users, Receipt, CreditCard, RefreshCw, Calendar, FileText, CheckCircle, Clock, AlertCircle } from 'lucide-react'
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts'
 import EditEventoModal from './EditEventoModal'
+import { useAuth } from '../../hooks/useAuth'
 import api from '../../api/client'
 import Card from '../ui/Card'
 import Button from '../ui/Button'
@@ -30,6 +31,8 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 export default function EventoDetalhe({ eventoId }) {
   const navigate = useNavigate()
+  const { usuario } = useAuth()
+  const isReadOnly = usuario?.funcao === 'gestor_trafego'
   const [evento, setEvento] = useState(null)
   const [despesas, setDespesas] = useState([])
   const [fornecedores, setFornecedores] = useState([])
@@ -180,9 +183,9 @@ export default function EventoDetalhe({ eventoId }) {
           <div>
             <div className="flex items-center gap-3">
               <h2 className="text-2xl font-bold text-gray-900">{evento.nome}</h2>
-              <button onClick={() => setShowEdit(true)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-600 transition-colors" title="Editar evento">
+              {!isReadOnly && <button onClick={() => setShowEdit(true)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-600 transition-colors" title="Editar evento">
                 <Pencil size={18} />
-              </button>
+              </button>}
             </div>
             <div className="flex flex-wrap gap-6 mt-2 text-sm">
               <span className="text-gray-500">

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Plus, Search, X, CalendarDays } from 'lucide-react'
 import api from '../api/client'
 import toast from 'react-hot-toast'
+import { useAuth } from '../hooks/useAuth'
 import Button from '../components/ui/Button'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 import EventoCard from '../components/eventos/EventoCard'
@@ -35,6 +36,8 @@ function getMonthLabel(key) {
 }
 
 export default function EventosPage() {
+  const { usuario } = useAuth()
+  const isReadOnly = usuario?.funcao === 'gestor_trafego'
   const [eventos, setEventos]   = useState([])
   const [loading, setLoading]   = useState(true)
   const [showModal, setShowModal] = useState(false)
@@ -105,10 +108,10 @@ export default function EventosPage() {
             <span className="font-bold text-gray-600">{eventos.length}</span>
           </p>
         </div>
-        <Button onClick={() => setShowModal(true)}>
+        {!isReadOnly && <Button onClick={() => setShowModal(true)}>
           <Plus size={16} />
           Novo Evento
-        </Button>
+        </Button>}
       </div>
 
       {/* ── Busca ───────────────────────────────── */}
@@ -138,7 +141,7 @@ export default function EventosPage() {
           <p className="text-gray-500 font-semibold">
             {busca ? 'Nenhum evento encontrado para esta busca.' : 'Nenhum evento cadastrado ainda.'}
           </p>
-          {!busca && (
+          {!busca && !isReadOnly && (
             <Button size="sm" onClick={() => setShowModal(true)}>
               <Plus size={14} /> Criar primeiro evento
             </Button>
@@ -173,7 +176,7 @@ export default function EventosPage() {
                 key={ev.id}
                 evento={ev}
                 onClick={() => navigate(`/eventos/${ev.id}`)}
-                onDelete={handleDelete}
+                onDelete={isReadOnly ? undefined : handleDelete}
               />
             ))}
           </div>

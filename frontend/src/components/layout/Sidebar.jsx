@@ -7,12 +7,12 @@ import { useTema } from '../../contexts/ThemeContext'
 
 const mainLinks = [
   { to: '/', label: 'Dashboard', roles: ['admin', 'agent', 'diretor'] },
-  { to: '/eventos', label: 'Eventos', roles: ['admin', 'diretor'] },
+  { to: '/eventos', label: 'Eventos', roles: ['admin', 'diretor', 'gestor_trafego'] },
 ]
 
 const marketingSubLinks = [
-  { to: '/marketing', label: 'Cronograma', roles: ['admin', 'social_media', 'diretor'] },
-  { to: '/demandas', label: 'Minhas Demandas', roles: ['admin', 'social_media', 'designer', 'diretor'] },
+  { to: '/marketing', label: 'Cronograma', roles: ['admin', 'social_media', 'diretor', 'gestor_trafego'] },
+  { to: '/demandas', label: 'Minhas Demandas', roles: ['admin', 'social_media', 'designer', 'diretor', 'gestor_trafego'] },
   { to: '/anuncios', label: 'Anúncios', roles: ['admin', 'diretor'] },
 ]
 
@@ -37,7 +37,7 @@ export default function Sidebar() {
 
   const isDark = tema === 'dark'
 
-  const showMarketing = ['admin', 'social_media', 'designer', 'diretor'].includes(funcao)
+  const showMarketing = ['admin', 'social_media', 'designer', 'diretor', 'gestor_trafego'].includes(funcao)
   const showFinanceiro = funcao === 'admin' || funcao === 'diretor'
   const showEquipe = funcao === 'admin' || funcao === 'diretor'
 
@@ -187,7 +187,7 @@ export default function Sidebar() {
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-white/[0.08]">
                 <div>
                   <p className="text-sm font-bold text-gray-900 dark:text-white/90">{usuario?.nome || 'Usuário'}</p>
-                  <p className="text-[11px] text-gray-400 dark:text-white/40">{funcao === 'admin' ? 'Administrador' : funcao === 'diretor' ? 'Diretor' : funcao === 'designer' ? 'Designer' : funcao === 'social_media' ? 'Social Media' : funcao}</p>
+                  <p className="text-[11px] text-gray-400 dark:text-white/40">{funcao === 'admin' ? 'Administrador' : funcao === 'diretor' ? 'Diretor' : funcao === 'designer' ? 'Designer' : funcao === 'social_media' ? 'Social Media' : funcao === 'gestor_trafego' ? 'Gestor de Tráfego' : funcao}</p>
                 </div>
                 <button onClick={() => setMobileOpen(false)} className={iconBtn}><X size={18} /></button>
               </div>

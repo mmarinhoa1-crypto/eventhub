@@ -22,9 +22,11 @@ export default function MarketingPage() {
   const isSocialMedia = funcao === 'social_media'
   const isAdmin = funcao === 'admin'
   const isDiretor = funcao === 'diretor'
-  const canCreateEvent = !isDesigner && !isSocialMedia
-  const canEditName = isAdmin || isDiretor
-  const canDelete = isAdmin || isDiretor
+  const isGestorTrafego = funcao === 'gestor_trafego'
+  const isReadOnly = isGestorTrafego
+  const canCreateEvent = !isDesigner && !isSocialMedia && !isReadOnly
+  const canEditName = (isAdmin || isDiretor) && !isReadOnly
+  const canDelete = (isAdmin || isDiretor) && !isReadOnly
   const [loading, setLoading] = useState(true)
   const [filtroMkt, setFiltroMkt] = useState('')
   const [searchParams, setSearchParams] = useSearchParams()

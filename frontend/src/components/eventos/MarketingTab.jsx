@@ -82,8 +82,10 @@ export default function MarketingTab({ eventoId }) {
   const isSocialMedia = funcao === 'social_media'
   const isDiretor = funcao === 'diretor'
   const isAdmin = funcao === 'admin'
-  const canCreatePlan = isSocialMedia || isAdmin || isDiretor
-  const canApprovePlan = isDiretor || isAdmin
+  const isGestorTrafego = funcao === 'gestor_trafego'
+  const isReadOnly = isGestorTrafego
+  const canCreatePlan = (isSocialMedia || isAdmin || isDiretor) && !isReadOnly
+  const canApprovePlan = (isDiretor || isAdmin) && !isReadOnly
   const [briefings, setBriefings] = useState([])
   const [cronograma, setCronograma] = useState([])
   const [tagsStore, setTagsStore] = useState({})
@@ -818,7 +820,11 @@ export default function MarketingTab({ eventoId }) {
       {/* Sub-tabs */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-1.5">
         <div className="flex gap-1 overflow-x-auto">
-          {subTabs.filter(tab => !(isSocialMedia || isDesigner) || (tab.key !== 'campanhas' && tab.key !== 'analise' && tab.key !== 'aprovacoes' && tab.key !== 'trafego')).map((tab) => {
+          {subTabs.filter(tab => {
+            if (isReadOnly) return ['briefings', 'cronograma', 'materiais'].includes(tab.key)
+            if (isSocialMedia || isDesigner) return tab.key !== 'campanhas' && tab.key !== 'analise' && tab.key !== 'aprovacoes' && tab.key !== 'trafego'
+            return true
+          }).map((tab) => {
             const isActive = activeSubTab === tab.key
             const counts = {
               briefings: briefings.length,
@@ -877,11 +883,11 @@ export default function MarketingTab({ eventoId }) {
                 </div>
               </div>
               <div className="flex gap-2">
-                {!isDesigner && <Button size="sm" variant="secondary" onClick={() => { setShowIAModal(true); setBriefingGerado(null) }}>
+                {!isDesigner && !isReadOnly && <Button size="sm" variant="secondary" onClick={() => { setShowIAModal(true); setBriefingGerado(null) }}>
                   <Sparkles size={16} />
                   Gerar com IA
                 </Button>}
-                {!isDesigner && <Button size="sm" onClick={() => setShowBriefingForm(!showBriefingForm)}>
+                {!isDesigner && !isReadOnly && <Button size="sm" onClick={() => setShowBriefingForm(!showBriefingForm)}>
                   <Plus size={16} />
                   {showBriefingForm ? 'Cancelar' : 'Novo Briefing'}
                 </Button>}
@@ -982,7 +988,7 @@ export default function MarketingTab({ eventoId }) {
                               </div>
                               {/* Card Actions */}
                               <div className="flex items-center justify-between pt-1.5 border-t border-gray-100 dark:border-white/[0.06]">
-                                <div className="flex gap-0.5">
+                                {!isReadOnly && <div className="flex gap-0.5">
                                   {colIdx > 0 && (
                                     <button onClick={() => { api.put('/tags-demandas/briefing/' + b.id, { tag_key: statusFlow[colIdx - 1] }).then(() => { setTagsStore(prev => ({...prev, ['briefing-'+b.id]: statusFlow[colIdx - 1]})) }).catch(() => {}) }} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-white/[0.08] text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70 transition" title={`Mover para ${kanbanColumns[colIdx - 1].label}`}>
                                       <ArrowLeft size={13} />
@@ -993,12 +999,12 @@ export default function MarketingTab({ eventoId }) {
                                       <ArrowRight size={13} />
                                     </button>
                                   )}
-                                </div>
+                                </div>}
                                 <div className="flex gap-0.5">
-                                  {!isDesigner && <button onClick={() => duplicarBriefing(b)} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-white/[0.08] text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70 transition" title="Duplicar briefing">
+                                  {!isDesigner && !isReadOnly && <button onClick={() => duplicarBriefing(b)} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-white/[0.08] text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70 transition" title="Duplicar briefing">
                                     <Copy size={13} />
                                   </button>}
-                                  {!isDesigner && <button onClick={() => removerBriefing(b.id)} className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-500/20 text-gray-400 dark:text-white/40 hover:text-red-500 transition" title="Remover">
+                                  {!isDesigner && !isReadOnly && <button onClick={() => removerBriefing(b.id)} className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-500/20 text-gray-400 dark:text-white/40 hover:text-red-500 transition" title="Remover">
                                     <Trash2 size={13} />
                                   </button>}
                                 </div>
@@ -1029,8 +1035,8 @@ export default function MarketingTab({ eventoId }) {
                   {briefingsFiltrados.filter(b => b.status === 'cancelado').map(b => (
                     <div key={b.id} className="flex items-center gap-2 bg-red-50 dark:bg-red-500/10 px-3 py-1.5 rounded-lg">
                       <span className="text-xs text-red-600 dark:text-red-400 line-through">{b.titulo}</span>
-                      <button onClick={() => atualizarBriefing(b.id, { status: 'pendente' })} className="text-[10px] text-blue-500 dark:text-blue-400 hover:text-blue-700 font-medium">Restaurar</button>
-                      <button onClick={() => removerBriefing(b.id)} className="text-red-300 hover:text-red-500"><Trash2 size={11} /></button>
+                      {!isReadOnly && <button onClick={() => atualizarBriefing(b.id, { status: 'pendente' })} className="text-[10px] text-blue-500 dark:text-blue-400 hover:text-blue-700 font-medium">Restaurar</button>}
+                      {!isReadOnly && <button onClick={() => removerBriefing(b.id)} className="text-red-300 hover:text-red-500"><Trash2 size={11} /></button>}
                     </div>
                   ))}
                 </div>
@@ -1225,20 +1231,20 @@ export default function MarketingTab({ eventoId }) {
                                   </div>
                                 )}
                                 <div className="flex items-center justify-between pt-1 border-t border-gray-50">
-                                  <select value={c.status} onChange={e => atualizarCronograma(c.id, { status: e.target.value })} className="text-[10px] border border-gray-200 rounded px-1 py-0.5 outline-none focus:ring-1 focus:ring-accent">
+                                  <select value={c.status} onChange={e => atualizarCronograma(c.id, { status: e.target.value })} disabled={isReadOnly} className="text-[10px] border border-gray-200 rounded px-1 py-0.5 outline-none focus:ring-1 focus:ring-accent disabled:opacity-60 disabled:cursor-not-allowed">
                                     <option value="pendente">Pendente</option>
                                     <option value="em_andamento">Não feito</option>
                                     <option value="publicado">Publicado</option>
                                     <option value="cancelado">Cancelado</option>
                                   </select>
-                                  <div className="flex items-center gap-1">
+                                  {!isReadOnly && <div className="flex items-center gap-1">
                                     <button onClick={() => setEditandoPost(c)} className="text-gray-300 hover:text-blue-500 transition"><Pencil size={11} /></button>
                                     <div className="relative">
                                       <input type="file" accept="image/*,video/*,.pdf" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onChange={(e) => { const file = e.target.files[0]; if(file) uploadCronogramaArquivo(c.id, file); e.target.value='' }} />
                                       <Paperclip size={11} className="text-gray-300 hover:text-blue-500 transition cursor-pointer" />
                                     </div>
                                     <button onClick={() => removerCronograma(c.id)} className="text-gray-300 hover:text-red-500 transition"><Trash2 size={11} /></button>
-                                  </div>
+                                  </div>}
                                 </div>
                                 {c.status !== 'publicado' && (
                                   <div className="mt-1.5 space-y-1">
@@ -1390,10 +1396,10 @@ export default function MarketingTab({ eventoId }) {
                           <span className={`${plataformaColors[c.plataforma] || 'bg-gray-500'} text-white text-[9px] font-bold px-1.5 py-0.5 rounded`}>{c.plataforma}</span>
                           <span className="text-xs text-gray-700 truncate">{c.titulo}</span>
                         </div>
-                        <div className="flex items-center gap-1 ml-2">
+                        {!isReadOnly && <div className="flex items-center gap-1 ml-2">
                           <button onClick={() => setEditandoPost(c)} className="text-gray-300 hover:text-blue-500 transition"><Pencil size={12} /></button>
                           <button onClick={() => removerCronograma(c.id)} className="text-gray-300 hover:text-red-500 transition"><Trash2 size={12} /></button>
-                        </div>
+                        </div>}
                       </div>
                     ))}
                   </div>
@@ -1509,7 +1515,7 @@ export default function MarketingTab({ eventoId }) {
                               <div className="p-2 space-y-1">
                                 <div className="flex items-center justify-between">
                                   <p className="text-xs font-semibold text-gray-900 flex-1">{c.titulo}</p>
-                                  <button onClick={() => { setShowPlanejamentoDetalhe(null); setEditandoPost(c) }} className="text-gray-300 hover:text-blue-500 transition p-0.5"><Pencil size={11} /></button>
+                                  {!isReadOnly && <button onClick={() => { setShowPlanejamentoDetalhe(null); setEditandoPost(c) }} className="text-gray-300 hover:text-blue-500 transition p-0.5"><Pencil size={11} /></button>}
                                 </div>
                                 {c.conteudo && <p className="text-[10px] text-gray-500 line-clamp-3 whitespace-pre-wrap">{c.conteudo}</p>}
                                 {c.formato && <span className="inline-block text-[10px] font-medium text-blue-600 dark:text-blue-400 bg-violet-50 dark:bg-violet-500/10 px-1.5 py-0.5 rounded">{c.formato}</span>}
@@ -1672,13 +1678,13 @@ export default function MarketingTab({ eventoId }) {
                     </div>
                   )}
                   <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                    <select value={c.status} onChange={e => { atualizarCronograma(c.id, { status: e.target.value }); setDiaSelecionado(prev => ({...prev, posts: prev.posts.map(p => p.id === c.id ? {...p, status: e.target.value} : p)})) }} className="text-xs border border-gray-200 rounded-lg px-2 py-1 outline-none focus:ring-1 focus:ring-accent">
+                    <select value={c.status} onChange={e => { atualizarCronograma(c.id, { status: e.target.value }); setDiaSelecionado(prev => ({...prev, posts: prev.posts.map(p => p.id === c.id ? {...p, status: e.target.value} : p)})) }} disabled={isReadOnly} className="text-xs border border-gray-200 rounded-lg px-2 py-1 outline-none focus:ring-1 focus:ring-accent disabled:opacity-60 disabled:cursor-not-allowed">
                       <option value="pendente">Pendente</option>
                       <option value="em_andamento">Não feito</option>
                       <option value="publicado">Publicado</option>
                       <option value="cancelado">Cancelado</option>
                     </select>
-                    <div className="flex items-center gap-2">
+                    {!isReadOnly && <div className="flex items-center gap-2">
                       <button onClick={() => { setDiaSelecionado(null); setEditandoPost(c) }} className="text-gray-400 hover:text-blue-500 transition"><Pencil size={14} /></button>
                       <div className="relative">
                         <input type="file" accept="image/*,video/*,.pdf" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onChange={(e) => { const file = e.target.files[0]; if(file) uploadCronogramaArquivo(c.id, file); e.target.value='' }} />
@@ -1687,7 +1693,7 @@ export default function MarketingTab({ eventoId }) {
                       <button onClick={() => { removerCronograma(c.id); setDiaSelecionado(prev => { const posts = prev.posts.filter(p => p.id !== c.id); return posts.length > 0 ? {...prev, posts} : null }) }} className="text-gray-400 hover:text-red-500 transition">
                         <Trash2 size={14} />
                       </button>
-                    </div>
+                    </div>}
                   </div>
                 </div>
               </div>
