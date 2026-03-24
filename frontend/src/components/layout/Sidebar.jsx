@@ -7,12 +7,12 @@ import { useTema } from '../../contexts/ThemeContext'
 
 const mainLinks = [
   { to: '/', label: 'Dashboard', roles: ['admin', 'agent', 'diretor'] },
-  { to: '/eventos', label: 'Eventos', roles: ['admin', 'diretor', 'gestor_trafego'] },
+  { to: '/eventos', label: 'Eventos', roles: ['admin', 'diretor'] },
 ]
 
 const marketingSubLinks = [
   { to: '/marketing', label: 'Cronograma', roles: ['admin', 'social_media', 'diretor', 'gestor_trafego'] },
-  { to: '/demandas', label: 'Minhas Demandas', roles: ['admin', 'social_media', 'designer', 'diretor', 'gestor_trafego'] },
+  { to: '/demandas', label: 'Minhas Demandas', roles: ['admin', 'social_media', 'designer', 'diretor'] },
   { to: '/anuncios', label: 'Anúncios', roles: ['admin', 'diretor'] },
 ]
 

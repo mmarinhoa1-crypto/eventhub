@@ -17,7 +17,7 @@ export default function ProtectedRoute({ children, adminOnly = false }) {
     return <Navigate to="/entrar" replace />
   }
 
-  if (adminOnly && usuario.funcao !== 'admin' && usuario.funcao !== 'diretor' && usuario.funcao !== 'gestor_trafego') {
+  if (adminOnly && usuario.funcao !== 'admin' && usuario.funcao !== 'diretor') {
     return <Navigate to="/" replace />
   }
 

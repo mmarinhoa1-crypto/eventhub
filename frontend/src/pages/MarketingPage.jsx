@@ -594,7 +594,7 @@ export default function MarketingPage() {
                         <div className="flex items-center gap-3 mt-1 flex-wrap">
                           {ev.data_evento && <span className="flex items-center gap-1 text-xs text-gray-400"><Calendar size={12} /> {fmtData(ev.data_evento)}</span>}
                           {ev.cidade && <span className="flex items-center gap-1 text-xs text-gray-400"><MapPin size={12} /> {ev.cidade}</span>}
-                          {igConnections[ev.id] && <span className="flex items-center gap-1 text-xs text-pink-500 font-semibold"><Instagram size={12} /> @{igConnections[ev.id].ig_username}<button onClick={(e) => { e.stopPropagation(); desconectarInstagram(ev.id) }} className="ml-1 p-0.5 rounded-full text-pink-300 hover:text-red-500 hover:bg-red-50 transition" title="Desconectar Instagram"><X size={10} /></button></span>}
+                          {!isReadOnly && igConnections[ev.id] && <span className="flex items-center gap-1 text-xs text-pink-500 font-semibold"><Instagram size={12} /> @{igConnections[ev.id].ig_username}<button onClick={(e) => { e.stopPropagation(); desconectarInstagram(ev.id) }} className="ml-1 p-0.5 rounded-full text-pink-300 hover:text-red-500 hover:bg-red-50 transition" title="Desconectar Instagram"><X size={10} /></button></span>}
                           {getNome(ev.designer_id, designers) && <span className="flex items-center gap-1 text-xs text-gray-400"><Palette size={12} className="text-violet-400" /> {getNome(ev.designer_id, designers)}</span>}
                           {getNome(ev.social_media_id, socialMedias) && <span className="flex items-center gap-1 text-xs text-gray-400"><Users size={12} className="text-blue-400" /> {getNome(ev.social_media_id, socialMedias)}</span>}
                           {!isPast && dias && (
@@ -606,7 +606,7 @@ export default function MarketingPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 md:gap-3 flex-shrink-0 ml-2 md:ml-4">
-                      {!isPast && !igConnections[ev.id] && (
+                      {!isReadOnly && !isPast && !igConnections[ev.id] && (
                         <button onClick={(e) => { e.stopPropagation(); setIgConnectEvento(ev.id) }} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-purple-50 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/30 hover:bg-purple-100 dark:hover:bg-purple-500/20 transition" title="Conectar Instagram">
                           <Instagram size={12} className="text-purple-500 dark:text-purple-400" />
                           <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400 hidden lg:inline">Conectar</span>

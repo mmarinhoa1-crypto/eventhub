@@ -976,7 +976,7 @@ export default function MarketingTab({ eventoId }) {
                                   ))}
                                 </div>
                               )}
-                              <div
+                              {!isReadOnly && <div
                                 onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-blue-400','bg-blue-50') }}
                                 onDragLeave={(e) => { e.preventDefault(); e.currentTarget.classList.remove('border-blue-400','bg-blue-50') }}
                                 onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove('border-blue-400','bg-blue-50'); const file = e.dataTransfer.files[0]; if(file) uploadArquivo(b.id, file) }}
@@ -985,7 +985,7 @@ export default function MarketingTab({ eventoId }) {
                                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                   onChange={(e) => { const file = e.target.files[0]; if(file) uploadArquivo(b.id, file); e.target.value='' }} />
                                 {uploading === b.id ? <span className="animate-spin">⏳</span> : <><Paperclip size={10} /> Upload arte</>}
-                              </div>
+                              </div>}
                               {/* Card Actions */}
                               <div className="flex items-center justify-between pt-1.5 border-t border-gray-100 dark:border-white/[0.06]">
                                 {!isReadOnly && <div className="flex gap-0.5">
@@ -1112,7 +1112,7 @@ export default function MarketingTab({ eventoId }) {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-gray-500">{cronograma.length} posts</span>
-                  {igConnection && (
+                  {!isReadOnly && igConnection && (
                     <div className="flex items-center gap-1.5">
                       <span className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-pink-50 dark:bg-pink-500/10 border border-pink-200 dark:border-pink-500/30 text-xs font-bold text-pink-600 dark:text-pink-400">
                         <Instagram size={12} /> @{igConnection.ig_username}
@@ -1122,7 +1122,7 @@ export default function MarketingTab({ eventoId }) {
                       </button>
                     </div>
                   )}
-                  <Button size="sm" variant="secondary" onClick={() => {
+                  {!isReadOnly && <Button size="sm" variant="secondary" onClick={() => {
                     const week = getWeekBounds(calendarDate)
                     const existing = getPlanForWeek(week.inicio)
                     if (existing) { carregarPlanejamentoDetalhe(existing.id) }
@@ -1130,11 +1130,11 @@ export default function MarketingTab({ eventoId }) {
                   }}>
                     <Calendar size={16} />
                     Planejamento Semanal
-                  </Button>
-                  <Button size="sm" onClick={() => { if (showCronogramaForm) setCronogramaFormDate(null); setShowCronogramaForm(!showCronogramaForm) }}>
+                  </Button>}
+                  {!isReadOnly && <Button size="sm" onClick={() => { if (showCronogramaForm) setCronogramaFormDate(null); setShowCronogramaForm(!showCronogramaForm) }}>
                     <Plus size={16} />
                     {showCronogramaForm ? 'Cancelar' : 'Novo Post'}
-                  </Button>
+                  </Button>}
                 </div>
               </div>
             </Card>
@@ -1163,7 +1163,7 @@ export default function MarketingTab({ eventoId }) {
                     const posts = postsForDate(dayObj.date)
                     const isToday = dayObj.date.toDateString() === today.toDateString()
                     return (
-                      <div key={idx} onClick={() => { if (dayObj.current) { if (posts.length > 0) { setDiaSelecionado({ date: dayObj.date, posts }) } else { const d = dayObj.date; const dateStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); setCronogramaFormDate(dateStr); setShowCronogramaForm(true) } } }} className={`min-h-[110px] border-b border-r border-gray-100 p-1.5 transition-colors ${!dayObj.current ? 'bg-gray-50/60' : 'hover:bg-gray-50/40 cursor-pointer'} ${isToday ? 'bg-blue-50/60 dark:bg-blue-500/10' : ''} ${dayObj.current ? 'hover:ring-1 hover:ring-blue-300 dark:hover:ring-blue-500/30 hover:ring-inset' : ''}`}>
+                      <div key={idx} onClick={() => { if (dayObj.current) { if (posts.length > 0) { setDiaSelecionado({ date: dayObj.date, posts }) } else if (!isReadOnly) { const d = dayObj.date; const dateStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); setCronogramaFormDate(dateStr); setShowCronogramaForm(true) } } }} className={`min-h-[110px] border-b border-r border-gray-100 p-1.5 transition-colors ${!dayObj.current ? 'bg-gray-50/60' : 'hover:bg-gray-50/40 cursor-pointer'} ${isToday ? 'bg-blue-50/60 dark:bg-blue-500/10' : ''} ${dayObj.current ? 'hover:ring-1 hover:ring-blue-300 dark:hover:ring-blue-500/30 hover:ring-inset' : ''}`}>
                         <div className="flex items-center justify-between mb-1">
                           <span className={`text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full ${isToday ? 'bg-blue-600 text-white' : dayObj.current ? 'text-gray-700 dark:text-white/70' : 'text-gray-300 dark:text-white/20'}`}>
                             {dayObj.date.getDate()}
@@ -1246,7 +1246,7 @@ export default function MarketingTab({ eventoId }) {
                                     <button onClick={() => removerCronograma(c.id)} className="text-gray-300 hover:text-red-500 transition"><Trash2 size={11} /></button>
                                   </div>}
                                 </div>
-                                {c.status !== 'publicado' && (
+                                {c.status !== 'publicado' && !isReadOnly && (
                                   <div className="mt-1.5 space-y-1">
                                     {/* Toggle Agendamento */}
                                     <div onClick={(e) => e.stopPropagation()} className="flex items-center justify-between px-2 py-1.5 rounded-md bg-gray-50 border border-gray-100">
@@ -1331,9 +1331,9 @@ export default function MarketingTab({ eventoId }) {
                               </div>
                             </div>
                           ))}
-                          <div onClick={() => { const d = day; const dateStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); setCronogramaFormDate(dateStr); setShowCronogramaForm(true) }} className="flex items-center justify-center py-2 rounded-lg border-2 border-dashed border-gray-200 dark:border-white/[0.10] text-gray-300 dark:text-white/20 hover:border-blue-400 hover:text-blue-400 cursor-pointer transition group">
+                          {!isReadOnly && <div onClick={() => { const d = day; const dateStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); setCronogramaFormDate(dateStr); setShowCronogramaForm(true) }} className="flex items-center justify-center py-2 rounded-lg border-2 border-dashed border-gray-200 dark:border-white/[0.10] text-gray-300 dark:text-white/20 hover:border-blue-400 hover:text-blue-400 cursor-pointer transition group">
                             <Plus size={14} className="group-hover:scale-110 transition-transform" />
-                          </div>
+                          </div>}
                         </div>
                       </div>
                     )
@@ -2304,16 +2304,16 @@ export default function MarketingTab({ eventoId }) {
                               <a href={'/api' + arq.url} download className="text-[9px] text-blue-500 hover:text-blue-700 font-medium">Baixar</a>
                             </div>
                           </div>
-                          <button onClick={() => deletarMaterialArquivo(arq.id)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-xs">
+                          {!isReadOnly && <button onClick={() => deletarMaterialArquivo(arq.id)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-xs">
                             <XIcon size={10} />
-                          </button>
+                          </button>}
                         </div>
                       ))}
                     </div>
                   )}
 
                   {/* Upload area */}
-                  <div
+                  {!isReadOnly && <div
                     onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-blue-400','bg-blue-50') }}
                     onDragLeave={(e) => { e.preventDefault(); e.currentTarget.classList.remove('border-blue-400','bg-blue-50') }}
                     onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove('border-blue-400','bg-blue-50'); Array.from(e.dataTransfer.files).forEach(f => uploadMaterialArquivo(cat, f)) }}
@@ -2321,7 +2321,7 @@ export default function MarketingTab({ eventoId }) {
                     <input type="file" accept="image/*,video/*,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.rar" multiple className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                       onChange={(e) => { Array.from(e.target.files).forEach(f => uploadMaterialArquivo(cat, f)); e.target.value = '' }} />
                     <Paperclip size={14} /> Arraste ou clique para adicionar {cat.toLowerCase()}
-                  </div>
+                  </div>}
                 </div>
               </Card>
             )
