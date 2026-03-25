@@ -4,6 +4,7 @@ import { Plus, Search, X, CalendarDays } from 'lucide-react'
 import api from '../api/client'
 import toast from 'react-hot-toast'
 import { useAuth } from '../hooks/useAuth'
+import { useTema } from '../contexts/ThemeContext'
 import Button from '../components/ui/Button'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 import EventoCard from '../components/eventos/EventoCard'
@@ -35,13 +36,27 @@ function getMonthLabel(key) {
   return `${MESES[Number(mes) - 1]} ${ano}`
 }
 
+function diasDiferenca(dataStr) {
+  const d = parseData(dataStr)
+  if (!d) return null
+  const hoje = new Date()
+  hoje.setHours(12, 0, 0, 0)
+  return Math.round((d - hoje) / (1000 * 60 * 60 * 24))
+}
+
 export default function EventosPage() {
   const { usuario } = useAuth()
-  const isReadOnly = usuario?.funcao === 'gestor_trafego'
-  const [eventos, setEventos]   = useState([])
-  const [loading, setLoading]   = useState(true)
+  const { tema } = useTema()
+  const isDark = tema === 'dark'
+  const funcao = usuario?.funcao || 'viewer'
+  const canManage = funcao === 'admin' || funcao === 'diretor'
+  const isReadOnly = !canManage
+
+  const [eventos, setEventos] = useState([])
+  const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
-  const [busca, setBusca]         = useState('')
+  const [busca, setBusca] = useState('')
+  const [aba, setAba] = useState('proximos')
   const navigate = useNavigate()
 
   function carregarEventos() {
@@ -63,17 +78,39 @@ export default function EventosPage() {
     }
   }
 
-  const eventosFiltrados = useMemo(() => {
-    if (!busca.trim()) return eventos
-    const q = busca.toLowerCase()
-    return eventos.filter(ev =>
-      ev.nome?.toLowerCase().includes(q) ||
-      ev.atracoes?.toLowerCase().includes(q) ||
-      ev.cidade?.toLowerCase().includes(q)
-    )
-  }, [eventos, busca])
+  const hoje = new Date()
+  hoje.setHours(12, 0, 0, 0)
 
-  // Agrupamento por mês, ordenado cronologicamente
+  const eventosFiltrados = useMemo(() => {
+    let list = eventos
+    if (busca.trim()) {
+      const q = busca.toLowerCase()
+      list = list.filter(ev =>
+        ev.nome?.toLowerCase().includes(q) ||
+        ev.atracoes?.toLowerCase().includes(q) ||
+        ev.cidade?.toLowerCase().includes(q)
+      )
+    }
+    // Separar por aba
+    list = list.filter(ev => {
+      const d = parseData(ev.data_evento)
+      if (!d) return aba === 'proximos'
+      return aba === 'proximos' ? d >= hoje : d < hoje
+    })
+    // Ordenar
+    list.sort((a, b) => {
+      const da = parseData(a.data_evento)
+      const db = parseData(b.data_evento)
+      if (!da && !db) return 0
+      if (!da) return 1
+      if (!db) return -1
+      if (aba === 'proximos') return da - db // mais próximo primeiro
+      return db - da // mais recente primeiro
+    })
+    return list
+  }, [eventos, busca, aba])
+
+  // Agrupar por mês
   const grupos = useMemo(() => {
     const map = {}
     eventosFiltrados.forEach(ev => {
@@ -81,107 +118,142 @@ export default function EventosPage() {
       if (!map[key]) map[key] = []
       map[key].push(ev)
     })
-
     const entries = Object.entries(map)
     entries.sort(([a], [b]) => {
       if (a === '__sem_data__') return 1
       if (b === '__sem_data__') return -1
-      return a.localeCompare(b)
+      return aba === 'proximos' ? a.localeCompare(b) : b.localeCompare(a)
     })
-
     return entries
-  }, [eventosFiltrados])
+  }, [eventosFiltrados, aba])
+
+  const totalProximos = eventos.filter(ev => { const d = parseData(ev.data_evento); return d ? d >= hoje : true }).length
+  const totalPassados = eventos.filter(ev => { const d = parseData(ev.data_evento); return d ? d < hoje : false }).length
 
   if (loading) {
     return <div className="flex justify-center py-32"><LoadingSpinner size="lg" /></div>
   }
 
-  return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+  const containerStyle = {
+    background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.6)',
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    border: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(0,0,0,0.04)',
+  }
 
-      {/* ── Header ──────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+  return (
+    <div className="max-w-7xl mx-auto space-y-6">
+
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">EVENTOS</h1>
-          <p className="text-sm text-gray-400 mt-0.5">
-            Total de eventos cadastrados:{' '}
-            <span className="font-bold text-gray-600">{eventos.length}</span>
+          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white/90 tracking-tight">Eventos</h1>
+          <p className="text-sm text-gray-400 dark:text-white/40 mt-0.5">
+            {eventos.length} evento{eventos.length !== 1 ? 's' : ''} cadastrado{eventos.length !== 1 ? 's' : ''}
           </p>
         </div>
-        {!isReadOnly && <Button onClick={() => setShowModal(true)}>
-          <Plus size={16} />
-          Novo Evento
-        </Button>}
-      </div>
-
-      {/* ── Busca ───────────────────────────────── */}
-      <div className="relative max-w-md">
-        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-        <input
-          type="text"
-          value={busca}
-          onChange={e => setBusca(e.target.value)}
-          placeholder="Buscar por evento ou artista..."
-          className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition"
-        />
-        {busca && (
-          <button
-            onClick={() => setBusca('')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
-          >
-            <X size={15} />
-          </button>
+        {canManage && (
+          <Button onClick={() => setShowModal(true)}>
+            <Plus size={16} /> Novo Evento
+          </Button>
         )}
       </div>
 
-      {/* ── Resultado vazio ─────────────────────── */}
-      {grupos.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
-          <CalendarDays size={40} className="text-gray-200" />
-          <p className="text-gray-500 font-semibold">
-            {busca ? 'Nenhum evento encontrado para esta busca.' : 'Nenhum evento cadastrado ainda.'}
-          </p>
-          {!busca && !isReadOnly && (
-            <Button size="sm" onClick={() => setShowModal(true)}>
-              <Plus size={14} /> Criar primeiro evento
-            </Button>
+      {/* Container principal */}
+      <div className="rounded-2xl overflow-hidden" style={containerStyle}>
+
+        {/* Toolbar: abas + busca */}
+        <div className="px-5 pt-5 pb-4 space-y-4">
+          {/* Abas */}
+          <div className="flex items-center gap-1 bg-gray-100/80 dark:bg-white/[0.04] p-1 rounded-xl w-fit">
+            <button
+              onClick={() => setAba('proximos')}
+              className={'px-4 py-2 rounded-lg text-sm font-semibold transition-all ' + (aba === 'proximos'
+                ? 'bg-white dark:bg-white/[0.10] text-gray-900 dark:text-white shadow-sm'
+                : 'text-gray-500 dark:text-white/40 hover:text-gray-700 dark:hover:text-white/60')}
+            >
+              Próximos Eventos
+              <span className="ml-1.5 text-xs font-bold text-accent">{totalProximos}</span>
+            </button>
+            <button
+              onClick={() => setAba('passados')}
+              className={'px-4 py-2 rounded-lg text-sm font-semibold transition-all ' + (aba === 'passados'
+                ? 'bg-white dark:bg-white/[0.10] text-gray-900 dark:text-white shadow-sm'
+                : 'text-gray-500 dark:text-white/40 hover:text-gray-700 dark:hover:text-white/60')}
+            >
+              Eventos Passados
+              <span className="ml-1.5 text-xs font-bold text-gray-400">{totalPassados}</span>
+            </button>
+          </div>
+
+          {/* Busca */}
+          <div className="relative max-w-sm">
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/30 pointer-events-none" />
+            <input
+              type="text"
+              value={busca}
+              onChange={e => setBusca(e.target.value)}
+              placeholder="Encontrar evento..."
+              className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] text-sm text-gray-700 dark:text-white/80 placeholder-gray-400 dark:placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-accent/40 transition"
+            />
+            {busca && (
+              <button onClick={() => setBusca('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-white/60 transition">
+                <X size={15} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Conteúdo: eventos agrupados por mês */}
+        <div className="px-5 pb-6 max-h-[calc(100vh-320px)] overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+          {grupos.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
+              <CalendarDays size={40} className="text-gray-200 dark:text-white/10" />
+              <p className="text-gray-500 dark:text-white/40 font-semibold">
+                {busca ? 'Nenhum evento encontrado.' : aba === 'proximos' ? 'Nenhum evento futuro.' : 'Nenhum evento passado.'}
+              </p>
+              {!busca && canManage && aba === 'proximos' && (
+                <Button size="sm" onClick={() => setShowModal(true)}>
+                  <Plus size={14} /> Criar evento
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {grupos.map(([key, evs]) => (
+                <section key={key}>
+                  {/* Label do mês */}
+                  <div className="flex items-center gap-3 mb-3 sticky top-0 py-2 z-10" style={{ background: isDark ? 'rgba(19,19,22,0.85)' : 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)' }}>
+                    <div className="w-1 h-4 rounded-full bg-accent flex-shrink-0" />
+                    <h2 className="text-sm font-extrabold text-gray-800 dark:text-white/80">
+                      {key === '__sem_data__' ? 'Sem data' : getMonthLabel(key)}
+                    </h2>
+                    <span className="text-[11px] font-bold text-accent bg-accent/8 px-2 py-0.5 rounded-full">
+                      {evs.length}
+                    </span>
+                    <div className="flex-1 h-px bg-gray-100 dark:bg-white/[0.06]" />
+                  </div>
+
+                  {/* Grid de cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                    {evs.map(ev => (
+                      <EventoCard
+                        key={ev.id}
+                        evento={ev}
+                        diasDiff={diasDiferenca(ev.data_evento)}
+                        abaAtual={aba}
+                        clickable={canManage}
+                        onClick={() => canManage && navigate(`/eventos/${ev.id}`)}
+                        onDelete={canManage ? handleDelete : undefined}
+                      />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
           )}
         </div>
-      )}
-
-      {/* ── Seções por mês ──────────────────────── */}
-      {grupos.map(([key, evs]) => (
-        <section key={key}>
-          {/* Label do mês */}
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex items-center gap-2.5">
-              <div className="w-1 h-5 rounded-full" style={{ backgroundColor: '#f80d52' }} />
-              <h2 className="text-base font-extrabold text-gray-800">
-                {key === '__sem_data__' ? 'Sem data definida' : getMonthLabel(key)}
-              </h2>
-            </div>
-            <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 px-2.5 py-0.5 rounded-full">
-              {evs.length} evento{evs.length !== 1 ? 's' : ''}
-            </span>
-            <div className="flex-1 h-px bg-gray-100" />
-          </div>
-
-          {/* Scroll horizontal dos cards */}
-          <div
-            className="flex gap-4 overflow-x-auto pb-4"
-            style={{ scrollbarWidth: 'thin' }}
-          >
-            {evs.map(ev => (
-              <EventoCard
-                key={ev.id}
-                evento={ev}
-                onClick={() => navigate(`/eventos/${ev.id}`)}
-                onDelete={isReadOnly ? undefined : handleDelete}
-              />
-            ))}
-          </div>
-        </section>
-      ))}
+      </div>
 
       <NovoEventoModal
         open={showModal}
