@@ -93,7 +93,6 @@ export default function Sidebar() {
   const iconBtn = 'text-gray-400 hover:text-gray-700 hover:bg-black/[0.06] p-1.5 rounded-lg transition-all dark:text-white/50 dark:hover:text-white dark:hover:bg-white/10'
 
   const divider = 'bg-black/10 dark:bg-white/15'
-  const sairClass = `${linkBase} text-red-400 hover:text-red-600 hover:bg-red-50 dark:text-red-400/80 dark:hover:text-red-300 dark:hover:bg-red-500/10`
 
   // Mobile drawer link styles
   const mobileLinkBase = 'block px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200'
@@ -149,14 +148,6 @@ export default function Sidebar() {
           {showEquipe && (
             <NavLink to="/equipe" className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}>Equipe</NavLink>
           )}
-          <div className={`w-px h-5 mx-0.5 ${divider}`} />
-          <NotificationPanel />
-          <button onClick={alternarTema} className={iconBtn} title={isDark ? 'Modo claro' : 'Modo escuro'}>
-            {isDark ? <Sun size={16} /> : <Moon size={16} />}
-          </button>
-          <div className={`w-px h-5 mx-0.5 ${divider}`} />
-          <span className="text-xs font-medium px-1 text-gray-400 dark:text-white/40">{usuario?.nome?.split(' ')[0] || 'Usuário'}</span>
-          <button onClick={handleSair} className={sairClass}>Sair</button>
         </div>
       </nav>
 

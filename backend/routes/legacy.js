@@ -27,7 +27,7 @@ router.get('/api/auth/me',auth,async(req,res)=>{try{
 const r=await pool.query('SELECT u.*,o.nome as nome_org,o.plano FROM usuarios u JOIN organizacoes o ON u.org_id=o.id WHERE u.id=$1',[req.user.id]);
 if(!r.rows.length)return res.status(404).json({error:'X'});
 const u=r.rows[0];
-res.json({usuario:{id:u.id,nome:u.nome,email:u.email,funcao:u.funcao},organizacao:{id:u.org_id,nome:u.nome_org,plano:u.plano}})}catch(e){res.status(500).json({error:e.message})}});
+res.json({usuario:{id:u.id,nome:u.nome,email:u.email,funcao:u.funcao,foto_url:u.foto_url||null},organizacao:{id:u.org_id,nome:u.nome_org,plano:u.plano}})}catch(e){res.status(500).json({error:e.message})}});
 router.get('/api/tickets',auth,async(req,res)=>{try{
 const r=await pool.query('SELECT * FROM tickets WHERE org_id=$1 ORDER BY created_at DESC',[req.user.org_id]);
 res.json(r.rows)}catch(e){res.json([])}});
