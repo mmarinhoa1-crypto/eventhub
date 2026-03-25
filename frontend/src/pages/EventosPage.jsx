@@ -81,6 +81,8 @@ export default function EventosPage() {
   const hoje = new Date()
   hoje.setHours(12, 0, 0, 0)
 
+  const showMeusEventos = funcao === 'designer' || funcao === 'social_media'
+
   const eventosFiltrados = useMemo(() => {
     let list = eventos
     if (busca.trim()) {
@@ -92,11 +94,15 @@ export default function EventosPage() {
       )
     }
     // Separar por aba
-    list = list.filter(ev => {
-      const d = parseData(ev.data_evento)
-      if (!d) return aba === 'proximos'
-      return aba === 'proximos' ? d >= hoje : d < hoje
-    })
+    if (aba === 'meus') {
+      list = list.filter(ev => ev.designer_id === usuario?.id || ev.social_media_id === usuario?.id)
+    } else {
+      list = list.filter(ev => {
+        const d = parseData(ev.data_evento)
+        if (!d) return aba === 'proximos'
+        return aba === 'proximos' ? d >= hoje : d < hoje
+      })
+    }
     // Ordenar
     list.sort((a, b) => {
       const da = parseData(a.data_evento)
@@ -104,11 +110,11 @@ export default function EventosPage() {
       if (!da && !db) return 0
       if (!da) return 1
       if (!db) return -1
-      if (aba === 'proximos') return da - db // mais próximo primeiro
-      return db - da // mais recente primeiro
+      if (aba === 'passados') return db - da
+      return da - db
     })
     return list
-  }, [eventos, busca, aba])
+  }, [eventos, busca, aba, usuario?.id])
 
   // Agrupar por mês
   const grupos = useMemo(() => {
@@ -129,6 +135,7 @@ export default function EventosPage() {
 
   const totalProximos = eventos.filter(ev => { const d = parseData(ev.data_evento); return d ? d >= hoje : true }).length
   const totalPassados = eventos.filter(ev => { const d = parseData(ev.data_evento); return d ? d < hoje : false }).length
+  const totalMeus = showMeusEventos ? eventos.filter(ev => ev.designer_id === usuario?.id || ev.social_media_id === usuario?.id).length : 0
 
   if (loading) {
     return <div className="flex justify-center py-32"><LoadingSpinner size="lg" /></div>
@@ -184,6 +191,17 @@ export default function EventosPage() {
               Eventos Passados
               <span className="ml-1.5 text-xs font-bold text-gray-400">{totalPassados}</span>
             </button>
+            {showMeusEventos && (
+              <button
+                onClick={() => setAba('meus')}
+                className={'px-4 py-2 rounded-lg text-sm font-semibold transition-all ' + (aba === 'meus'
+                  ? 'bg-white dark:bg-white/[0.10] text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-500 dark:text-white/40 hover:text-gray-700 dark:hover:text-white/60')}
+              >
+                Meus Eventos
+                <span className="ml-1.5 text-xs font-bold text-accent">{totalMeus}</span>
+              </button>
+            )}
           </div>
 
           {/* Busca */}

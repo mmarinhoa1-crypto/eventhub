@@ -101,7 +101,7 @@ export default function EventoCard({ evento, diasDiff, abaAtual, clickable = tru
 
           {/* Tempo */}
           {tempoLabel && (
-            <p className={'flex items-center gap-1 text-[10px] font-semibold mt-1.5 ' + (abaAtual === 'proximos' ? 'text-blue-500 dark:text-blue-400' : 'text-gray-400 dark:text-white/30')}>
+            <p className={'flex items-center gap-1 text-[10px] font-semibold mt-1.5 ' + (abaAtual === 'proximos' ? 'text-accent' : 'text-gray-400 dark:text-white/30')}>
               <Clock size={9} />
               {tempoLabel}
             </p>
@@ -125,7 +125,7 @@ export default function EventoCard({ evento, diasDiff, abaAtual, clickable = tru
       {!confirmando && onDelete && (
         <button
           onClick={handleDeleteClick}
-          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-gray-300 dark:text-white/20 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all duration-200"
+          className="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-gray-300 dark:text-white/20 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all duration-200"
           title="Excluir evento"
         >
           <Trash2 size={12} />

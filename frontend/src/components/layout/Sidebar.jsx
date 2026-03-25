@@ -7,8 +7,7 @@ import { useTema } from '../../contexts/ThemeContext'
 import api from '../../api/client'
 
 const mainLinks = [
-  { to: '/', label: 'Dashboard', roles: ['admin', 'agent', 'diretor'] },
-  { to: '/eventos', label: 'Eventos', roles: ['admin', 'diretor'] },
+  { to: '/', label: 'Dashboard' },
 ]
 
 const marketingSubLinks = [
@@ -48,8 +47,9 @@ export default function Sidebar() {
   const isDark = tema === 'dark'
 
   const showMarketing = ['admin', 'social_media', 'designer', 'diretor', 'gestor_trafego'].includes(funcao)
-  const showFinanceiro = funcao === 'admin' || funcao === 'diretor'
-  const showEquipe = funcao === 'admin' || funcao === 'diretor'
+  const canFinanceiro = funcao === 'admin' || funcao === 'diretor'
+  const canEquipe = funcao === 'admin' || funcao === 'diretor'
+  const canDashboard = funcao === 'admin' || funcao === 'agent' || funcao === 'diretor'
 
   const isMarketingActive = ['/marketing', '/demandas', '/anuncios'].some(p => location.pathname.startsWith(p))
   const isFinanceiroActive = ['/financeiro', '/vendas', '/consumo', '/previsao'].some(p => location.pathname.startsWith(p))
@@ -192,7 +192,7 @@ export default function Sidebar() {
                 </div>
               </div>
             )}
-            {openMenu === 'financeiro' && showFinanceiro && (
+            {openMenu === 'financeiro' && canFinanceiro && (
               <div className="absolute top-full mt-3 left-1/2 -translate-x-1/2 rounded-2xl overflow-hidden shadow-2xl min-w-[180px]" style={submenuStyle}>
                 <div className="px-2 py-2 space-y-0.5">
                   {financeiroSubLinks.map(({ to, label }) => (
@@ -206,21 +206,37 @@ export default function Sidebar() {
             <div className="flex items-center gap-1 px-5 py-2.5 rounded-2xl shadow-2xl" style={barStyle}>
               <img src="/logo-rosa.png" alt="314 Produções" className="h-7 w-auto flex-shrink-0" />
               <div className={`w-px h-5 mx-0.5 ${divider}`} />
-              {mainLinks.filter(l => l.roles.includes(funcao)).map(({ to, label }) => (
-                <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}>{label}</NavLink>
-              ))}
-              {showMarketing && (
+              {mainLinks.map(({ to, label }) => {
+                const allowed = canDashboard || to === '/eventos'
+                return allowed ? (
+                  <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}>{label}</NavLink>
+                ) : (
+                  <span key={to} className={`${linkBase} text-gray-300 dark:text-white/20 cursor-default select-none`}>{label}</span>
+                )
+              })}
+              <NavLink to="/eventos" className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}>Eventos</NavLink>
+              {showMarketing ? (
                 <button onClick={() => toggleMenu('marketing')} className={`${linkBase} flex items-center gap-1 ${isMarketingActive || openMenu === 'marketing' ? linkActive : linkInactive}`}>
                   Marketing <ChevronDown size={12} className={'transition-transform duration-200 ' + (openMenu === 'marketing' ? 'rotate-180' : '')} />
                 </button>
+              ) : (
+                <span className={`${linkBase} flex items-center gap-1 text-gray-300 dark:text-white/20 cursor-default select-none`}>
+                  Marketing <ChevronDown size={12} />
+                </span>
               )}
-              {showFinanceiro && (
+              {canFinanceiro ? (
                 <button onClick={() => toggleMenu('financeiro')} className={`${linkBase} flex items-center gap-1 ${isFinanceiroActive || openMenu === 'financeiro' ? linkActive : linkInactive}`}>
                   Financeiro <ChevronDown size={12} className={'transition-transform duration-200 ' + (openMenu === 'financeiro' ? 'rotate-180' : '')} />
                 </button>
+              ) : (
+                <span className={`${linkBase} flex items-center gap-1 text-gray-300 dark:text-white/20 cursor-default select-none`}>
+                  Financeiro <ChevronDown size={12} />
+                </span>
               )}
-              {showEquipe && (
+              {canEquipe ? (
                 <NavLink to="/equipe" className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}>Equipe</NavLink>
+              ) : (
+                <span className={`${linkBase} text-gray-300 dark:text-white/20 cursor-default select-none`}>Equipe</span>
               )}
             </div>
           </nav>
@@ -275,11 +291,18 @@ export default function Sidebar() {
                 <button onClick={() => setMobileOpen(false)} className={iconBtn}><X size={18} /></button>
               </div>
               <div className="p-3 space-y-1">
-                {mainLinks.filter(l => l.roles.includes(funcao)).map(({ to, label }) => (
-                  <button key={to} onClick={() => { navigate(to); setMobileOpen(false) }}
-                    className={`${mobileLinkBase} w-full text-left ${location.pathname === to ? mobileLinkActive : mobileLinkInactive}`}>{label}</button>
-                ))}
-                {showMarketing && (
+                {/* Dashboard */}
+                {canDashboard ? (
+                  <button onClick={() => { navigate('/'); setMobileOpen(false) }}
+                    className={`${mobileLinkBase} w-full text-left ${location.pathname === '/' ? mobileLinkActive : mobileLinkInactive}`}>Dashboard</button>
+                ) : (
+                  <span className={`${mobileLinkBase} block text-gray-300 dark:text-white/20`}>Dashboard</span>
+                )}
+                {/* Eventos */}
+                <button onClick={() => { navigate('/eventos'); setMobileOpen(false) }}
+                  className={`${mobileLinkBase} w-full text-left ${location.pathname === '/eventos' ? mobileLinkActive : mobileLinkInactive}`}>Eventos</button>
+                {/* Marketing */}
+                {showMarketing ? (
                   <div>
                     <button onClick={() => setOpenMenu(openMenu === 'marketing' ? null : 'marketing')}
                       className={`${mobileLinkBase} w-full text-left flex items-center justify-between ${isMarketingActive ? mobileLinkActive : mobileLinkInactive}`}>
@@ -294,8 +317,11 @@ export default function Sidebar() {
                       </div>
                     )}
                   </div>
+                ) : (
+                  <span className={`${mobileLinkBase} block text-gray-300 dark:text-white/20`}>Marketing</span>
                 )}
-                {showFinanceiro && (
+                {/* Financeiro */}
+                {canFinanceiro ? (
                   <div>
                     <button onClick={() => setOpenMenu(openMenu === 'financeiro' ? null : 'financeiro')}
                       className={`${mobileLinkBase} w-full text-left flex items-center justify-between ${isFinanceiroActive ? mobileLinkActive : mobileLinkInactive}`}>
@@ -310,10 +336,15 @@ export default function Sidebar() {
                       </div>
                     )}
                   </div>
+                ) : (
+                  <span className={`${mobileLinkBase} block text-gray-300 dark:text-white/20`}>Financeiro</span>
                 )}
-                {showEquipe && (
+                {/* Equipe */}
+                {canEquipe ? (
                   <button onClick={() => { navigate('/equipe'); setMobileOpen(false) }}
                     className={`${mobileLinkBase} w-full text-left ${location.pathname === '/equipe' ? mobileLinkActive : mobileLinkInactive}`}>Equipe</button>
+                ) : (
+                  <span className={`${mobileLinkBase} block text-gray-300 dark:text-white/20`}>Equipe</span>
                 )}
               </div>
               <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-white/[0.08]">

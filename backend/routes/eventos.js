@@ -35,9 +35,7 @@ res.json({briefings:briefR.rows,posts:postR.rows,eventos:evR.rows});
 router.get('/api/eventos',auth,async(req,res)=>{try{
 let q='SELECT e.*,COALESCE(SUM(d.valor),0) as total,COUNT(d.id) as quantidade FROM eventos e LEFT JOIN despesas d ON d.id_evento=e.id WHERE e.org_id=$1';
 const params=[req.user.org_id];
-if(req.user.funcao==='designer'){q+=' AND e.designer_id=$2';params.push(req.user.id)}
-else if(req.user.funcao==='social_media'){q+=' AND e.social_media_id=$2';params.push(req.user.id)}
-// gestor_trafego vê todos os eventos da org (somente leitura no frontend)
+// Todos os usuários veem todos os eventos da org (permissões controladas no frontend)
 q+=' GROUP BY e.id ORDER BY e.data_evento ASC';
 const r=await pool.query(q,params);
 res.json(r.rows)}catch(e){res.status(500).json({erro:e.message})}});
