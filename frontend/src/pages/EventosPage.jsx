@@ -155,7 +155,7 @@ export default function EventosPage() {
           {/* Label do mês */}
           <div className="flex items-center gap-3 mb-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-1 h-5 rounded-full bg-blue-500" />
+              <div className="w-1 h-5 rounded-full" style={{ backgroundColor: '#f80d52' }} />
               <h2 className="text-base font-extrabold text-gray-800">
                 {key === '__sem_data__' ? 'Sem data definida' : getMonthLabel(key)}
               </h2>
