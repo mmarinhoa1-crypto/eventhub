@@ -11,9 +11,9 @@ const mainLinks = [
 ]
 
 const marketingSubLinks = [
-  { to: '/marketing', label: 'Cronograma', roles: ['admin', 'social_media', 'diretor', 'gestor_trafego'] },
-  { to: '/demandas', label: 'Minhas Demandas', roles: ['admin', 'social_media', 'designer', 'diretor'] },
-  { to: '/anuncios', label: 'Anúncios', roles: ['admin', 'diretor'] },
+  { to: '/marketing', label: 'Cronograma', roles: ['admin', 'social_media', 'diretor'] },
+  { to: '/demandas', label: 'Minhas Demandas', roles: ['admin', 'social_media', 'designer', 'diretor', 'gestor_trafego'] },
+  { to: '/anuncios', label: 'Anúncios', roles: ['admin', 'diretor', 'gestor_trafego'] },
 ]
 
 const financeiroSubLinks = [

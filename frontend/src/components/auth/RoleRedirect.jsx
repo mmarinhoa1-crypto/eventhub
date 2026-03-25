@@ -8,7 +8,7 @@ const homeByRole = {
   social_media: '/marketing',
   diretor: '/marketing',
   viewer: '/marketing',
-  gestor_trafego: '/marketing',
+  gestor_trafego: '/demandas',
 }
 
 export default function RoleRedirect() {

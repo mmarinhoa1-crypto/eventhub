@@ -83,7 +83,7 @@ export default function MinhasDemandas() {
   const isDiretor = funcao === 'diretor'
   const isGestorTrafego = funcao === 'gestor_trafego'
   const isReadOnly = isGestorTrafego
-  const isGestor = isAdmin || isDiretor
+  const isGestor = isAdmin || isDiretor || isGestorTrafego
 
   const [data, setData] = useState({ briefings: [], posts: [], eventos: [] })
   const [equipe, setEquipe] = useState([])

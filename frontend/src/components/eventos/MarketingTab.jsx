@@ -823,7 +823,7 @@ export default function MarketingTab({ eventoId }) {
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-1.5">
         <div className="flex gap-1 overflow-x-auto">
           {subTabs.filter(tab => {
-            if (isReadOnly) return ['briefings', 'cronograma', 'materiais'].includes(tab.key)
+            if (isReadOnly) return ['briefings', 'cronograma', 'materiais', 'trafego'].includes(tab.key)
             if (isSocialMedia || isDesigner) return tab.key !== 'campanhas' && tab.key !== 'analise' && tab.key !== 'aprovacoes' && tab.key !== 'trafego'
             return true
           }).map((tab) => {
