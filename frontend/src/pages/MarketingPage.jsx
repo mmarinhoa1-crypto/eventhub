@@ -556,7 +556,7 @@ export default function MarketingPage() {
         function renderEvento(ev, isPast) {
           const dias = diasFaltam(ev.data_evento)
           return (
-            <div key={ev.id} className={'bg-white rounded-2xl border overflow-hidden transition-all ' + (isPast ? 'border-gray-100 opacity-60' : 'border-gray-200 hover:shadow-md hover:border-blue-200')}>
+            <div key={ev.id} className={'bg-white dark:bg-[rgba(19,19,22,0.98)] overflow-hidden transition-all ' + (isPast ? 'border border-gray-100 dark:border-white/[0.08] opacity-60 rounded-2xl' : 'hover:shadow-md')} style={isPast ? {} : {border:'1px solid #f80d52', borderRadius:'14px'}}>
               {confirmDelete === ev.id && (
                 <div className="bg-red-50 dark:bg-red-500/10 border-b border-red-200 dark:border-red-500/30 px-4 py-2.5 flex items-center justify-between" onClick={e => e.stopPropagation()}>
                   <span className="text-xs text-red-700 dark:text-red-400 font-medium">Excluir evento e todos os dados?</span>
@@ -586,7 +586,7 @@ export default function MarketingPage() {
                 </div>
               ) : (
                 <div className="cursor-pointer flex items-center" onClick={() => abrirEvento(ev.id)}>
-                  <div className={'w-1.5 self-stretch rounded-l-2xl flex-shrink-0 ' + (isPast ? 'bg-gray-300' : '')} style={isPast ? {} : {background:'linear-gradient(180deg, #2563eb, #3b82f6)'}} />
+                  <div className={'w-1.5 self-stretch flex-shrink-0 ' + (isPast ? 'bg-gray-300 rounded-l-2xl' : '')} style={isPast ? {} : {background:'#f80d52', borderRadius:'14px 0 0 14px'}} />
                   <div className="flex-1 px-3 md:px-5 py-3 md:py-4 flex items-center justify-between">
                     <div className="flex items-center gap-3 md:gap-4 min-w-0 flex-1">
                       <div className="min-w-0">
@@ -598,7 +598,7 @@ export default function MarketingPage() {
                           {getNome(ev.designer_id, designers) && <span className="flex items-center gap-1 text-xs text-gray-400"><Palette size={12} className="text-violet-400" /> {getNome(ev.designer_id, designers)}</span>}
                           {getNome(ev.social_media_id, socialMedias) && <span className="flex items-center gap-1 text-xs text-gray-400"><Users size={12} className="text-blue-400" /> {getNome(ev.social_media_id, socialMedias)}</span>}
                           {!isPast && dias && (
-                            <span className={'text-xs font-bold px-2.5 py-0.5 rounded-full ' + (dias === 'Hoje' ? 'bg-red-50 dark:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/30' : dias === 'Amanha' ? 'bg-orange-50 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-500/30' : 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-500/30')}>
+                            <span className={'text-xs font-bold px-2.5 py-0.5 rounded-full ' + (dias === 'Hoje' ? 'bg-red-50 dark:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/30' : dias === 'Amanha' ? 'bg-orange-50 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-500/30' : 'border')} style={dias !== 'Hoje' && dias !== 'Amanha' ? {backgroundColor:'rgba(248,13,82,0.08)', color:'#f80d52', borderColor:'rgba(248,13,82,0.25)'} : {}}>
                               {dias === 'Hoje' || dias === 'Amanha' ? dias : 'Faltam ' + dias}
                             </span>
                           )}
@@ -641,13 +641,13 @@ export default function MarketingPage() {
             </div>
             {!showPast ? (
               futuros.length > 0 ? (
-                <div className="space-y-2">{futuros.map(ev => renderEvento(ev, false))}</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">{futuros.map(ev => renderEvento(ev, false))}</div>
               ) : (
                 <div className="bg-white rounded-2xl border border-gray-200 text-center py-16"><Calendar size={32} className="text-gray-300 mx-auto mb-2" /><p className="text-sm text-gray-400">Nenhum evento futuro</p></div>
               )
             ) : (
               passados.length > 0 ? (
-                <div className="space-y-2">{passados.map(ev => renderEvento(ev, true))}</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">{passados.map(ev => renderEvento(ev, true))}</div>
               ) : (
                 <div className="bg-white rounded-2xl border border-gray-200 text-center py-16"><Calendar size={32} className="text-gray-300 mx-auto mb-2" /><p className="text-sm text-gray-400">Nenhum evento passado</p></div>
               )
