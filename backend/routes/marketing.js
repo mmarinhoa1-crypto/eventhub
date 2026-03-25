@@ -6,6 +6,7 @@ module.exports = function({ pool, axios, auth, upload, CLAUDE }) {
   const IG_INSTAGRAM_APP_ID = process.env.INSTAGRAM_IG_APP_ID || '761874503395552';
   const IG_APP_SECRET = process.env.INSTAGRAM_APP_SECRET;
   const IG_REDIRECT_URI = 'https://app.314br.com/api/instagram/callback';
+  const IG_REDIRECT_URI_DIRECT = 'https://app.314br.com/api/instagram/callback-direct';
 
 // === BRIEFINGS DE MARKETING ===
 router.get('/api/briefings/todos',auth,async(req,res)=>{try{
@@ -173,26 +174,28 @@ router.post('/api/instagram/accounts',auth,async(req,res)=>{try{
 
 // Remover conta
 router.delete('/api/instagram/accounts/:id',auth,async(req,res)=>{try{
+  // Buscar ig_account_id antes de deletar
+  const acc = await pool.query('SELECT ig_account_id FROM instagram_accounts WHERE id=$1 AND org_id=$2',[req.params.id,req.user.org_id]);
+  if(acc.rows.length > 0){
+    // Remover conexões de eventos que usam esta conta
+    await pool.query('DELETE FROM instagram_connections WHERE org_id=$1 AND ig_account_id=$2',[req.user.org_id, acc.rows[0].ig_account_id]);
+  }
   await pool.query('DELETE FROM instagram_accounts WHERE id=$1 AND org_id=$2',[req.params.id,req.user.org_id]);
-  // Remover conexões de eventos que usam esta conta
-  await pool.query('DELETE FROM instagram_connections WHERE org_id=$1 AND ig_account_id=(SELECT ig_account_id FROM instagram_accounts WHERE id=$2)',[req.user.org_id,req.params.id]);
   res.json({sucesso:true});
 }catch(e){res.status(500).json({erro:e.message})}});
 
-// Conectar conta existente a um evento (só selecionar)
+// Conectar conta existente a um evento (só referência, sem copiar token)
 router.post('/api/eventos/:id/instagram/connect',auth,async(req,res)=>{try{
   const {account_id} = req.body;
   const acc = await pool.query('SELECT * FROM instagram_accounts WHERE id=$1 AND org_id=$2',[account_id,req.user.org_id]);
   if(acc.rows.length===0) return res.status(404).json({erro:'Conta não encontrada'});
   const a = acc.rows[0];
-  
-  const expiresAt = a.token_expires_at || new Date(Date.now() + 5184000 * 1000);
-  
-  await pool.query(`INSERT INTO instagram_connections(org_id,evento_id,ig_account_id,ig_username,page_id,page_name,access_token,token_expires_at) 
-    VALUES($1,$2,$3,$4,$5,$6,$7,$8) 
+
+  await pool.query(`INSERT INTO instagram_connections(org_id,evento_id,ig_account_id,ig_username,page_id,page_name,access_token,token_expires_at)
+    VALUES($1,$2,$3,$4,$5,$6,$7,$8)
     ON CONFLICT (evento_id) DO UPDATE SET ig_account_id=$3,ig_username=$4,page_id=$5,page_name=$6,access_token=$7,token_expires_at=$8,criado_em=NOW()`,
-    [req.user.org_id, req.params.id, a.ig_account_id, a.ig_username, '', a.ig_username, a.access_token, expiresAt]);
-  
+    [req.user.org_id, req.params.id, a.ig_account_id, a.ig_username, '', a.ig_username, '', null]);
+
   res.json({sucesso:true, username: a.ig_username});
 }catch(e){res.status(500).json({erro:e.message})}});
 
@@ -201,7 +204,7 @@ router.post('/api/eventos/:id/instagram/connect',auth,async(req,res)=>{try{
 // Iniciar OAuth - redireciona pro Instagram Login direto
 router.get('/api/instagram/connect/:eventoId',auth,async(req,res)=>{
   const state = Buffer.from(JSON.stringify({evento_id:req.params.eventoId,user_id:req.user.id,org_id:req.user.org_id})).toString('base64');
-  const url = `https://www.facebook.com/v21.0/dialog/oauth?client_id=${IG_APP_ID}&redirect_uri=${encodeURIComponent(IG_REDIRECT_URI)}&scope=instagram_basic,instagram_content_publish,pages_show_list,pages_read_engagement&state=${state}&response_type=code`;
+  const url = `https://www.facebook.com/v21.0/dialog/oauth?client_id=${IG_APP_ID}&redirect_uri=${encodeURIComponent(IG_REDIRECT_URI)}&scope=instagram_basic,instagram_content_publish,pages_show_list,pages_read_engagement&state=${state}&response_type=code&auth_type=reauthenticate`;
   res.json({url});
 });
 
@@ -251,17 +254,19 @@ router.get('/api/instagram/callback',async(req,res)=>{try{
     const pageLongData = await pageLongRes.json();
     const finalToken = pageLongData.access_token || acc.pageToken;
     const expiresAt = new Date(Date.now() + 5184000 * 1000);
-    
-    await pool.query(`INSERT INTO instagram_accounts(org_id,ig_account_id,ig_username,profile_picture,access_token,token_expires_at) 
-      VALUES($1,$2,$3,$4,$5,$6) 
+
+    // Token salvo apenas em instagram_accounts (fonte única)
+    await pool.query(`INSERT INTO instagram_accounts(org_id,ig_account_id,ig_username,profile_picture,access_token,token_expires_at)
+      VALUES($1,$2,$3,$4,$5,$6)
       ON CONFLICT (org_id, ig_username) DO UPDATE SET ig_account_id=$2,access_token=$5,profile_picture=$4,token_expires_at=$6,criado_em=NOW()`,
       [org_id, acc.igId, acc.username, acc.picture, finalToken, expiresAt]);
-    
-    await pool.query(`INSERT INTO instagram_connections(org_id,evento_id,ig_account_id,ig_username,page_id,page_name,access_token,token_expires_at) 
-      VALUES($1,$2,$3,$4,$5,$6,$7,$8) 
+
+    // Conexão evento → conta (sem copiar token)
+    await pool.query(`INSERT INTO instagram_connections(org_id,evento_id,ig_account_id,ig_username,page_id,page_name,access_token,token_expires_at)
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8)
       ON CONFLICT (evento_id) DO UPDATE SET ig_account_id=$3,ig_username=$4,page_id=$5,page_name=$6,access_token=$7,token_expires_at=$8,criado_em=NOW()`,
-      [org_id, evento_id, acc.igId, acc.username, acc.pageId, acc.pageName, finalToken, expiresAt]);
-    
+      [org_id, evento_id, acc.igId, acc.username, acc.pageId, acc.pageName, '', null]);
+
     return acc.username;
   }
   
@@ -312,25 +317,33 @@ router.get('/api/instagram/callback-select',async(req,res)=>{try{
   const pageLongData = await pageLongRes.json();
   const finalToken = pageLongData.access_token || acc.pageToken;
   const expiresAt = new Date(Date.now() + 5184000 * 1000);
-  
-  await pool.query(`INSERT INTO instagram_accounts(org_id,ig_account_id,ig_username,profile_picture,access_token,token_expires_at) 
-    VALUES($1,$2,$3,$4,$5,$6) 
+
+  // Token salvo apenas em instagram_accounts (fonte única)
+  await pool.query(`INSERT INTO instagram_accounts(org_id,ig_account_id,ig_username,profile_picture,access_token,token_expires_at)
+    VALUES($1,$2,$3,$4,$5,$6)
     ON CONFLICT (org_id, ig_username) DO UPDATE SET ig_account_id=$2,access_token=$5,profile_picture=$4,token_expires_at=$6,criado_em=NOW()`,
     [org_id, acc.igId, acc.username, acc.picture, finalToken, expiresAt]);
-  
-  await pool.query(`INSERT INTO instagram_connections(org_id,evento_id,ig_account_id,ig_username,page_id,page_name,access_token,token_expires_at) 
-    VALUES($1,$2,$3,$4,$5,$6,$7,$8) 
+
+  // Conexão evento → conta (sem copiar token)
+  await pool.query(`INSERT INTO instagram_connections(org_id,evento_id,ig_account_id,ig_username,page_id,page_name,access_token,token_expires_at)
+    VALUES($1,$2,$3,$4,$5,$6,$7,$8)
     ON CONFLICT (evento_id) DO UPDATE SET ig_account_id=$3,ig_username=$4,page_id=$5,page_name=$6,access_token=$7,token_expires_at=$8,criado_em=NOW()`,
-    [org_id, evento_id, acc.igId, acc.username, acc.pageId, acc.pageName, finalToken, expiresAt]);
-  
+    [org_id, evento_id, acc.igId, acc.username, acc.pageId, acc.pageName, '', null]);
+
   delete global._igTemp[t];
   
   res.send('<html><body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;background:#fdf2f8"><div style="text-align:center"><h2 style="color:#ec4899">Instagram Conectado!</h2><p style="font-size:16px">@'+acc.username+'</p><p style="color:#999">Pode fechar esta janela.</p><script>setTimeout(()=>window.close(),2000)</script></div></body></html>');
 }catch(e){res.status(500).send('Erro: '+e.message)}});
 
-// Listar conexão de um evento
+// Listar conexão de um evento (token_expires_at vem da conta mestre)
 router.get('/api/eventos/:id/instagram',auth,async(req,res)=>{try{
-  const r = await pool.query('SELECT id,ig_account_id,ig_username,page_name,token_expires_at FROM instagram_connections WHERE evento_id=$1 AND org_id=$2',[req.params.id,req.user.org_id]);
+  const r = await pool.query(
+    `SELECT ic.id, ic.ig_account_id, ic.ig_username, ic.page_name, ia.token_expires_at
+     FROM instagram_connections ic
+     LEFT JOIN instagram_accounts ia ON ia.ig_account_id = ic.ig_account_id AND ia.org_id = ic.org_id
+     WHERE ic.evento_id=$1 AND ic.org_id=$2`,
+    [req.params.id, req.user.org_id]
+  );
   res.json(r.rows[0] || null);
 }catch(e){res.status(500).json({erro:e.message})}});
 
@@ -338,6 +351,93 @@ router.get('/api/eventos/:id/instagram',auth,async(req,res)=>{try{
 router.delete('/api/eventos/:id/instagram',auth,async(req,res)=>{try{
   await pool.query('DELETE FROM instagram_connections WHERE evento_id=$1 AND org_id=$2',[req.params.id,req.user.org_id]);
   res.json({sucesso:true});
+}catch(e){res.status(500).json({erro:e.message})}});
+
+// === FACEBOOK LOGIN FOR BUSINESS (onboarding completo) ===
+
+// Gerar URL do Facebook Login for Business
+router.get('/api/instagram/connect-business/:eventoId',auth,async(req,res)=>{
+  const extras = encodeURIComponent(JSON.stringify({setup:{channel:"IG_API_ONBOARDING"}}));
+  const redirectUri = encodeURIComponent('https://app.314br.com/instagram-callback');
+  const url = `https://www.facebook.com/v21.0/dialog/oauth?client_id=${IG_APP_ID}&display=page&extras=${extras}&redirect_uri=${redirectUri}&response_type=token&scope=instagram_basic,instagram_content_publish,pages_show_list,pages_read_engagement`;
+  res.json({url});
+});
+
+// Receber token do Facebook Login for Business (chamado pelo frontend)
+router.post('/api/instagram/complete-business-login',auth,async(req,res)=>{try{
+  const {token, evento_id} = req.body;
+  if(!token) return res.status(400).json({erro:'Token não recebido'});
+
+  // Buscar Pages + Instagram Business accounts
+  const pagesRes = await fetch(`https://graph.facebook.com/v21.0/me/accounts?fields=id,name,access_token,instagram_business_account&access_token=${token}`);
+  const pagesData = await pagesRes.json();
+  if(pagesData.error) return res.status(400).json({erro:'Erro ao buscar páginas: '+pagesData.error.message});
+
+  const igAccounts = [];
+  for(const page of (pagesData.data || [])){
+    if(page.instagram_business_account){
+      try{
+        const userRes = await fetch(`https://graph.facebook.com/v21.0/${page.instagram_business_account.id}?fields=username,name,profile_picture_url&access_token=${page.access_token}`);
+        const userData = await userRes.json();
+        igAccounts.push({
+          pageId: page.id,
+          pageName: page.name,
+          pageToken: page.access_token,
+          igId: page.instagram_business_account.id,
+          username: userData.username || userData.name || 'unknown',
+          picture: userData.profile_picture_url || ''
+        });
+      }catch(e){/* skip */}
+    }
+  }
+
+  if(igAccounts.length === 0) return res.status(400).json({erro:'Nenhum Instagram Business encontrado. A conta precisa ser Business/Creator vinculada a uma Página.'});
+
+  // Múltiplas contas: retorna lista para seleção no frontend
+  if(igAccounts.length > 1){
+    return res.json({multiple:true, accounts:igAccounts});
+  }
+
+  // Conta única: salvar e conectar
+  const acc = igAccounts[0];
+  // Page token de long-lived user token = token permanente de página
+  const expiresAt = new Date(Date.now() + 5184000 * 1000);
+
+  await pool.query(`INSERT INTO instagram_accounts(org_id,ig_account_id,ig_username,profile_picture,access_token,token_expires_at)
+    VALUES($1,$2,$3,$4,$5,$6)
+    ON CONFLICT (org_id, ig_username) DO UPDATE SET ig_account_id=$2,access_token=$5,profile_picture=$4,token_expires_at=$6,criado_em=NOW()`,
+    [req.user.org_id, acc.igId, acc.username, acc.picture, acc.pageToken, expiresAt]);
+
+  if(evento_id){
+    await pool.query(`INSERT INTO instagram_connections(org_id,evento_id,ig_account_id,ig_username,page_id,page_name,access_token,token_expires_at)
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8)
+      ON CONFLICT (evento_id) DO UPDATE SET ig_account_id=$3,ig_username=$4,page_id=$5,page_name=$6,access_token=$7,token_expires_at=$8,criado_em=NOW()`,
+      [req.user.org_id, evento_id, acc.igId, acc.username, acc.pageId, acc.pageName, '', null]);
+  }
+
+  res.json({sucesso:true, username:acc.username, picture:acc.picture});
+}catch(e){console.error('complete-business-login erro:',e);res.status(500).json({erro:e.message})}});
+
+// Selecionar conta quando há múltiplas (chamado pelo frontend)
+router.post('/api/instagram/select-business-account',auth,async(req,res)=>{try{
+  const {account, evento_id} = req.body;
+  if(!account) return res.status(400).json({erro:'Conta não informada'});
+
+  const expiresAt = new Date(Date.now() + 5184000 * 1000);
+
+  await pool.query(`INSERT INTO instagram_accounts(org_id,ig_account_id,ig_username,profile_picture,access_token,token_expires_at)
+    VALUES($1,$2,$3,$4,$5,$6)
+    ON CONFLICT (org_id, ig_username) DO UPDATE SET ig_account_id=$2,access_token=$5,profile_picture=$4,token_expires_at=$6,criado_em=NOW()`,
+    [req.user.org_id, account.igId, account.username, account.picture||'', account.pageToken, expiresAt]);
+
+  if(evento_id){
+    await pool.query(`INSERT INTO instagram_connections(org_id,evento_id,ig_account_id,ig_username,page_id,page_name,access_token,token_expires_at)
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8)
+      ON CONFLICT (evento_id) DO UPDATE SET ig_account_id=$3,ig_username=$4,page_id=$5,page_name=$6,access_token=$7,token_expires_at=$8,criado_em=NOW()`,
+      [req.user.org_id, evento_id, account.igId, account.username, account.pageId||'', account.pageName||'', '', null]);
+  }
+
+  res.json({sucesso:true, username:account.username});
 }catch(e){res.status(500).json({erro:e.message})}});
 
 
@@ -820,23 +920,19 @@ router.post('/api/cronograma/:id/boost-stop',auth,async(req,res)=>{try{
 
 
 // === INSTAGRAM PUBLISHING ===
-const IG_ACCOUNT_ID = process.env.INSTAGRAM_ACCOUNT_ID;
-const IG_ACCESS_TOKEN = process.env.INSTAGRAM_ACCESS_TOKEN;
 const IG_GRAPH_URL = 'https://graph.instagram.com';
 
 async function publicarInstagram(imageUrl, caption, igAccountId, igToken, collaborators) {
-  const accountId = igAccountId || IG_ACCOUNT_ID;
-  const token = igToken || IG_ACCESS_TOKEN;
-  if (!accountId || !token) throw new Error('Instagram não configurado para este evento');
+  if (!igAccountId || !igToken) throw new Error('Instagram não configurado para este evento. Conecte uma conta primeiro.');
 
   // Step 1: Criar container de mídia
   const bodyData = {
     image_url: imageUrl,
     caption: caption,
-    access_token: token
+    access_token: igToken
   };
   if (collaborators && collaborators.length > 0) bodyData.collaborators = collaborators;
-  const createRes = await fetch(`${IG_GRAPH_URL}/${accountId}/media`, {
+  const createRes = await fetch(`${IG_GRAPH_URL}/${igAccountId}/media`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(bodyData)
@@ -849,20 +945,20 @@ async function publicarInstagram(imageUrl, caption, igAccountId, igToken, collab
   let ready = false;
   for (let i = 0; i < 30; i++) {
     await new Promise(r => setTimeout(r, 2000));
-    const statusRes = await fetch(`${IG_GRAPH_URL}/${containerId}?fields=status_code&access_token=${token}`);
+    const statusRes = await fetch(`${IG_GRAPH_URL}/${containerId}?fields=status_code&access_token=${igToken}`);
     const statusData = await statusRes.json();
     if (statusData.status_code === 'FINISHED') { ready = true; break; }
     if (statusData.status_code === 'ERROR') throw new Error('Erro ao processar mídia no Instagram');
   }
   if (!ready) throw new Error('Timeout ao processar mídia');
-  
+
   // Step 3: Publicar
-  const publishRes = await fetch(`${IG_GRAPH_URL}/${accountId}/media_publish`, {
+  const publishRes = await fetch(`${IG_GRAPH_URL}/${igAccountId}/media_publish`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       creation_id: containerId,
-      access_token: token
+      access_token: igToken
     })
   });
   const publishData = await publishRes.json();
@@ -872,17 +968,15 @@ async function publicarInstagram(imageUrl, caption, igAccountId, igToken, collab
 
 // Publicar Carrossel
 async function publicarCarrosselInstagram(imageUrls, caption, igAccountId, igToken, collaborators) {
-  const accountId = igAccountId || IG_ACCOUNT_ID;
-  const token = igToken || IG_ACCESS_TOKEN;
-  if (!accountId || !token) throw new Error('Instagram não configurado para este evento');
+  if (!igAccountId || !igToken) throw new Error('Instagram não configurado para este evento. Conecte uma conta primeiro.');
 
   // Step 1: Criar containers individuais
   const childIds = [];
   for (const url of imageUrls) {
-    const res = await fetch(`${IG_GRAPH_URL}/${accountId}/media`, {
+    const res = await fetch(`${IG_GRAPH_URL}/${igAccountId}/media`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image_url: url, is_carousel_item: true, access_token: token })
+      body: JSON.stringify({ image_url: url, is_carousel_item: true, access_token: igToken })
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error.message);
@@ -890,9 +984,9 @@ async function publicarCarrosselInstagram(imageUrls, caption, igAccountId, igTok
   }
 
   // Step 2: Criar container do carrossel
-  const carouselBody = { media_type: 'CAROUSEL', children: childIds, caption, access_token: token };
+  const carouselBody = { media_type: 'CAROUSEL', children: childIds, caption, access_token: igToken };
   if (collaborators && collaborators.length > 0) carouselBody.collaborators = collaborators;
-  const carouselRes = await fetch(`${IG_GRAPH_URL}/${accountId}/media`, {
+  const carouselRes = await fetch(`${IG_GRAPH_URL}/${igAccountId}/media`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(carouselBody)
@@ -902,10 +996,10 @@ async function publicarCarrosselInstagram(imageUrls, caption, igAccountId, igTok
   
   // Step 3: Aguardar e publicar
   await new Promise(r => setTimeout(r, 5000));
-  const publishRes = await fetch(`${IG_GRAPH_URL}/${accountId}/media_publish`, {
+  const publishRes = await fetch(`${IG_GRAPH_URL}/${igAccountId}/media_publish`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ creation_id: carouselData.id, access_token: token })
+    body: JSON.stringify({ creation_id: carouselData.id, access_token: igToken })
   });
   const publishData = await publishRes.json();
   if (publishData.error) throw new Error(publishData.error.message);
@@ -914,13 +1008,11 @@ async function publicarCarrosselInstagram(imageUrls, caption, igAccountId, igTok
 
 // Publicar Reels/Video
 async function publicarReelsInstagram(videoUrl, caption, igAccountId, igToken, collaborators) {
-  const accountId = igAccountId || IG_ACCOUNT_ID;
-  const token = igToken || IG_ACCESS_TOKEN;
-  if (!accountId || !token) throw new Error('Instagram não configurado para este evento');
+  if (!igAccountId || !igToken) throw new Error('Instagram não configurado para este evento. Conecte uma conta primeiro.');
 
-  const reelsBody = { video_url: videoUrl, caption, media_type: 'REELS', access_token: token };
+  const reelsBody = { video_url: videoUrl, caption, media_type: 'REELS', access_token: igToken };
   if (collaborators && collaborators.length > 0) reelsBody.collaborators = collaborators;
-  const createRes = await fetch(`${IG_GRAPH_URL}/${accountId}/media`, {
+  const createRes = await fetch(`${IG_GRAPH_URL}/${igAccountId}/media`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(reelsBody)
@@ -932,17 +1024,17 @@ async function publicarReelsInstagram(videoUrl, caption, igAccountId, igToken, c
   let ready = false;
   for (let i = 0; i < 60; i++) {
     await new Promise(r => setTimeout(r, 3000));
-    const statusRes = await fetch(`${IG_GRAPH_URL}/${createData.id}?fields=status_code&access_token=${token}`);
+    const statusRes = await fetch(`${IG_GRAPH_URL}/${createData.id}?fields=status_code&access_token=${igToken}`);
     const statusData = await statusRes.json();
     if (statusData.status_code === 'FINISHED') { ready = true; break; }
     if (statusData.status_code === 'ERROR') throw new Error('Erro ao processar vídeo no Instagram');
   }
   if (!ready) throw new Error('Timeout ao processar vídeo');
-  
-  const publishRes = await fetch(`${IG_GRAPH_URL}/${accountId}/media_publish`, {
+
+  const publishRes = await fetch(`${IG_GRAPH_URL}/${igAccountId}/media_publish`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ creation_id: createData.id, access_token: token })
+    body: JSON.stringify({ creation_id: createData.id, access_token: igToken })
   });
   const publishData = await publishRes.json();
   if (publishData.error) throw new Error(publishData.error.message);
@@ -955,10 +1047,22 @@ router.post('/api/cronograma/:id/publicar-instagram',auth,async(req,res)=>{try{
   if(post.rows.length===0) return res.status(404).json({erro:'Post não encontrado'});
   const p = post.rows[0];
   
-  // Buscar conexão Instagram do evento
-  const conn = await pool.query('SELECT * FROM instagram_connections WHERE evento_id=$1 AND org_id=$2',[p.id_evento,req.user.org_id]);
+  // Buscar conexão Instagram do evento + token fresco da conta mestre
+  const conn = await pool.query(
+    `SELECT ic.ig_account_id, ic.ig_username, ic.page_id, ic.page_name,
+            ia.access_token, ia.token_expires_at
+     FROM instagram_connections ic
+     JOIN instagram_accounts ia ON ia.ig_account_id = ic.ig_account_id AND ia.org_id = ic.org_id
+     WHERE ic.evento_id=$1 AND ic.org_id=$2`,
+    [p.id_evento, req.user.org_id]
+  );
   if(conn.rows.length===0) return res.status(400).json({erro:'Instagram não conectado neste evento. Vá em Configurações do evento e conecte o Instagram.'});
   const ig = conn.rows[0];
+
+  // Verificar se token não expirou
+  if(ig.token_expires_at && new Date(ig.token_expires_at) < new Date()) {
+    return res.status(400).json({erro:'Token do Instagram expirado. Reconecte a conta em Configurações.'});
+  }
   
   // Buscar arquivos do post
   const arqs = await pool.query('SELECT * FROM arquivos WHERE cronograma_id=$1 AND org_id=$2 ORDER BY criado_em',[p.id,req.user.org_id]);
@@ -1045,13 +1149,15 @@ setInterval(async()=>{
     
     const posts = await pool.query(
       `SELECT c.id, c.titulo, c.conteudo, c.hashtags, c.id_evento, c.org_id, c.auto_publish, c.status, c.boost_enabled, c.boost_budget, c.boost_duration, c.boost_age_min, c.boost_age_max, c.boost_cities, c.collaborators,
-              ic.ig_account_id as conn_ig_id, ic.access_token as conn_ig_token, ic.ig_username as conn_ig_user
-       FROM cronograma_marketing c 
-       JOIN instagram_connections ic ON ic.evento_id=c.id_evento 
-       WHERE c.auto_publish=true 
-       AND c.status IN ('pendente','aprovado','em_andamento') 
-       AND c.data_publicacao::text LIKE $1 
-       AND c.hora_publicacao IS NOT NULL 
+              ic.ig_account_id as conn_ig_id, ia.access_token as conn_ig_token, ic.ig_username as conn_ig_user,
+              ia.token_expires_at as token_expires
+       FROM cronograma_marketing c
+       JOIN instagram_connections ic ON ic.evento_id=c.id_evento
+       JOIN instagram_accounts ia ON ia.ig_account_id=ic.ig_account_id AND ia.org_id=ic.org_id
+       WHERE c.auto_publish=true
+       AND c.status IN ('pendente','aprovado','em_andamento')
+       AND c.data_publicacao::text LIKE $1
+       AND c.hora_publicacao IS NOT NULL
        AND c.hora_publicacao <= $2`,
       [dataHoje+'%', horaAgora+':59']
     );
@@ -1062,6 +1168,10 @@ setInterval(async()=>{
       try{
         if(!p.conn_ig_id || !p.conn_ig_token) {
           console.log('CRON: post #'+p.id+' sem Instagram conectado no evento, pulando');
+          continue;
+        }
+        if(p.token_expires && new Date(p.token_expires) < new Date()) {
+          console.log('CRON: post #'+p.id+' token Instagram expirado, pulando');
           continue;
         }
         
@@ -1106,6 +1216,41 @@ setInterval(async()=>{
     }
   }catch(e){console.error('CRON erro geral:',e.message)}
 }, 60000);
+
+// CRON: Renovar tokens do Instagram a cada 6 horas
+// Tokens long-lived duram 60 dias; renovamos quando faltam menos de 15 dias
+setInterval(async()=>{
+  try{
+    const quinzeDias = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
+    const contas = await pool.query(
+      'SELECT id, ig_username, access_token, token_expires_at FROM instagram_accounts WHERE token_expires_at < $1 AND token_expires_at > NOW()',
+      [quinzeDias]
+    );
+    if(contas.rows.length === 0) return;
+    console.log('TOKEN REFRESH: '+contas.rows.length+' conta(s) para renovar');
+
+    for(const conta of contas.rows){
+      try{
+        const refreshRes = await fetch(
+          `https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${conta.access_token}`
+        );
+        const refreshData = await refreshRes.json();
+        if(refreshData.error){
+          console.error('TOKEN REFRESH erro @'+conta.ig_username+':', refreshData.error.message);
+          continue;
+        }
+        const novoToken = refreshData.access_token;
+        const novaExpiracao = new Date(Date.now() + (refreshData.expires_in || 5184000) * 1000);
+
+        await pool.query(
+          'UPDATE instagram_accounts SET access_token=$1, token_expires_at=$2 WHERE id=$3',
+          [novoToken, novaExpiracao, conta.id]
+        );
+        console.log('✅ TOKEN REFRESH: @'+conta.ig_username+' renovado até '+novaExpiracao.toISOString().split('T')[0]);
+      }catch(e2){console.error('TOKEN REFRESH erro @'+conta.ig_username+':', e2.message)}
+    }
+  }catch(e){console.error('TOKEN REFRESH erro geral:',e.message)}
+}, 6 * 60 * 60 * 1000); // 6 horas
 
 
 // === PLANEJAMENTO SEMANAL ===

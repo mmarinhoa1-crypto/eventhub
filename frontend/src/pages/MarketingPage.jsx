@@ -698,8 +698,8 @@ export default function MarketingPage() {
             )}
 
             {/* Token manual */}
-            <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
-              <p className="text-[10px] text-gray-500 leading-relaxed mb-2">
+            <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-3 border border-gray-100 dark:border-white/10">
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-relaxed mb-2">
                 <strong>Gerar token:</strong> developers.facebook.com → App → Instagram → Gerar Token
               </p>
               <textarea
@@ -707,9 +707,9 @@ export default function MarketingPage() {
                 onChange={e => setIgTokenInput(e.target.value)}
                 placeholder="Cole o token aqui..."
                 rows={2}
-                className="w-full border border-gray-200 rounded-lg px-2.5 py-2 text-xs font-mono focus:ring-2 focus:ring-accent outline-none resize-none bg-white"
+                className="w-full border border-gray-200 dark:border-white/10 rounded-lg px-2.5 py-2 text-xs font-mono focus:ring-2 focus:ring-accent outline-none resize-none bg-white dark:bg-white/5 dark:text-white"
               />
-              <button onClick={conectarIGToken} disabled={savingIG || !igTokenInput.trim()} className={'w-full mt-2 px-3 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ' + (savingIG ? 'bg-gray-300 text-gray-500' : !igTokenInput.trim() ? 'bg-gray-200 text-gray-400' : 'bg-accent text-white hover:bg-accent/90 shadow-sm')}>
+              <button onClick={conectarIGToken} disabled={savingIG || !igTokenInput.trim()} className={'w-full mt-2 px-3 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ' + (savingIG ? 'bg-gray-300 text-gray-500' : !igTokenInput.trim() ? 'bg-gray-200 text-gray-400 dark:bg-white/10 dark:text-gray-500' : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 shadow-sm')}>
                 <Instagram size={12} /> {savingIG ? 'Verificando...' : 'Conectar'}
               </button>
             </div>

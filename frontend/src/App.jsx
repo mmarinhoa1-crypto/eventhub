@@ -18,12 +18,14 @@ import PrevisaoPage from './pages/PrevisaoPage'
 import VendasPage from './pages/VendasPage'
 import ConsumoPage from './pages/ConsumoPage'
 import AnunciosPage from './pages/AnunciosPage'
+import InstagramCallbackPage from './pages/InstagramCallbackPage'
 
 export default function App() {
   return (
     <Routes>
       <Route path="/entrar" element={<LoginPage />} />
       <Route path="/registrar" element={<RegistrarPage />} />
+      <Route path="/instagram-callback" element={<InstagramCallbackPage />} />
       <Route
         element={
           <ProtectedRoute>
