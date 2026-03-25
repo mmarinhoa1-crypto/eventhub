@@ -34,12 +34,15 @@ export default function EventoCard({ evento, onClick, onDelete }) {
 
   return (
     <div
-      className="group relative bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg hover:shadow-blue-100/40 hover:border-blue-200 transition-all duration-300 cursor-pointer flex-shrink-0"
+      className="group relative bg-white dark:bg-[rgba(19,19,22,0.98)] rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer flex-shrink-0"
+      style={{ border: '1px solid #f80d52' }}
+      onMouseEnter={e => e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(248,13,82,0.15)'}
+      onMouseLeave={e => e.currentTarget.style.boxShadow = ''}
       style={{ width: 280 }}
       onClick={() => !confirmando && onClick(evento)}
     >
       {/* Barra de cor superior */}
-      <div className="h-1 w-full bg-gradient-to-r from-blue-500 to-blue-400" />
+      <div className="h-1 w-full" style={{ background: 'linear-gradient(to right, #f80d52, #ff3d7a)' }} />
 
       <div className="p-4">
         {/* Header */}
@@ -63,7 +66,7 @@ export default function EventoCard({ evento, onClick, onDelete }) {
               )}
             </div>
           </div>
-          <div className="p-1.5 rounded-xl bg-blue-50 dark:bg-blue-500/20 text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all flex-shrink-0">
+          <div className="p-1.5 rounded-xl transition-all flex-shrink-0 group-hover:!bg-[#f80d52] group-hover:text-white" style={{ backgroundColor: 'rgba(248,13,82,0.08)', color: '#f80d52' }}>
             <ArrowRight size={14} />
           </div>
         </div>
@@ -80,9 +83,9 @@ export default function EventoCard({ evento, onClick, onDelete }) {
               <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">{fmtV(receita)}</p>
             </div>
           ) : (
-            <div className="bg-blue-50 dark:bg-blue-500/10 rounded-xl px-3 py-2">
-              <p className="text-[9px] font-bold text-blue-400 uppercase tracking-wider">Orçamento</p>
-              <p className="text-sm font-bold text-blue-700 dark:text-blue-400 mt-0.5">
+            <div className="rounded-xl px-3 py-2" style={{ backgroundColor: 'rgba(248,13,82,0.08)' }}>
+              <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: '#f80d52' }}>Orçamento</p>
+              <p className="text-sm font-bold mt-0.5" style={{ color: '#f80d52' }}>
                 {orcamento > 0 ? fmtV(orcamento) : '—'}
               </p>
             </div>

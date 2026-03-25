@@ -586,7 +586,7 @@ export default function MarketingPage() {
                 </div>
               ) : (
                 <div className="cursor-pointer flex items-center" onClick={() => abrirEvento(ev.id)}>
-                  <div className={'w-1.5 self-stretch flex-shrink-0 ' + (isPast ? 'bg-gray-300 rounded-l-2xl' : '')} style={isPast ? {} : {background:'#f80d52', borderRadius:'14px 0 0 14px'}} />
+                  {isPast && <div className="w-1.5 self-stretch flex-shrink-0 bg-gray-300 rounded-l-2xl" />}
                   <div className="flex-1 px-3 md:px-5 py-3 md:py-4 flex items-center justify-between">
                     <div className="flex items-center gap-3 md:gap-4 min-w-0 flex-1">
                       <div className="min-w-0">
@@ -641,13 +641,13 @@ export default function MarketingPage() {
             </div>
             {!showPast ? (
               futuros.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">{futuros.map(ev => renderEvento(ev, false))}</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">{futuros.map(ev => renderEvento(ev, false))}</div>
               ) : (
                 <div className="bg-white rounded-2xl border border-gray-200 text-center py-16"><Calendar size={32} className="text-gray-300 mx-auto mb-2" /><p className="text-sm text-gray-400">Nenhum evento futuro</p></div>
               )
             ) : (
               passados.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">{passados.map(ev => renderEvento(ev, true))}</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">{passados.map(ev => renderEvento(ev, true))}</div>
               ) : (
                 <div className="bg-white rounded-2xl border border-gray-200 text-center py-16"><Calendar size={32} className="text-gray-300 mx-auto mb-2" /><p className="text-sm text-gray-400">Nenhum evento passado</p></div>
               )
