@@ -945,11 +945,11 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                               return (
                                 <div
                                   key={d._tipo+'-'+d.id}
-                                  draggable
-                                  onDragStart={e => { e.stopPropagation(); setDraggedItem({...d}) }}
+                                  draggable={!isReadOnly}
+                                  onDragStart={e => { if (isReadOnly) return; e.stopPropagation(); setDraggedItem({...d}) }}
                                   onDragEnd={() => { setDraggedItem(null); setDragOverDay(null); setDragOverCard(null) }}
-                                  onDragOver={e => handleCardDragOver(e, d._tipo+'-'+d.id)}
-                                  onDrop={e => handleCardDrop(e, d, dayStr, dayItems)}
+                                  onDragOver={e => !isReadOnly && handleCardDragOver(e, d._tipo+'-'+d.id)}
+                                  onDrop={e => !isReadOnly && handleCardDrop(e, d, dayStr, dayItems)}
                                   onClick={e => { e.stopPropagation(); const next = isSelected ? null : d; setAdminDetalhe(next); if(next) { setAdminArquivos([]); carregarAdminArqs(next); carregarComentarios(next._tipo, next.id, true) } }}
                                   className={'rounded-xl bg-white dark:bg-white/[0.06] border cursor-grab select-none transition-all duration-150 hover:shadow-md '
                                     + (isDraggingThis ? 'opacity-40 scale-95 ' : '')
@@ -1091,8 +1091,8 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                               {ETIQUETAS_PADRAO.map(et => {
                                 const ativa = etqs.includes(et.key)
                                 return (
-                                  <button key={et.key} onClick={() => toggleEtiqueta(d._tipo, d.id, et.key)}
-                                    className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border-2 transition-all"
+                                  <button key={et.key} onClick={() => !isReadOnly && toggleEtiqueta(d._tipo, d.id, et.key)} disabled={isReadOnly}
+                                    className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border-2 transition-all disabled:cursor-not-allowed"
                                     style={ativa
                                       ? { backgroundColor: isDark ? et.darkBg : et.bg, color: isDark ? et.darkColor : et.color, borderColor: isDark ? et.darkBorder : et.border }
                                       : { backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
@@ -1110,8 +1110,8 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                               {TAGS_STATUS.map(tag => {
                                 const ativa = getTag(d._tipo, d.id) === tag.key
                                 return (
-                                  <button key={tag.key} onClick={() => setTagStatus(d._tipo, d.id, tag.key)}
-                                    className="text-xs font-semibold px-2.5 py-1 rounded-full border-2 transition-all"
+                                  <button key={tag.key} onClick={() => !isReadOnly && setTagStatus(d._tipo, d.id, tag.key)} disabled={isReadOnly}
+                                    className="text-xs font-semibold px-2.5 py-1 rounded-full border-2 transition-all disabled:cursor-not-allowed"
                                     style={ativa
                                       ? { backgroundColor: tag.color + '20', color: tag.color, borderColor: tag.color }
                                       : { backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
@@ -1494,10 +1494,10 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                             </div>
                           </div>
 
-                          <button onClick={() => { setAdminDetalhe(null); navigate('/marketing?evento='+d.id_evento) }}
+                          {!isReadOnly && <button onClick={() => { setAdminDetalhe(null); navigate('/marketing?evento='+d.id_evento) }}
                             className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition text-center">
                             Abrir no Marketing
-                          </button>
+                          </button>}
                         </div>
                       </div>
                     </div>
