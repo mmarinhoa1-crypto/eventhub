@@ -1,9 +1,10 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useRef, useEffect } from 'react'
-import { Sun, Moon, ChevronDown, Menu, X } from 'lucide-react'
+import { Sun, Moon, ChevronDown, Menu, X, LogOut, User } from 'lucide-react'
 import NotificationPanel from './NotificationPanel'
 import { useAuth } from '../../hooks/useAuth'
 import { useTema } from '../../contexts/ThemeContext'
+import api from '../../api/client'
 
 const mainLinks = [
   { to: '/', label: 'Dashboard', roles: ['admin', 'agent', 'diretor'] },
@@ -23,6 +24,12 @@ const financeiroSubLinks = [
   { to: '/previsao', label: 'Previsão IA' },
 ]
 
+const funcaoLabels = {
+  admin: 'Administrador', diretor: 'Diretor', designer: 'Designer',
+  social_media: 'Social Media', gestor_trafego: 'Gestor de Tráfego',
+  agent: 'Agente', viewer: 'Visualizador',
+}
+
 export default function Sidebar() {
   const { usuario, sair } = useAuth()
   const { tema, alternarTema } = useTema()
@@ -32,7 +39,10 @@ export default function Sidebar() {
 
   const [openMenu, setOpenMenu] = useState(null)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [userDropdown, setUserDropdown] = useState(false)
+  const [fotoUrl, setFotoUrl] = useState(null)
   const navRef = useRef(null)
+  const userRef = useRef(null)
   const mobileDrawerRef = useRef(null)
 
   const isDark = tema === 'dark'
@@ -44,20 +54,24 @@ export default function Sidebar() {
   const isMarketingActive = ['/marketing', '/demandas', '/anuncios'].some(p => location.pathname.startsWith(p))
   const isFinanceiroActive = ['/financeiro', '/vendas', '/consumo', '/previsao'].some(p => location.pathname.startsWith(p))
 
+  // Carregar foto de perfil
+  useEffect(() => {
+    api.get('/equipe/me').then(r => {
+      if (r.data.foto_url) setFotoUrl(r.data.foto_url)
+    }).catch(() => {})
+  }, [])
+
   useEffect(() => {
     function handleClickOutside(e) {
-      // Ignorar cliques dentro do drawer mobile
       if (mobileDrawerRef.current && mobileDrawerRef.current.contains(e.target)) return
-      if (navRef.current && !navRef.current.contains(e.target)) {
-        setOpenMenu(null)
-      }
+      if (navRef.current && !navRef.current.contains(e.target)) setOpenMenu(null)
+      if (userRef.current && !userRef.current.contains(e.target)) setUserDropdown(false)
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Fechar submenus desktop ao navegar
-  useEffect(() => { setOpenMenu(null) }, [location.pathname])
+  useEffect(() => { setOpenMenu(null); setUserDropdown(false) }, [location.pathname])
 
   function toggleMenu(name) {
     setOpenMenu(prev => (prev === name ? null : name))
@@ -68,7 +82,9 @@ export default function Sidebar() {
     navigate('/entrar')
   }
 
-  // Estilos da barra glass
+  const inicial = usuario?.nome?.[0]?.toUpperCase() || 'U'
+
+  // Estilos glass
   const barStyle = {
     background: 'var(--sidebar-bar-bg)',
     backdropFilter: 'blur(32px)',
@@ -80,6 +96,15 @@ export default function Sidebar() {
     backdropFilter: 'blur(28px)',
     WebkitBackdropFilter: 'blur(28px)',
     border: '1px solid var(--sidebar-submenu-border)',
+  }
+  const circleStyle = {
+    background: isDark ? 'rgba(20, 20, 30, 0.60)' : 'rgba(255, 255, 255, 0.70)',
+    backdropFilter: 'blur(32px)',
+    WebkitBackdropFilter: 'blur(32px)',
+    border: isDark ? '1px solid rgba(255, 255, 255, 0.10)' : '1px solid rgba(0, 0, 0, 0.06)',
+    boxShadow: isDark
+      ? '0 4px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255,255,255,0.05)'
+      : '0 4px 20px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255,255,255,0.8)',
   }
 
   const linkBase = 'px-2.5 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap'
@@ -94,7 +119,7 @@ export default function Sidebar() {
 
   const divider = 'bg-black/10 dark:bg-white/15'
 
-  // Mobile drawer link styles
+  // Mobile styles
   const mobileLinkBase = 'block px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200'
   const mobileLinkActive = 'bg-accent/10 text-accent'
   const mobileLinkInactive = 'text-gray-600 dark:text-white/70 hover:bg-gray-100 dark:hover:bg-white/[0.06]'
@@ -102,70 +127,130 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* ===== DESKTOP NAVBAR ===== */}
-      <nav
-        ref={navRef}
-        className="fixed top-4 left-1/2 -translate-x-1/2 z-50 hidden md:block"
-        style={{ maxWidth: 'calc(100vw - 0.5rem)' }}
-      >
-        {/* Submenus desktop */}
-        {openMenu === 'marketing' && showMarketing && (
-          <div className="absolute top-full mt-3 left-1/2 -translate-x-1/2 rounded-2xl overflow-hidden shadow-2xl min-w-[180px]" style={submenuStyle}>
-            <div className="px-2 py-2 space-y-0.5">
-              {marketingSubLinks.filter(l => l.roles.includes(funcao)).map(({ to, label }) => (
-                <NavLink key={to} to={to} end={to === '/marketing'} className={({ isActive }) => `${subLinkBase} ${isActive ? subLinkActive : subLinkInactive}`}>{label}</NavLink>
-              ))}
-            </div>
-          </div>
-        )}
-        {openMenu === 'financeiro' && showFinanceiro && (
-          <div className="absolute top-full mt-3 left-1/2 -translate-x-1/2 rounded-2xl overflow-hidden shadow-2xl min-w-[180px]" style={submenuStyle}>
-            <div className="px-2 py-2 space-y-0.5">
-              {financeiroSubLinks.map(({ to, label }) => (
-                <NavLink key={to} to={to} end={to === '/financeiro'} className={({ isActive }) => `${subLinkBase} ${isActive ? subLinkActive : subLinkInactive}`}>{label}</NavLink>
-              ))}
-            </div>
-          </div>
-        )}
+      {/* ===== DESKTOP: 3-COLUMN TOP BAR ===== */}
+      <div className="fixed top-0 left-0 right-0 z-50 hidden md:block pointer-events-none" style={{ height: 72 }}>
+        <div className="max-w-[1600px] mx-auto px-5 h-full flex items-center justify-between">
 
-        {/* Barra principal desktop */}
-        <div className="flex items-center gap-0.5 px-2.5 py-2.5 rounded-2xl shadow-2xl" style={barStyle}>
-          <img src="/logo-rosa.png" alt="314 Produções" className="h-7 w-auto flex-shrink-0" />
-          <div className={`w-px h-5 mx-0.5 ${divider}`} />
-          {mainLinks.filter(l => l.roles.includes(funcao)).map(({ to, label }) => (
-            <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}>{label}</NavLink>
-          ))}
-          {showMarketing && (
-            <button onClick={() => toggleMenu('marketing')} className={`${linkBase} flex items-center gap-1 ${isMarketingActive || openMenu === 'marketing' ? linkActive : linkInactive}`}>
-              Marketing <ChevronDown size={12} className={'transition-transform duration-200 ' + (openMenu === 'marketing' ? 'rotate-180' : '')} />
+          {/* ESQUERDA: Avatar do usuário */}
+          <div ref={userRef} className="relative pointer-events-auto">
+            <button
+              onClick={() => setUserDropdown(!userDropdown)}
+              className="w-11 h-11 rounded-full overflow-hidden flex items-center justify-center transition-transform duration-200 hover:scale-105 active:scale-95"
+              style={circleStyle}
+            >
+              {fotoUrl ? (
+                <img src={'/api' + fotoUrl} alt="Perfil" className="w-full h-full object-cover" />
+              ) : (
+                <User size={18} className="text-gray-500 dark:text-white/60" />
+              )}
             </button>
-          )}
-          {showFinanceiro && (
-            <button onClick={() => toggleMenu('financeiro')} className={`${linkBase} flex items-center gap-1 ${isFinanceiroActive || openMenu === 'financeiro' ? linkActive : linkInactive}`}>
-              Financeiro <ChevronDown size={12} className={'transition-transform duration-200 ' + (openMenu === 'financeiro' ? 'rotate-180' : '')} />
+
+            {/* User dropdown */}
+            {userDropdown && (
+              <div
+                className="absolute top-full mt-3 left-0 rounded-2xl overflow-hidden shadow-2xl min-w-[220px] p-4 space-y-3"
+                style={submenuStyle}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0"
+                    style={{ background: fotoUrl ? 'transparent' : 'linear-gradient(135deg, #f80d52, #ff6b9d)' }}
+                  >
+                    {fotoUrl ? (
+                      <img src={'/api' + fotoUrl} alt="Perfil" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-sm font-bold text-white">{inicial}</span>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-gray-900 dark:text-white/90 truncate">{usuario?.nome || 'Usuário'}</p>
+                    <p className="text-[11px] text-gray-400 dark:text-white/40">{funcaoLabels[funcao] || funcao}</p>
+                  </div>
+                </div>
+                <div className="h-px bg-gray-200/60 dark:bg-white/[0.06]" />
+                <button
+                  onClick={handleSair}
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition"
+                >
+                  <LogOut size={15} />
+                  Sair
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* CENTRO: Menu principal */}
+          <nav ref={navRef} className="relative pointer-events-auto">
+            {/* Submenus */}
+            {openMenu === 'marketing' && showMarketing && (
+              <div className="absolute top-full mt-3 left-1/2 -translate-x-1/2 rounded-2xl overflow-hidden shadow-2xl min-w-[180px]" style={submenuStyle}>
+                <div className="px-2 py-2 space-y-0.5">
+                  {marketingSubLinks.filter(l => l.roles.includes(funcao)).map(({ to, label }) => (
+                    <NavLink key={to} to={to} end={to === '/marketing'} className={({ isActive }) => `${subLinkBase} ${isActive ? subLinkActive : subLinkInactive}`}>{label}</NavLink>
+                  ))}
+                </div>
+              </div>
+            )}
+            {openMenu === 'financeiro' && showFinanceiro && (
+              <div className="absolute top-full mt-3 left-1/2 -translate-x-1/2 rounded-2xl overflow-hidden shadow-2xl min-w-[180px]" style={submenuStyle}>
+                <div className="px-2 py-2 space-y-0.5">
+                  {financeiroSubLinks.map(({ to, label }) => (
+                    <NavLink key={to} to={to} end={to === '/financeiro'} className={({ isActive }) => `${subLinkBase} ${isActive ? subLinkActive : subLinkInactive}`}>{label}</NavLink>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Barra central glass */}
+            <div className="flex items-center gap-0.5 px-2.5 py-2.5 rounded-2xl shadow-2xl" style={barStyle}>
+              <img src="/logo-rosa.png" alt="314 Produções" className="h-7 w-auto flex-shrink-0" />
+              <div className={`w-px h-5 mx-0.5 ${divider}`} />
+              {mainLinks.filter(l => l.roles.includes(funcao)).map(({ to, label }) => (
+                <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}>{label}</NavLink>
+              ))}
+              {showMarketing && (
+                <button onClick={() => toggleMenu('marketing')} className={`${linkBase} flex items-center gap-1 ${isMarketingActive || openMenu === 'marketing' ? linkActive : linkInactive}`}>
+                  Marketing <ChevronDown size={12} className={'transition-transform duration-200 ' + (openMenu === 'marketing' ? 'rotate-180' : '')} />
+                </button>
+              )}
+              {showFinanceiro && (
+                <button onClick={() => toggleMenu('financeiro')} className={`${linkBase} flex items-center gap-1 ${isFinanceiroActive || openMenu === 'financeiro' ? linkActive : linkInactive}`}>
+                  Financeiro <ChevronDown size={12} className={'transition-transform duration-200 ' + (openMenu === 'financeiro' ? 'rotate-180' : '')} />
+                </button>
+              )}
+              {showEquipe && (
+                <NavLink to="/equipe" className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}>Equipe</NavLink>
+              )}
+            </div>
+          </nav>
+
+          {/* DIREITA: Notificações + Theme */}
+          <div className="flex items-center gap-2.5 pointer-events-auto">
+            {/* Notificações */}
+            <div
+              className="w-11 h-11 rounded-full flex items-center justify-center transition-transform duration-200 hover:scale-105"
+              style={circleStyle}
+            >
+              <NotificationPanel />
+            </div>
+
+            {/* Light/Dark toggle */}
+            <button
+              onClick={alternarTema}
+              className="w-11 h-11 rounded-full flex items-center justify-center transition-transform duration-200 hover:scale-105 active:scale-95"
+              style={circleStyle}
+              title={isDark ? 'Modo claro' : 'Modo escuro'}
+            >
+              {isDark ? <Sun size={17} className="text-amber-400" /> : <Moon size={17} className="text-gray-500" />}
             </button>
-          )}
-          {showEquipe && (
-            <NavLink to="/equipe" className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}>Equipe</NavLink>
-          )}
-          <div className={`w-px h-5 mx-0.5 ${divider}`} />
-          <NotificationPanel />
-          <button onClick={alternarTema} className={iconBtn} title={isDark ? 'Modo claro' : 'Modo escuro'}>
-            {isDark ? <Sun size={16} /> : <Moon size={16} />}
-          </button>
-          <div className={`w-px h-5 mx-0.5 ${divider}`} />
-          <span className="text-xs font-medium px-1 text-gray-400 dark:text-white/40">{usuario?.nome?.split(' ')[0] || 'Usuário'}</span>
-          <button onClick={handleSair} className={`${linkBase} text-red-400 hover:text-red-600 hover:bg-red-50 dark:text-red-400/80 dark:hover:text-red-300 dark:hover:bg-red-500/10`}>Sair</button>
+          </div>
         </div>
-      </nav>
+      </div>
 
-      {/* ===== MOBILE NAVBAR ===== */}
+      {/* ===== MOBILE NAVBAR (inalterado) ===== */}
       <nav className="fixed top-0 left-0 right-0 z-50 md:hidden">
         <div className="flex items-center justify-between px-4 py-3" style={barStyle}>
-          {/* Logo */}
           <img src="/logo-rosa.png" alt="314 Produções" className="h-6 w-auto flex-shrink-0" />
-
-          {/* Notificação + Theme + Hamburguer */}
           <div className="flex items-center gap-1">
             <NotificationPanel />
             <button onClick={alternarTema} className={iconBtn} title={isDark ? 'Modo claro' : 'Modo escuro'}>
@@ -177,27 +262,22 @@ export default function Sidebar() {
           </div>
         </div>
 
-        {/* Mobile drawer */}
         {mobileOpen && (
           <>
             <div className="fixed inset-0 bg-black/40 z-[55]" onClick={() => setMobileOpen(false)} />
             <div ref={mobileDrawerRef} className="fixed top-0 right-0 w-72 h-full z-[56] overflow-y-auto shadow-2xl" style={{ ...submenuStyle, borderRadius: 0, borderLeft: '1px solid var(--sidebar-submenu-border)' }}>
-              {/* Drawer header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-white/[0.08]">
                 <div>
                   <p className="text-sm font-bold text-gray-900 dark:text-white/90">{usuario?.nome || 'Usuário'}</p>
-                  <p className="text-[11px] text-gray-400 dark:text-white/40">{funcao === 'admin' ? 'Administrador' : funcao === 'diretor' ? 'Diretor' : funcao === 'designer' ? 'Designer' : funcao === 'social_media' ? 'Social Media' : funcao === 'gestor_trafego' ? 'Gestor de Tráfego' : funcao}</p>
+                  <p className="text-[11px] text-gray-400 dark:text-white/40">{funcaoLabels[funcao] || funcao}</p>
                 </div>
                 <button onClick={() => setMobileOpen(false)} className={iconBtn}><X size={18} /></button>
               </div>
-
-              {/* Links */}
               <div className="p-3 space-y-1">
                 {mainLinks.filter(l => l.roles.includes(funcao)).map(({ to, label }) => (
                   <button key={to} onClick={() => { navigate(to); setMobileOpen(false) }}
                     className={`${mobileLinkBase} w-full text-left ${location.pathname === to ? mobileLinkActive : mobileLinkInactive}`}>{label}</button>
                 ))}
-
                 {showMarketing && (
                   <div>
                     <button onClick={() => setOpenMenu(openMenu === 'marketing' ? null : 'marketing')}
@@ -214,7 +294,6 @@ export default function Sidebar() {
                     )}
                   </div>
                 )}
-
                 {showFinanceiro && (
                   <div>
                     <button onClick={() => setOpenMenu(openMenu === 'financeiro' ? null : 'financeiro')}
@@ -231,14 +310,11 @@ export default function Sidebar() {
                     )}
                   </div>
                 )}
-
                 {showEquipe && (
                   <button onClick={() => { navigate('/equipe'); setMobileOpen(false) }}
                     className={`${mobileLinkBase} w-full text-left ${location.pathname === '/equipe' ? mobileLinkActive : mobileLinkInactive}`}>Equipe</button>
                 )}
               </div>
-
-              {/* Footer */}
               <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-white/[0.08]">
                 <button onClick={handleSair} className="w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition">Sair</button>
               </div>
