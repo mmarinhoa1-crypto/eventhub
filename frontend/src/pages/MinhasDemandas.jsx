@@ -114,6 +114,10 @@ export default function MinhasDemandas() {
   const [_calendarFilter, setCalendarFilter] = useState('todos')
   const [cardArquivos, setCardArquivos] = useState({})
   const [previewArquivo, setPreviewArquivo] = useState(null)
+  const [previewArquivoList, setPreviewArquivoList] = useState([])
+  const [previewArquivoIndex, setPreviewArquivoIndex] = useState(0)
+  const [adminRefArquivos, setAdminRefArquivos] = useState([])
+  const [refArquivos, setRefArquivos] = useState([])
   const [showNovoPost, setShowNovoPost] = useState(false)
   const [comentarios, setComentarios] = useState([])
   const [novoComentario, setNovoComentario] = useState('')
@@ -220,8 +224,9 @@ export default function MinhasDemandas() {
     try {
       const endpoint = tipo === 'briefing' ? '/briefings/' + id + '/arquivos' : '/cronograma/' + id + '/arquivos'
       const { data } = await api.get(endpoint)
-      setArquivos(data)
-    } catch { setArquivos([]) }
+      setArquivos(data.filter(a => !a.is_referencia))
+      setRefArquivos(data.filter(a => a.is_referencia))
+    } catch { setArquivos([]); setRefArquivos([]) }
   }
 
   async function carregarAdminArqs(item) {
@@ -229,8 +234,9 @@ export default function MinhasDemandas() {
     try {
       const endpoint = item._tipo === 'briefing' ? '/briefings/' + item.id + '/arquivos' : '/cronograma/' + item.id + '/arquivos'
       const { data } = await api.get(endpoint)
-      setAdminArquivos(data)
-    } catch { setAdminArquivos([]) }
+      setAdminArquivos(data.filter(a => !a.is_referencia))
+      setAdminRefArquivos(data.filter(a => a.is_referencia))
+    } catch { setAdminArquivos([]); setAdminRefArquivos([]) }
     finally { setAdminLoadArqs(false) }
   }
 
@@ -253,6 +259,35 @@ export default function MinhasDemandas() {
       toast.success('Arquivo removido')
       carregarArquivosDetalhe(tipo, id)
     } catch { toast.error('Erro ao remover') }
+  }
+
+  async function uploadRefArquivo(tipo, id, file) {
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('arquivo', file)
+      formData.append('is_referencia', 'true')
+      const endpoint = tipo === 'briefing' ? '/briefings/' + id + '/arquivos' : '/cronograma/' + id + '/arquivos'
+      await api.post(endpoint, formData, { timeout: 600000 })
+      toast.success('Referência enviada!')
+      carregarArquivosDetalhe(tipo, id)
+    } catch { toast.error('Erro ao enviar referência') }
+    finally { setUploading(false) }
+  }
+
+  function openPreviewWithNav(arq, lista) {
+    const idx = lista.findIndex(a => a.id === arq.id)
+    setPreviewArquivoList(lista)
+    setPreviewArquivoIndex(idx >= 0 ? idx : 0)
+    setPreviewArquivo(arq)
+  }
+
+  function previewNavegar(dir) {
+    const newIdx = previewArquivoIndex + dir
+    if (newIdx >= 0 && newIdx < previewArquivoList.length) {
+      setPreviewArquivoIndex(newIdx)
+      setPreviewArquivo(previewArquivoList[newIdx])
+    }
   }
 
   async function salvarEdicao() {
@@ -1150,7 +1185,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
 
                                 <div className="grid grid-cols-2 gap-3">
                                   <div>
-                                    <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Referência</label>
+                                    <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Referência (link)</label>
                                     <input value={adminEditForm.referencia||''} onChange={e => setAdminEditForm({...adminEditForm, referencia: e.target.value})}
                                       placeholder="Link ou descrição"
                                       className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
@@ -1163,13 +1198,23 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                   </div>
                                 </div>
 
-                                {/* Upload de arquivo */}
+                                {/* Upload publicável (pode ir para Instagram) */}
                                 <div>
-                                  <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Adicionar Arquivo</label>
-                                  <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-gray-300 text-xs text-gray-400 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50/50 transition cursor-pointer">
+                                  <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block" style={{color:'#16a34a'}}>📤 Upload Publicável <span className="text-[9px] font-normal normal-case text-gray-400">(pode ser publicado no Instagram)</span></label>
+                                  <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-green-300 text-xs text-green-600 hover:border-green-500 hover:bg-green-50/50 transition cursor-pointer">
                                     <input type="file" accept="image/*,video/*,.pdf" multiple className="hidden"
                                       onChange={e => { Array.from(e.target.files).forEach(file => { const tipo = d._tipo; const id = d.id; const endpoint = tipo === 'briefing' ? '/briefings/' + id + '/arquivos' : '/cronograma/' + id + '/arquivos'; const fd = new FormData(); fd.append('arquivo', file); api.post(endpoint, fd, {timeout:600000}).then(() => { toast.success('Arquivo enviado!'); carregarAdminArqs(d) }).catch(() => toast.error('Erro ao enviar')) }); e.target.value='' }} />
-                                    <Paperclip size={13} /> Clique para anexar
+                                    <Paperclip size={13} /> Clique para anexar arquivo publicável
+                                  </label>
+                                </div>
+
+                                {/* Upload de referência (uso interno, NUNCA vai para Instagram) */}
+                                <div>
+                                  <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block" style={{color:'#d97706'}}>📎 Upload de Referência <span className="text-[9px] font-normal normal-case text-gray-400">(uso interno — NÃO publica no Instagram)</span></label>
+                                  <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-amber-300 text-xs text-amber-600 hover:border-amber-500 hover:bg-amber-50/50 transition cursor-pointer">
+                                    <input type="file" accept="image/*,video/*,.pdf,.psd,.ai,.zip" multiple className="hidden"
+                                      onChange={e => { Array.from(e.target.files).forEach(file => { const tipo = d._tipo; const id = d.id; const endpoint = tipo === 'briefing' ? '/briefings/' + id + '/arquivos' : '/cronograma/' + id + '/arquivos'; const fd = new FormData(); fd.append('arquivo', file); fd.append('is_referencia', 'true'); api.post(endpoint, fd, {timeout:600000}).then(() => { toast.success('Referência enviada!'); carregarAdminArqs(d) }).catch(() => toast.error('Erro ao enviar referência')) }); e.target.value='' }} />
+                                    <Paperclip size={13} /> Clique para anexar referência
                                   </label>
                                 </div>
 
@@ -1236,7 +1281,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                               )}
                               {(d.referencia || d.musica) && (
                                 <div className="grid grid-cols-2 gap-3">
-                                  {d.referencia && <div className="bg-gray-50 dark:bg-white/[0.04] rounded-xl px-3 py-2.5"><p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide mb-1">Referência</p><p className="text-xs text-gray-700 dark:text-white/70 break-all">{d.referencia}</p></div>}
+                                  {d.referencia && <div className="bg-gray-50 dark:bg-white/[0.04] rounded-xl px-3 py-2.5"><p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide mb-1">Referência (link)</p><p className="text-xs text-gray-700 dark:text-white/70 break-all">{d.referencia}</p></div>}
                                   {d.musica && <div className="bg-gray-50 dark:bg-white/[0.04] rounded-xl px-3 py-2.5"><p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide mb-1">Música</p><p className="text-xs text-gray-700 dark:text-white/70">{d.musica}</p></div>}
                                 </div>
                               )}
@@ -1249,13 +1294,13 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                             </div>
                           )}
 
-                          {/* Arquivos */}
-                          <div className="bg-gray-50 rounded-xl px-4 py-3">
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-2">Arquivos</p>
+                          {/* Arquivos Publicáveis */}
+                          <div className="rounded-xl px-4 py-3" style={{backgroundColor: 'rgba(22,163,106,0.06)', border: '1px solid rgba(22,163,106,0.15)'}}>
+                            <p className="text-[10px] font-bold uppercase tracking-wide mb-2" style={{color:'#16a34a'}}>📤 Arquivos Publicáveis <span className="text-[9px] font-normal normal-case text-gray-400">(Instagram)</span></p>
                             {adminLoadArqs ? (
                               <div className="flex items-center justify-center py-4"><div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div></div>
                             ) : adminArquivos.length === 0 ? (
-                              <p className="text-xs text-gray-400 py-1">Nenhum arquivo</p>
+                              <p className="text-xs text-gray-400 py-1">Nenhum arquivo publicável</p>
                             ) : (
                               <div className="grid grid-cols-3 gap-2">
                                 {adminArquivos.map(arq => {
@@ -1264,11 +1309,38 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                   const fileUrl = arq.url?.startsWith('http') ? arq.url : '/api' + (arq.url?.startsWith('/') ? arq.url : '/uploads/' + (arq.nome_arquivo || arq.url))
                                   return (
                                     <div key={arq.id} className="group relative rounded-xl overflow-hidden border border-gray-200 dark:border-white/[0.10] bg-white dark:bg-white/[0.04] hover:shadow-sm transition">
-                                      {isImg && <img src={fileUrl} alt={arq.nome_original} className="w-full object-cover cursor-pointer hover:opacity-80" style={{height:80}} onClick={() => setPreviewArquivo(arq)} />}
+                                      {isImg && <img src={fileUrl} alt={arq.nome_original} className="w-full object-cover cursor-pointer hover:opacity-80" style={{height:80}} onClick={() => openPreviewWithNav(arq, adminArquivos)} />}
                                       {isVideo && <video src={fileUrl} controls className="w-full" style={{height:80}} />}
                                       {!isImg && !isVideo && <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 text-xs font-semibold text-gray-600 dark:text-white/60 hover:text-blue-600">📎 {arq.nome_original || 'Arquivo'}</a>}
                                       <a href={fileUrl} download={arq.nome_original || 'arquivo'} onClick={e => e.stopPropagation()}
                                         className="absolute bottom-1 right-1 w-7 h-7 bg-blue-500 hover:bg-blue-600 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition z-10">
+                                        <Download size={13} className="text-white" />
+                                      </a>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Arquivos de Referência (uso interno) */}
+                          <div className="rounded-xl px-4 py-3" style={{backgroundColor: 'rgba(217,119,6,0.06)', border: '1px solid rgba(217,119,6,0.15)'}}>
+                            <p className="text-[10px] font-bold uppercase tracking-wide mb-2" style={{color:'#d97706'}}>📎 Referências <span className="text-[9px] font-normal normal-case text-gray-400">(uso interno — não publica)</span></p>
+                            {adminRefArquivos.length === 0 ? (
+                              <p className="text-xs text-gray-400 py-1">Nenhuma referência</p>
+                            ) : (
+                              <div className="grid grid-cols-3 gap-2">
+                                {adminRefArquivos.map(arq => {
+                                  const isImg = arq.tipo?.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp)$/i.test(arq.nome_original || arq.url || '')
+                                  const isVideo = arq.tipo?.startsWith('video/') || /\.(mp4|mov|webm)$/i.test(arq.nome_original || arq.url || '')
+                                  const fileUrl = arq.url?.startsWith('http') ? arq.url : '/api' + (arq.url?.startsWith('/') ? arq.url : '/uploads/' + (arq.nome_arquivo || arq.url))
+                                  return (
+                                    <div key={arq.id} className="group relative rounded-xl overflow-hidden border border-amber-200 dark:border-amber-500/20 bg-white dark:bg-white/[0.04] hover:shadow-sm transition">
+                                      {isImg && <img src={fileUrl} alt={arq.nome_original} className="w-full object-cover cursor-pointer hover:opacity-80" style={{height:80}} onClick={() => openPreviewWithNav(arq, adminRefArquivos)} />}
+                                      {isVideo && <video src={fileUrl} controls className="w-full" style={{height:80}} />}
+                                      {!isImg && !isVideo && <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 text-xs font-semibold text-gray-600 dark:text-white/60 hover:text-amber-600">📎 {arq.nome_original || 'Arquivo'}</a>}
+                                      <a href={fileUrl} download={arq.nome_original || 'arquivo'} onClick={e => e.stopPropagation()}
+                                        className="absolute bottom-1 right-1 w-7 h-7 bg-amber-500 hover:bg-amber-600 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition z-10">
                                         <Download size={13} className="text-white" />
                                       </a>
                                     </div>
@@ -2177,7 +2249,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
 
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Referência</label>
+                        <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Referência (link)</label>
                         <input value={editForm.referencia||''} onChange={e => setEditForm({...editForm, referencia: e.target.value})}
                           placeholder="Link ou descrição"
                           className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
@@ -2188,6 +2260,26 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                           placeholder="Nome ou link"
                           className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                       </div>
+                    </div>
+
+                    {/* Upload publicável */}
+                    <div>
+                      <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block" style={{color:'#16a34a'}}>📤 Upload Publicável <span className="text-[9px] font-normal normal-case text-gray-400">(pode ser publicado no Instagram)</span></label>
+                      <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-green-300 text-xs text-green-600 hover:border-green-500 hover:bg-green-50/50 transition cursor-pointer">
+                        <input type="file" accept="image/*,video/*,.pdf" multiple className="hidden"
+                          onChange={e => { Array.from(e.target.files).forEach(file => uploadArquivo(d._tipo, d.id, file)); e.target.value='' }} />
+                        <Paperclip size={13} /> Clique para anexar arquivo publicável
+                      </label>
+                    </div>
+
+                    {/* Upload de referência */}
+                    <div>
+                      <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block" style={{color:'#d97706'}}>📎 Upload de Referência <span className="text-[9px] font-normal normal-case text-gray-400">(uso interno — NÃO publica no Instagram)</span></label>
+                      <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-amber-300 text-xs text-amber-600 hover:border-amber-500 hover:bg-amber-50/50 transition cursor-pointer">
+                        <input type="file" accept="image/*,video/*,.pdf,.psd,.ai,.zip" multiple className="hidden"
+                          onChange={e => { Array.from(e.target.files).forEach(file => uploadRefArquivo(d._tipo, d.id, file)); e.target.value='' }} />
+                        <Paperclip size={13} /> Clique para anexar referência
+                      </label>
                     </div>
 
                     {/* Toggle: Aparecer para o Designer */}
@@ -2246,7 +2338,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                     )}
                     {(d.referencia || d.musica) && (
                       <div className="grid grid-cols-2 gap-3">
-                        {d.referencia && <div className="bg-gray-50 dark:bg-white/[0.04] rounded-xl px-3 py-2.5"><p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide mb-1">Referência</p><p className="text-xs text-gray-700 dark:text-white/70 break-all">{d.referencia}</p></div>}
+                        {d.referencia && <div className="bg-gray-50 dark:bg-white/[0.04] rounded-xl px-3 py-2.5"><p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide mb-1">Referência (link)</p><p className="text-xs text-gray-700 dark:text-white/70 break-all">{d.referencia}</p></div>}
                         {d.musica && <div className="bg-gray-50 dark:bg-white/[0.04] rounded-xl px-3 py-2.5"><p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide mb-1">Música</p><p className="text-xs text-gray-700 dark:text-white/70">{d.musica}</p></div>}
                       </div>
                     )}
@@ -2259,11 +2351,30 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                   </div>
                 )}
 
-                {/* Arquivos */}
+                {/* Ações Instagram (posts) */}
+                {d._tipo === 'post' && d.status !== 'publicado' && (
+                  <div className="border-t border-gray-100 pt-4 space-y-2">
+                    <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-gray-50 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.10]">
+                      <span className={'text-xs font-semibold ' + (d.auto_publish ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-white/40')}>
+                        {d.auto_publish ? `⏰ Agendado ${d.hora_publicacao ? d.hora_publicacao.slice(0,5) : ''}` : 'Agendar publicação'}
+                      </span>
+                      <button onClick={e => { e.stopPropagation(); toggleAutoPublish(d.id, d.auto_publish) }}
+                        className={'relative w-10 h-5 rounded-full transition-colors ' + (d.auto_publish ? 'bg-green-500' : 'bg-gray-300')}>
+                        <span className={'absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ' + (d.auto_publish ? 'translate-x-5' : 'translate-x-0.5')} />
+                      </button>
+                    </div>
+                    <button onClick={e => { e.stopPropagation(); publicarInstagram(d.id) }}
+                      className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 hover:opacity-90 transition text-white text-xs font-bold shadow-sm">
+                      📸 Publicar no Instagram
+                    </button>
+                  </div>
+                )}
+
+                {/* Arquivos Publicáveis */}
                 <div className="border-t border-gray-100 pt-4">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Arquivos ({arquivos.length})</p>
-                    <label className={'px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition ' + (uploading ? 'bg-gray-100 text-gray-400' : 'bg-blue-50 text-blue-600 hover:bg-blue-100')}>
+                    <p className="text-[10px] font-bold uppercase tracking-wide" style={{color:'#16a34a'}}>📤 Publicáveis ({arquivos.length}) <span className="text-[9px] font-normal normal-case text-gray-400">(Instagram)</span></p>
+                    <label className={'px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition ' + (uploading ? 'bg-gray-100 text-gray-400' : 'bg-green-50 text-green-600 hover:bg-green-100')}>
                       {uploading ? 'Enviando...' : '+ Enviar'}
                       <input type="file" className="hidden" disabled={uploading} accept="image/*,video/*,.pdf,.psd,.ai,.zip" multiple
                         onChange={e => { Array.from(e.target.files).forEach(file => uploadArquivo(d._tipo, d.id, file)); e.target.value='' }} />
@@ -2275,13 +2386,47 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                         const isImg = a.tipo?.startsWith('image') || /\.(jpg|jpeg|png|gif|webp)$/i.test(a.nome_original || '')
                         const fileUrl = '/api' + a.url
                         return (
-                          <div key={a.id} className="group relative rounded-xl overflow-hidden border border-gray-200 dark:border-white/[0.10] bg-gray-50 dark:bg-white/[0.04] hover:shadow-sm transition">
+                          <div key={a.id} className="group relative rounded-xl overflow-hidden border border-green-200 dark:border-green-500/20 bg-gray-50 dark:bg-white/[0.04] hover:shadow-sm transition">
                             {isImg
-                              ? <img src={fileUrl} alt={a.nome_original} className="w-full h-20 object-cover cursor-pointer hover:opacity-80" onClick={() => setPreviewArquivo(a)} />
+                              ? <img src={fileUrl} alt={a.nome_original} className="w-full h-20 object-cover cursor-pointer hover:opacity-80" onClick={() => openPreviewWithNav(a, arquivos)} />
                               : <a href={fileUrl} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center h-20 gap-1 text-gray-400 hover:text-blue-600"><FileText size={20} /><span className="text-[10px] font-medium px-2 truncate w-full text-center">{a.nome_original}</span></a>
                             }
                             <a href={fileUrl} download={a.nome_original || 'arquivo'} onClick={e => e.stopPropagation()}
                               className="absolute bottom-1 right-1 w-7 h-7 bg-blue-500 hover:bg-blue-600 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition z-10">
+                              <Download size={13} className="text-white" />
+                            </a>
+                            <button onClick={e => { e.stopPropagation(); deletarArquivo(a.id, d._tipo, d.id) }}
+                              className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-xs font-bold">✕</button>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Arquivos de Referência */}
+                <div className="border-t border-gray-100 pt-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-[10px] font-bold uppercase tracking-wide" style={{color:'#d97706'}}>📎 Referências ({refArquivos.length}) <span className="text-[9px] font-normal normal-case text-gray-400">(uso interno)</span></p>
+                    <label className={'px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition ' + (uploading ? 'bg-gray-100 text-gray-400' : 'bg-amber-50 text-amber-600 hover:bg-amber-100')}>
+                      {uploading ? 'Enviando...' : '+ Referência'}
+                      <input type="file" className="hidden" disabled={uploading} accept="image/*,video/*,.pdf,.psd,.ai,.zip" multiple
+                        onChange={e => { Array.from(e.target.files).forEach(file => uploadRefArquivo(d._tipo, d.id, file)); e.target.value='' }} />
+                    </label>
+                  </div>
+                  {refArquivos.length > 0 && (
+                    <div className="grid grid-cols-3 gap-2">
+                      {refArquivos.map(a => {
+                        const isImg = a.tipo?.startsWith('image') || /\.(jpg|jpeg|png|gif|webp)$/i.test(a.nome_original || '')
+                        const fileUrl = '/api' + a.url
+                        return (
+                          <div key={a.id} className="group relative rounded-xl overflow-hidden border border-amber-200 dark:border-amber-500/20 bg-gray-50 dark:bg-white/[0.04] hover:shadow-sm transition">
+                            {isImg
+                              ? <img src={fileUrl} alt={a.nome_original} className="w-full h-20 object-cover cursor-pointer hover:opacity-80" onClick={() => openPreviewWithNav(a, refArquivos)} />
+                              : <a href={fileUrl} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center h-20 gap-1 text-gray-400 hover:text-amber-600"><FileText size={20} /><span className="text-[10px] font-medium px-2 truncate w-full text-center">{a.nome_original}</span></a>
+                            }
+                            <a href={fileUrl} download={a.nome_original || 'arquivo'} onClick={e => e.stopPropagation()}
+                              className="absolute bottom-1 right-1 w-7 h-7 bg-amber-500 hover:bg-amber-600 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition z-10">
                               <Download size={13} className="text-white" />
                             </a>
                             <button onClick={e => { e.stopPropagation(); deletarArquivo(a.id, d._tipo, d.id) }}
@@ -2332,15 +2477,37 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
         )
       })()}
       {previewArquivo && (
-        <div className="fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4" onClick={() => setPreviewArquivo(null)}>
+        <div className="fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4" onClick={() => { setPreviewArquivo(null); setPreviewArquivoList([]); setPreviewArquivoIndex(0) }}>
           <div className="relative max-w-4xl max-h-[90vh]" onClick={e => e.stopPropagation()}>
             <a href={'/api' + previewArquivo.url} download={previewArquivo.nome_original || previewArquivo.nome || 'arquivo'}
               className="absolute -top-3 -left-3 w-8 h-8 bg-blue-500 hover:bg-blue-600 rounded-full shadow-lg flex items-center justify-center transition z-10">
               <Download size={16} className="text-white" />
             </a>
-            <button onClick={() => setPreviewArquivo(null)} className="absolute -top-3 -right-3 w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-100 transition z-10">
+            <button onClick={() => { setPreviewArquivo(null); setPreviewArquivoList([]); setPreviewArquivoIndex(0) }} className="absolute -top-3 -right-3 w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-100 transition z-10">
               <XIcon size={16} className="text-gray-600" />
             </button>
+
+            {/* Setas de navegação */}
+            {previewArquivoList.length > 1 && (
+              <>
+                {previewArquivoIndex > 0 && (
+                  <button onClick={() => previewNavegar(-1)}
+                    className="absolute left-[-48px] top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full shadow-lg flex items-center justify-center transition z-20">
+                    <ChevronLeft size={22} className="text-gray-700" />
+                  </button>
+                )}
+                {previewArquivoIndex < previewArquivoList.length - 1 && (
+                  <button onClick={() => previewNavegar(1)}
+                    className="absolute right-[-48px] top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full shadow-lg flex items-center justify-center transition z-20">
+                    <ChevronRight size={22} className="text-gray-700" />
+                  </button>
+                )}
+                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-black/60 text-white text-xs font-bold px-3 py-1 rounded-full">
+                  {previewArquivoIndex + 1} / {previewArquivoList.length}
+                </div>
+              </>
+            )}
+
             {previewArquivo.tipo && previewArquivo.tipo.startsWith('image') ? (
               <img src={'/api' + previewArquivo.url} className="max-w-full max-h-[85vh] rounded-lg shadow-2xl object-contain" />
             ) : previewArquivo.tipo && previewArquivo.tipo.startsWith('video') ? (
