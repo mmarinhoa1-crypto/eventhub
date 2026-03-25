@@ -35,10 +35,9 @@ export default function EventoCard({ evento, onClick, onDelete }) {
   return (
     <div
       className="group relative bg-white dark:bg-[rgba(19,19,22,0.98)] rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer flex-shrink-0"
-      style={{ border: '1px solid #f80d52' }}
+      style={{ border: '1px solid #f80d52', width: 280 }}
       onMouseEnter={e => e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(248,13,82,0.15)'}
       onMouseLeave={e => e.currentTarget.style.boxShadow = ''}
-      style={{ width: 280 }}
       onClick={() => !confirmando && onClick(evento)}
     >
       {/* Barra de cor superior */}

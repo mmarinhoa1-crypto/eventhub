@@ -378,8 +378,8 @@ export default function MarketingPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 dark:bg-blue-500/20 rounded-xl">
-            <Megaphone size={24} className="text-blue-600 dark:text-blue-400" />
+          <div className="p-2 rounded-xl" style={{ backgroundColor: 'rgba(248,13,82,0.1)' }}>
+            <Megaphone size={24} style={{ color: '#f80d52' }} />
           </div>
           <div>
             <h1 className="text-xl md:text-2xl font-bold text-gray-900">Marketing</h1>
@@ -556,7 +556,7 @@ export default function MarketingPage() {
         function renderEvento(ev, isPast) {
           const dias = diasFaltam(ev.data_evento)
           return (
-            <div key={ev.id} className={'bg-white dark:bg-[rgba(19,19,22,0.98)] overflow-hidden transition-all ' + (isPast ? 'border border-gray-100 dark:border-white/[0.08] opacity-60 rounded-2xl' : 'hover:shadow-md')} style={isPast ? {} : {border:'1px solid #f80d52', borderRadius:'14px'}}>
+            <div key={ev.id} className={'bg-white dark:bg-[rgba(19,19,22,0.98)] overflow-hidden transition-all duration-200 ' + (isPast ? 'border border-gray-100 dark:border-white/[0.08] opacity-60 rounded-2xl' : 'border border-[#f80d52] dark:border-transparent dark:hover:border-[#f80d52] hover:shadow-md')} style={isPast ? {} : {borderRadius:'14px'}}>
               {confirmDelete === ev.id && (
                 <div className="bg-red-50 dark:bg-red-500/10 border-b border-red-200 dark:border-red-500/30 px-4 py-2.5 flex items-center justify-between" onClick={e => e.stopPropagation()}>
                   <span className="text-xs text-red-700 dark:text-red-400 font-medium">Excluir evento e todos os dados?</span>
