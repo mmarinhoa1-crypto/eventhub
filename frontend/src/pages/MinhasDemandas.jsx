@@ -2447,32 +2447,38 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                   </div>
                 )}
 
-                {/* Ações Instagram (posts) */}
-                {d._tipo === 'post' && (
+                {/* Ações Instagram (posts e briefings com cronograma vinculado) */}
+                {(d._tipo === 'post' || (d._tipo === 'briefing' && d.cronograma_id)) && (() => {
+                  const igPostId = d._tipo === 'post' ? d.id : d.cronograma_id
+                  const igStatus = d._tipo === 'post' ? d.status : (data.posts.find(p => p.id === d.cronograma_id)?.status || d.status)
+                  const igAutoPublish = d._tipo === 'post' ? d.auto_publish : (data.posts.find(p => p.id === d.cronograma_id)?.auto_publish || false)
+                  const igHora = d._tipo === 'post' ? d.hora_publicacao : (data.posts.find(p => p.id === d.cronograma_id)?.hora_publicacao || d.hora_publicacao)
+                  const igBoostStatus = d._tipo === 'post' ? d.boost_status : (data.posts.find(p => p.id === d.cronograma_id)?.boost_status || null)
+                  return (
                   <div className="border-t border-gray-100 pt-4 space-y-2">
-                    {d.status !== 'publicado' && (
+                    {igStatus !== 'publicado' && (
                       <>
                         <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-gray-50 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.10]">
-                          <span className={'text-xs font-semibold ' + (d.auto_publish ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-white/40')}>
-                            {d.auto_publish ? `⏰ Agendado ${d.hora_publicacao ? d.hora_publicacao.slice(0,5) : ''}` : 'Agendar publicação'}
+                          <span className={'text-xs font-semibold ' + (igAutoPublish ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-white/40')}>
+                            {igAutoPublish ? `⏰ Agendado ${igHora ? igHora.slice(0,5) : ''}` : 'Agendar publicação'}
                           </span>
-                          <button onClick={e => { e.stopPropagation(); toggleAutoPublish(d.id, d.auto_publish) }}
-                            className={'relative w-10 h-5 rounded-full transition-colors ' + (d.auto_publish ? 'bg-green-500' : 'bg-gray-300')}>
-                            <span className={'absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ' + (d.auto_publish ? 'translate-x-5' : 'translate-x-0.5')} />
+                          <button onClick={e => { e.stopPropagation(); toggleAutoPublish(igPostId, igAutoPublish) }}
+                            className={'relative w-10 h-5 rounded-full transition-colors ' + (igAutoPublish ? 'bg-green-500' : 'bg-gray-300')}>
+                            <span className={'absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ' + (igAutoPublish ? 'translate-x-5' : 'translate-x-0.5')} />
                           </button>
                         </div>
-                        <button onClick={e => { e.stopPropagation(); publicarInstagram(d.id) }}
+                        <button onClick={e => { e.stopPropagation(); publicarInstagram(igPostId) }}
                           className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 hover:opacity-90 transition text-white text-xs font-bold shadow-sm">
                           📸 Publicar no Instagram
                         </button>
                       </>
                     )}
-                    {d.status === 'publicado' && (
+                    {igStatus === 'publicado' && (
                       <>
                         <div className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20">
                           <span className="text-xs font-bold text-green-600 dark:text-green-400">✅ Publicado</span>
                         </div>
-                        {showBoostConfig === d.id ? (
+                        {showBoostConfig === igPostId ? (
                           <div className="space-y-2 p-3 rounded-xl border border-orange-200 dark:border-orange-500/20 bg-orange-50/50 dark:bg-orange-500/5">
                             <p className="text-[11px] font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wide">Configurar Impulsionamento</p>
                             <div className="grid grid-cols-2 gap-2">
@@ -2505,21 +2511,21 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                             <div className="flex gap-2">
                               <button onClick={() => setShowBoostConfig(null)}
                                 className="flex-1 py-1.5 rounded-lg text-xs font-bold bg-gray-100 dark:bg-white/[0.08] text-gray-600 dark:text-white/60 hover:bg-gray-200 dark:hover:bg-white/[0.12] transition">Cancelar</button>
-                              <button onClick={() => impulsionarPost(d.id)} disabled={boostingId === d.id}
-                                className={'flex-1 py-1.5 rounded-lg text-xs font-bold text-white transition ' + (boostingId === d.id ? 'bg-gray-400 animate-pulse' : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600')}>
-                                {boostingId === d.id ? 'Criando...' : '🚀 Confirmar'}
+                              <button onClick={() => impulsionarPost(igPostId)} disabled={boostingId === igPostId}
+                                className={'flex-1 py-1.5 rounded-lg text-xs font-bold text-white transition ' + (boostingId === igPostId ? 'bg-gray-400 animate-pulse' : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600')}>
+                                {boostingId === igPostId ? 'Criando...' : '🚀 Confirmar'}
                               </button>
                             </div>
                           </div>
                         ) : (
                           <>
-                            {d.boost_status === 'active' ? (
-                              <button onClick={e => { e.stopPropagation(); pararBoost(d.id) }}
+                            {igBoostStatus === 'active' ? (
+                              <button onClick={e => { e.stopPropagation(); pararBoost(igPostId) }}
                                 className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 text-xs font-bold hover:bg-red-100 dark:hover:bg-red-500/20 transition">
                                 ⏸️ Pausar Impulsionamento
                               </button>
                             ) : (
-                              <button onClick={e => { e.stopPropagation(); setShowBoostConfig(d.id) }}
+                              <button onClick={e => { e.stopPropagation(); setShowBoostConfig(igPostId) }}
                                 className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 transition text-white text-xs font-bold shadow-sm">
                                 🚀 Impulsionar
                               </button>
@@ -2529,7 +2535,8 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                       </>
                     )}
                   </div>
-                )}
+                  )
+                })()}
 
                 {/* Arquivos Publicáveis */}
                 <div className="border-t border-gray-100 pt-4">
