@@ -1385,7 +1385,17 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                         <div
                           key={dayStr}
                           data-day={dayStr}
-                          className={'flex-shrink-0 flex flex-col rounded-2xl border shadow-sm overflow-hidden transition-colors duration-150 ' + (isToday ? 'bg-blue-50/40 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/30' : 'bg-white dark:bg-white/[0.04] border-gray-100 dark:border-white/[0.08]')}
+                          onDragOver={e => { e.preventDefault(); setDragOverDay(dayStr) }}
+                          onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverDay(null) }}
+                          onDrop={e => {
+                            e.preventDefault()
+                            if (draggedItem && draggedItem._data?.slice(0,10) !== dayStr) {
+                              atualizarData(draggedItem._tipo, draggedItem.id, dayStr)
+                            }
+                            setDraggedItem(null)
+                            setDragOverDay(null)
+                          }}
+                          className={'flex-shrink-0 flex flex-col rounded-2xl border shadow-sm overflow-hidden transition-colors duration-150 ' + (isToday ? 'bg-blue-50/40 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/30' : 'bg-white dark:bg-white/[0.04] border-gray-100 dark:border-white/[0.08]') + (dragOverDay === dayStr && draggedItem ? ' ring-2 ring-inset ring-blue-400' : '')}
                           style={{ minWidth: 285, height: 520, scrollSnapAlign: 'start' }}
                         >
                           <div className={'flex items-center gap-2 px-4 py-3 border-b ' + (isToday ? 'bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30' : 'border-gray-100 dark:border-white/[0.08] bg-white dark:bg-white/[0.03]')}>

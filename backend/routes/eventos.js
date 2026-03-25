@@ -147,6 +147,8 @@ const delQueries = [
   'DELETE FROM pedidos_bebidas WHERE id_evento=$1 AND org_id=$2',
   'DELETE FROM consumo_eventos WHERE id_evento=$1 AND org_id=$2',
   'DELETE FROM setores_consumo WHERE id_evento=$1 AND org_id=$2',
+  'DELETE FROM ad_funnels WHERE evento_id=$1 AND org_id=$2',
+  'DELETE FROM instagram_connections WHERE evento_id=$1 AND org_id=$2',
 ];
 for (const q of delQueries) { try { await pool.query(q, [id, org]); } catch(e) { /* tabela ou coluna pode não existir */ } }
 const r=await pool.query('DELETE FROM eventos WHERE id=$1 AND org_id=$2 RETURNING id',[id,org]);
