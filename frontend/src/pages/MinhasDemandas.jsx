@@ -1040,7 +1040,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                             </span>
                           </div>
                           <div className="flex items-center gap-2 ml-3">
-                            <button
+                            {!isReadOnly && <button
                               onClick={() => {
                                 if (adminEditMode) { setAdminEditMode(false); setAdminEditForm({}) }
                                 else {
@@ -1062,7 +1062,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                               className={'text-xs px-3 py-1.5 rounded-lg font-bold transition ' + (adminEditMode ? 'bg-gray-100 dark:bg-white/[0.08] text-gray-600 dark:text-white/60 hover:bg-gray-200 dark:hover:bg-white/[0.12]' : 'bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/25')}
                             >
                               {adminEditMode ? 'Cancelar' : '✏️ Editar'}
-                            </button>
+                            </button>}
                             <button onClick={() => { setAdminDetalhe(null); setAdminEditMode(false); setAdminEditForm({}) }}
                               className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-white/[0.08] flex items-center justify-center text-gray-400 dark:text-white/50 hover:text-gray-600 dark:hover:text-white/80 hover:bg-gray-200 dark:hover:bg-white/[0.12] transition font-bold">✕</button>
                           </div>
