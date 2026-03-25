@@ -30,6 +30,10 @@ fields.push('atualizado_em=NOW()');
 vals.push(parseInt(req.params.id));vals.push(req.user.org_id);
 const r=await pool.query('UPDATE briefings SET '+fields.join(',')+' WHERE id=$'+idx+' AND org_id=$'+(idx+1)+' RETURNING *',vals);
 const updated=r.rows[0];
+// Sincronizar id_evento no cronograma vinculado para evitar duplicação
+if(b.id_evento!==undefined&&updated&&updated.cronograma_id){
+  try{await pool.query('UPDATE cronograma_marketing SET id_evento=$1 WHERE id=$2 AND org_id=$3',[updated.id_evento,updated.cronograma_id,req.user.org_id])}catch(e2){console.error('Erro ao sincronizar cronograma:',e2.message)}
+}
 // Notificar gestores quando status muda para em_revisao
 if(b.status==='em_revisao'&&updated){
   try{
@@ -92,6 +96,10 @@ const b=req.body;const fields=[];const vals=[];let idx=1;
 vals.push(parseInt(req.params.id));vals.push(req.user.org_id);
 const r=await pool.query('UPDATE cronograma_marketing SET '+fields.join(',')+' WHERE id=$'+idx+' AND org_id=$'+(idx+1)+' RETURNING *',vals);
 const updated=r.rows[0];
+// Sincronizar id_evento no briefing vinculado para evitar duplicação
+if(b.id_evento!==undefined&&updated){
+  try{await pool.query('UPDATE briefings SET id_evento=$1 WHERE cronograma_id=$2 AND org_id=$3',[updated.id_evento,updated.id,req.user.org_id])}catch(e2){console.error('Erro ao sincronizar briefing:',e2.message)}
+}
 // Notificar gestores quando status muda para em_revisao
 if(b.status==='em_revisao'&&updated){
   try{
