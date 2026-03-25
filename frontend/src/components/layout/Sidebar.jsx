@@ -165,6 +165,7 @@ export default function Sidebar() {
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-gray-900 dark:text-white/90 truncate">{usuario?.nome || 'Usuário'}</p>
                     <p className="text-[11px] text-gray-400 dark:text-white/40">{funcaoLabels[funcao] || funcao}</p>
+                    <p className="text-[10px] text-gray-400 dark:text-white/30 truncate mt-0.5">{usuario?.email || ''}</p>
                   </div>
                 </div>
                 <div className="h-px bg-gray-200/60 dark:bg-white/[0.06]" />

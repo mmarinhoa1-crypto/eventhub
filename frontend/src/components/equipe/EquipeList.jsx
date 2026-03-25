@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Trash2, Pencil, Check, X } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { Trash2, Pencil, Check, X, Camera } from 'lucide-react'
 import Badge from '../ui/Badge'
 import api from '../../api/client'
 import toast from 'react-hot-toast'
@@ -27,6 +27,7 @@ const funcaoLabels = {
 export default function EquipeList({ membros, onUpdate }) {
   const { usuario } = useAuth()
   const [editando, setEditando] = useState(null) // { id, nome, email }
+  const [uploadingId, setUploadingId] = useState(null)
 
   async function alterarFuncao(id, funcao) {
     try {
@@ -72,11 +73,31 @@ export default function EquipeList({ membros, onUpdate }) {
     }
   }
 
+  async function handleFotoUpload(membroId, e) {
+    const file = e.target.files[0]
+    if (!file) return
+    if (!['image/png', 'image/jpeg', 'image/jpg'].includes(file.type)) {
+      toast.error('Apenas PNG e JPEG são aceitos')
+      return
+    }
+    setUploadingId(membroId)
+    try {
+      const fd = new FormData()
+      fd.append('foto', file)
+      await api.post(`/equipe/${membroId}/foto`, fd, { timeout: 30000 })
+      toast.success('Foto atualizada!')
+      onUpdate()
+    } catch (err) {
+      toast.error(err.response?.data?.erro || 'Erro ao enviar foto')
+    } finally { setUploadingId(null); e.target.value = '' }
+  }
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-gray-200">
+            <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider text-xs">Foto</th>
             <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider text-xs">Nome</th>
             <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider text-xs">Email</th>
             <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider text-xs">Função</th>
@@ -86,8 +107,37 @@ export default function EquipeList({ membros, onUpdate }) {
         <tbody>
           {membros.map((m) => {
             const emEdicao = editando?.id === m.id
+            const inicial = m.nome?.[0]?.toUpperCase() || '?'
             return (
               <tr key={m.id} className="border-b border-gray-100">
+                <td className="px-4 py-3">
+                  <div className="relative group w-10 h-10">
+                    <div
+                      className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0"
+                      style={{ background: m.foto_url ? 'transparent' : 'linear-gradient(135deg, #f80d52, #ff6b9d)' }}
+                    >
+                      {m.foto_url ? (
+                        <img src={'/api' + m.foto_url} alt={m.nome} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-sm font-bold text-white">{inicial}</span>
+                      )}
+                    </div>
+                    <label className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                      {uploadingId === m.id ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                      ) : (
+                        <Camera size={14} className="text-white" />
+                      )}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/jpg"
+                        className="hidden"
+                        onChange={e => handleFotoUpload(m.id, e)}
+                        disabled={uploadingId === m.id}
+                      />
+                    </label>
+                  </div>
+                </td>
                 <td className="px-4 py-3 font-medium text-gray-900">
                   {emEdicao ? (
                     <input
