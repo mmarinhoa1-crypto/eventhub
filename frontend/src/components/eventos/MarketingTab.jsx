@@ -155,6 +155,8 @@ export default function MarketingTab({ eventoId }) {
   const [analiseExpandida, setAnaliseExpandida] = useState(null)
   const [calendarDate, setCalendarDate] = useState(new Date())
   const [calendarView, setCalendarView] = useState('week')
+  const [draggedPost, setDraggedPost] = useState(null)
+  const [dragOverDate, setDragOverDate] = useState(null)
 
   useEffect(() => {
     carregarDados()
@@ -1093,10 +1095,7 @@ export default function MarketingTab({ eventoId }) {
 
         const statusDot = { pendente: 'bg-yellow-400 dark:bg-yellow-500', em_andamento: 'bg-blue-500', publicado: 'bg-green-500', cancelado: 'bg-red-400' }
 
-        // Drag-and-drop state & handlers
-        const [draggedPost, setDraggedPost] = useState(null)
-        const [dragOverDate, setDragOverDate] = useState(null)
-
+        // Drag-and-drop handlers
         function handleDragStart(e, post) {
           if (isReadOnly) return
           setDraggedPost(post)
