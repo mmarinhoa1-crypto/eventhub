@@ -297,6 +297,17 @@ export default function MinhasDemandas() {
     try {
       if (detalhe._tipo === 'briefing') {
         await api.patch('/briefings/' + detalhe.id, editForm)
+        // Toggle designer usando cronograma_id do briefing vinculado
+        if (editForm.aparecer_designer !== undefined && detalhe.cronograma_id) {
+          await api.post('/cronograma/' + detalhe.cronograma_id + '/toggle-designer', {
+            ativo: editForm.aparecer_designer,
+            descricao: editForm.descricao || '',
+            tipo_conteudo: editForm.tipo_conteudo || '',
+            formato: editForm.formato || '',
+            referencia: editForm.referencia || '',
+            musica: editForm.musica || '',
+          })
+        }
       } else {
         await api.patch('/cronograma/' + detalhe.id, editForm)
         if (editForm.aparecer_designer !== undefined) {
@@ -321,6 +332,17 @@ export default function MinhasDemandas() {
     try {
       if (adminDetalhe._tipo === 'briefing') {
         await api.patch('/briefings/' + adminDetalhe.id, adminEditForm)
+        // Toggle designer usando cronograma_id do briefing vinculado
+        if (adminEditForm.aparecer_designer !== undefined && adminDetalhe.cronograma_id) {
+          await api.post('/cronograma/' + adminDetalhe.cronograma_id + '/toggle-designer', {
+            ativo: adminEditForm.aparecer_designer,
+            descricao: adminEditForm.descricao || '',
+            tipo_conteudo: adminEditForm.tipo_conteudo || '',
+            formato: adminEditForm.formato || '',
+            referencia: adminEditForm.referencia || '',
+            musica: adminEditForm.musica || '',
+          })
+        }
       } else {
         await api.patch('/cronograma/' + adminDetalhe.id, adminEditForm)
         // Sincronizar visibilidade para o designer
