@@ -202,7 +202,7 @@ export default function Sidebar() {
             )}
 
             {/* Barra central glass */}
-            <div className="flex items-center gap-0.5 px-2.5 py-2.5 rounded-2xl shadow-2xl" style={barStyle}>
+            <div className="flex items-center gap-1 px-5 py-2.5 rounded-2xl shadow-2xl" style={barStyle}>
               <img src="/logo-rosa.png" alt="314 Produções" className="h-7 w-auto flex-shrink-0" />
               <div className={`w-px h-5 mx-0.5 ${divider}`} />
               {mainLinks.filter(l => l.roles.includes(funcao)).map(({ to, label }) => (
