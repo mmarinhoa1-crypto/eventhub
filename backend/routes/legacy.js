@@ -197,8 +197,9 @@ if(!req.file)return res.status(400).json({erro:'Arquivo obrigatorio'});
 const b=await pool.query('SELECT * FROM briefings WHERE id=$1 AND org_id=$2',[req.params.id,req.user.org_id]);
 if(!b.rows.length)return res.status(404).json({erro:'Briefing nao encontrado'});
 const url='/uploads/'+req.file.filename;
-const r=await pool.query('INSERT INTO arquivos(org_id,briefing_id,evento_id,nome_original,nome_arquivo,tipo,tamanho,url,enviado_por) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *',
-[req.user.org_id,req.params.id,b.rows[0].id_evento,req.file.originalname,req.file.filename,req.file.mimetype,req.file.size,url,req.user.id]);
+const isRef=req.body.is_referencia==='true'||req.body.is_referencia===true;
+const r=await pool.query('INSERT INTO arquivos(org_id,briefing_id,evento_id,nome_original,nome_arquivo,tipo,tamanho,url,enviado_por,is_referencia) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *',
+[req.user.org_id,req.params.id,b.rows[0].id_evento,req.file.originalname,req.file.filename,req.file.mimetype,req.file.size,url,req.user.id,isRef]);
 await pool.query('UPDATE briefings SET arquivos_count=COALESCE(arquivos_count,0)+1 WHERE id=$1',[req.params.id]);
 // Vincular ao cronograma do briefing
 const bref=await pool.query('SELECT cronograma_id FROM briefings WHERE id=$1',[req.params.id]);
@@ -229,8 +230,9 @@ if(!req.file)return res.status(400).json({erro:'Arquivo obrigatorio'});
 const c=await pool.query('SELECT * FROM cronograma_marketing WHERE id=$1 AND org_id=$2',[req.params.id,req.user.org_id]);
 if(!c.rows.length)return res.status(404).json({erro:'Post nao encontrado'});
 const url='/uploads/'+req.file.filename;
-const r=await pool.query('INSERT INTO arquivos(org_id,cronograma_id,evento_id,nome_original,nome_arquivo,tipo,tamanho,url,enviado_por) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *',
-[req.user.org_id,req.params.id,c.rows[0].id_evento,req.file.originalname,req.file.filename,req.file.mimetype,req.file.size,url,req.user.id]);
+const isRef=req.body.is_referencia==='true'||req.body.is_referencia===true;
+const r=await pool.query('INSERT INTO arquivos(org_id,cronograma_id,evento_id,nome_original,nome_arquivo,tipo,tamanho,url,enviado_por,is_referencia) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *',
+[req.user.org_id,req.params.id,c.rows[0].id_evento,req.file.originalname,req.file.filename,req.file.mimetype,req.file.size,url,req.user.id,isRef]);
 res.json(r.rows[0])}catch(e){res.status(500).json({erro:e.message})}});
 
 router.patch('/api/briefings/:id/aprovar',auth,async(req,res)=>{try{

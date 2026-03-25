@@ -1072,8 +1072,8 @@ router.post('/api/cronograma/:id/publicar-instagram',auth,async(req,res)=>{try{
     return res.status(400).json({erro:'Token do Instagram expirado. Reconecte a conta em Configurações.'});
   }
   
-  // Buscar arquivos do post
-  const arqs = await pool.query('SELECT * FROM arquivos WHERE cronograma_id=$1 AND org_id=$2 ORDER BY criado_em',[p.id,req.user.org_id]);
+  // Buscar arquivos do post (EXCLUIR arquivos de referência — nunca enviar para Instagram)
+  const arqs = await pool.query('SELECT * FROM arquivos WHERE cronograma_id=$1 AND org_id=$2 AND (is_referencia IS NULL OR is_referencia = false) ORDER BY criado_em',[p.id,req.user.org_id]);
   
   if(arqs.rows.length===0) return res.status(400).json({erro:'Post sem imagem/vídeo. Adicione um arquivo primeiro.'});
   
@@ -1183,9 +1183,9 @@ setInterval(async()=>{
           continue;
         }
         
-        const arqs = await pool.query('SELECT * FROM arquivos WHERE cronograma_id=$1 ORDER BY criado_em',[p.id]);
+        const arqs = await pool.query('SELECT * FROM arquivos WHERE cronograma_id=$1 AND (is_referencia IS NULL OR is_referencia = false) ORDER BY criado_em',[p.id]);
         if(arqs.rows.length===0) {
-          console.log('CRON: post #'+p.id+' sem arquivos, pulando');
+          console.log('CRON: post #'+p.id+' sem arquivos publicáveis, pulando');
           continue;
         }
         
