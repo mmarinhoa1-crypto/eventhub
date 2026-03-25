@@ -36,7 +36,7 @@ export default function App() {
         <Route index element={<HomePage />} />
         <Route path="chamados" element={<ChamadosPage />} />
         <Route path="chamados/:id" element={<ChamadoDetalhePage />} />
-        <Route path="eventos" element={<ProtectedRoute adminOnly><EventosPage /></ProtectedRoute>} />
+        <Route path="eventos" element={<EventosPage />} />
         <Route path="eventos/:id" element={<ProtectedRoute adminOnly><EventoDetalhePage /></ProtectedRoute>} />
         <Route path="financeiro" element={<FinanceiroPage />} />
         <Route path="marketing" element={<MarketingPage />} />
