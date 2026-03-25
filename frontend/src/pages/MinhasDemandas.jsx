@@ -466,8 +466,15 @@ export default function MinhasDemandas() {
     const dragId = draggedItem._tipo + '-' + draggedItem.id
     const targetId = targetItem._tipo + '-' + targetItem.id
     if (dragId === targetId) return
-    // Só reordenar se estiver no mesmo dia
-    if (draggedItem._data?.slice(0,10) !== dayStr) return
+    // Se o card veio de outro dia, mover para o novo dia (alterar data)
+    if (draggedItem._data?.slice(0,10) !== dayStr) {
+      atualizarData(draggedItem._tipo, draggedItem.id, dayStr)
+      setDraggedItem(null)
+      setDragOverDay(null)
+      setDragOverCard(null)
+      return
+    }
+    // Mesmo dia: reordenar cards
     const currentOrder = dayItems.map(d => d._tipo + '-' + d.id)
     const fromIdx = currentOrder.indexOf(dragId)
     const toIdx = currentOrder.indexOf(targetId)
