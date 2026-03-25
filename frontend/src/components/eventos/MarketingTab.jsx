@@ -1093,6 +1093,44 @@ export default function MarketingTab({ eventoId }) {
 
         const statusDot = { pendente: 'bg-yellow-400 dark:bg-yellow-500', em_andamento: 'bg-blue-500', publicado: 'bg-green-500', cancelado: 'bg-red-400' }
 
+        // Drag-and-drop state & handlers
+        const [draggedPost, setDraggedPost] = useState(null)
+        const [dragOverDate, setDragOverDate] = useState(null)
+
+        function handleDragStart(e, post) {
+          if (isReadOnly) return
+          setDraggedPost(post)
+          e.dataTransfer.effectAllowed = 'move'
+          e.dataTransfer.setData('text/plain', post.id)
+          e.currentTarget.style.opacity = '0.5'
+        }
+        function handleDragEnd(e) {
+          e.currentTarget.style.opacity = '1'
+          setDraggedPost(null)
+          setDragOverDate(null)
+        }
+        function handleDragOver(e, ds) {
+          e.preventDefault()
+          e.dataTransfer.dropEffect = 'move'
+          if (dragOverDate !== ds) setDragOverDate(ds)
+        }
+        function handleDragLeave(e) {
+          if (!e.currentTarget.contains(e.relatedTarget)) setDragOverDate(null)
+        }
+        async function handleDrop(e, targetDate) {
+          e.preventDefault()
+          setDragOverDate(null)
+          if (!draggedPost) return
+          const newDateStr = dateStr(targetDate)
+          const oldDateStr = draggedPost.data_publicacao ? (typeof draggedPost.data_publicacao === 'string' ? draggedPost.data_publicacao.slice(0,10) : new Date(draggedPost.data_publicacao).toISOString().slice(0,10)) : ''
+          if (newDateStr === oldDateStr) { setDraggedPost(null); return }
+          try {
+            await atualizarCronograma(draggedPost.id, { data_publicacao: newDateStr })
+            toast.success('Post movido para ' + targetDate.getDate() + '/' + (targetDate.getMonth()+1))
+          } catch { toast.error('Erro ao mover post') }
+          setDraggedPost(null)
+        }
+
         return (
           <div className="space-y-4">
             {/* Calendar Header */}
@@ -1163,7 +1201,7 @@ export default function MarketingTab({ eventoId }) {
                     const posts = postsForDate(dayObj.date)
                     const isToday = dayObj.date.toDateString() === today.toDateString()
                     return (
-                      <div key={idx} onClick={() => { if (dayObj.current) { if (posts.length > 0) { setDiaSelecionado({ date: dayObj.date, posts }) } else if (!isReadOnly) { const d = dayObj.date; const dateStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); setCronogramaFormDate(dateStr); setShowCronogramaForm(true) } } }} className={`min-h-[110px] border-b border-r border-gray-100 p-1.5 transition-colors ${!dayObj.current ? 'bg-gray-50/60' : 'hover:bg-gray-50/40 cursor-pointer'} ${isToday ? 'bg-blue-50/60 dark:bg-blue-500/10' : ''} ${dayObj.current ? 'hover:ring-1 hover:ring-blue-300 dark:hover:ring-blue-500/30 hover:ring-inset' : ''}`}>
+                      <div key={idx} onClick={() => { if (dayObj.current) { if (posts.length > 0) { setDiaSelecionado({ date: dayObj.date, posts }) } else if (!isReadOnly) { const d = dayObj.date; const dateStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); setCronogramaFormDate(dateStr); setShowCronogramaForm(true) } } }} onDragOver={e => { if (dayObj.current) handleDragOver(e, dateStr(dayObj.date)) }} onDragLeave={handleDragLeave} onDrop={e => { if (dayObj.current) handleDrop(e, dayObj.date) }} className={`min-h-[110px] border-b border-r border-gray-100 p-1.5 transition-colors ${!dayObj.current ? 'bg-gray-50/60' : 'hover:bg-gray-50/40 cursor-pointer'} ${isToday ? 'bg-blue-50/60 dark:bg-blue-500/10' : ''} ${dayObj.current ? 'hover:ring-1 hover:ring-blue-300 dark:hover:ring-blue-500/30 hover:ring-inset' : ''} ${dragOverDate === dateStr(dayObj.date) && dayObj.current ? 'ring-2 ring-inset ring-[#f80d52]/40 bg-pink-50/60 dark:bg-pink-500/10' : ''}`}>
                         <div className="flex items-center justify-between mb-1">
                           <span className={`text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full ${isToday ? 'bg-blue-600 text-white' : dayObj.current ? 'text-gray-700 dark:text-white/70' : 'text-gray-300 dark:text-white/20'}`}>
                             {dayObj.date.getDate()}
@@ -1172,7 +1210,7 @@ export default function MarketingTab({ eventoId }) {
                         </div>
                         <div className="space-y-0.5">
                           {posts.slice(0, 3).map(c => (
-                            <div key={c.id} className={`${plataformaColors[c.plataforma] || 'bg-gray-500'} text-white text-[10px] font-medium px-1.5 py-0.5 rounded truncate cursor-default`} title={`${c.hora_publicacao ? c.hora_publicacao.slice(0,5)+' - ' : ''}${c.titulo} (${c.plataforma})${c.formato ? ' | '+c.formato : ''} [${c.status}]`}>
+                            <div key={c.id} draggable={!isReadOnly} onDragStart={e => { e.stopPropagation(); handleDragStart(e, c) }} onDragEnd={handleDragEnd} className={`${plataformaColors[c.plataforma] || 'bg-gray-500'} text-white text-[10px] font-medium px-1.5 py-0.5 rounded truncate ${!isReadOnly ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`} title={`${c.hora_publicacao ? c.hora_publicacao.slice(0,5)+' - ' : ''}${c.titulo} (${c.plataforma})${c.formato ? ' | '+c.formato : ''} [${c.status}]`}>
                               <span className="flex items-center gap-1">
                                 {c.status === 'publicado' && <span className="opacity-75">✓</span>}
                                 {c.hora_publicacao && <span className="opacity-75">{c.hora_publicacao.slice(0,5)}</span>}
@@ -1193,7 +1231,7 @@ export default function MarketingTab({ eventoId }) {
                     const posts = postsForDate(day)
                     const isToday = day.toDateString() === today.toDateString()
                     return (
-                      <div key={idx} className={`flex flex-col p-2 ${isToday ? 'bg-blue-50/50 dark:bg-blue-500/10' : ''}`} style={{ minHeight: 380 }}>
+                      <div key={idx} className={`flex flex-col p-2 transition-colors ${isToday ? 'bg-blue-50/50 dark:bg-blue-500/10' : ''} ${dragOverDate === dateStr(day) ? 'bg-pink-50/60 dark:bg-pink-500/10 ring-2 ring-inset ring-[#f80d52]/40' : ''}`} style={{ minHeight: 380 }} onDragOver={e => handleDragOver(e, dateStr(day))} onDragLeave={handleDragLeave} onDrop={e => handleDrop(e, day)}>
                         <div className="text-center mb-3">
                           <span className={`text-sm font-bold w-8 h-8 flex items-center justify-center rounded-full mx-auto ${isToday ? 'bg-blue-600 text-white' : 'text-gray-700 dark:text-white/70'}`}>
                             {day.getDate()}
@@ -1201,7 +1239,7 @@ export default function MarketingTab({ eventoId }) {
                         </div>
                         <div className="space-y-2 flex-1 overflow-y-auto" style={{ maxHeight: 320 }}>
                           {posts.map(c => (
-                            <div key={c.id} className="bg-white dark:bg-white/[0.06] rounded-lg border border-gray-200 dark:border-white/[0.08] overflow-hidden hover:shadow-md transition-shadow">
+                            <div key={c.id} draggable={!isReadOnly} onDragStart={e => handleDragStart(e, c)} onDragEnd={handleDragEnd} className="bg-white dark:bg-white/[0.06] rounded-lg border border-gray-200 dark:border-white/[0.08] overflow-hidden hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing">
                               <div className={`${plataformaColors[c.plataforma] || 'bg-gray-500'} px-2 py-1 flex items-center justify-between`}>
                                 <span className="text-white text-[10px] font-bold">{c.plataforma}</span>
                                 <span className={`w-2 h-2 rounded-full ${statusDot[c.status] || 'bg-gray-300'}`} title={c.status} />

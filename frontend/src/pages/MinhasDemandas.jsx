@@ -48,6 +48,7 @@ const ETIQUETAS_PADRAO = [
   { key: 'pausa',     label: 'Pausa',      color: '#d97706', bg: '#fffbeb', border: '#fde68a',   darkColor: '#fbbf24', darkBg: 'rgba(217,119,6,0.18)',   darkBorder: 'rgba(217,119,6,0.35)' },
   { key: 'em_foco',   label: 'Em Foco',    color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe',   darkColor: '#a78bfa', darkBg: 'rgba(124,58,237,0.18)',  darkBorder: 'rgba(124,58,237,0.35)' },
   { key: 'organico',  label: 'Orgânico',   color: '#10b981', bg: '#ecfdf5', border: '#a7f3d0',   darkColor: '#34d399', darkBg: 'rgba(16,185,129,0.18)',  darkBorder: 'rgba(16,185,129,0.35)' },
+  { key: 'impresso',  label: 'Impresso',   color: '#ea580c', bg: '#fff7ed', border: '#fdba74',   darkColor: '#fb923c', darkBg: 'rgba(234,88,12,0.18)',  darkBorder: 'rgba(234,88,12,0.35)' },
 ]
 
 const TAGS_STATUS = [
