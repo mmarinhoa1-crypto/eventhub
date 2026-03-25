@@ -128,7 +128,7 @@ export default function EventosPage() {
     entries.sort(([a], [b]) => {
       if (a === '__sem_data__') return 1
       if (b === '__sem_data__') return -1
-      return aba === 'proximos' ? a.localeCompare(b) : b.localeCompare(a)
+      return aba === 'passados' ? b.localeCompare(a) : a.localeCompare(b)
     })
     return entries
   }, [eventosFiltrados, aba])
