@@ -21,7 +21,7 @@ module.exports = function({ pool, bcrypt, auth }) {
 // === GESTAO DE EQUIPE ===
 
 router.get('/api/equipe/por-funcao/:funcao',auth,async(req,res)=>{try{
-const r=await pool.query('SELECT id,nome,email,funcao FROM usuarios WHERE org_id=$1 AND funcao=$2 ORDER BY nome',[req.user.org_id,req.params.funcao]);
+const r=await pool.query('SELECT id,nome,email,funcao,foto_url FROM usuarios WHERE org_id=$1 AND funcao=$2 ORDER BY nome',[req.user.org_id,req.params.funcao]);
 res.json(r.rows)}catch(e){res.status(500).json({erro:e.message})}});
 router.get('/api/equipe',auth,async(req,res)=>{try{
 if(req.user.role!=='admin'&&req.user.role!=='diretor')return res.status(403).json({erro:'Sem permissao'});
