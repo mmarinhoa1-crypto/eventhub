@@ -58,12 +58,14 @@ export default function MateriaisEvento({ eventoId, eventoNome, readOnly = false
         </div>
       </div>
 
-      {categorias.map(cat => {
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {categorias.map((cat, idx) => {
         const arqsCat = arquivos.filter(a => a.categoria_material === cat)
+        const isLast = idx === categorias.length - 1
         return (
           <div
             key={cat}
-            className="rounded-xl overflow-hidden"
+            className={'rounded-xl overflow-hidden' + (isLast ? ' md:col-start-2' : '')}
             style={{
               background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.6)',
               border: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(0,0,0,0.04)',
@@ -78,7 +80,7 @@ export default function MateriaisEvento({ eventoId, eventoNome, readOnly = false
               </div>
 
               {arqsCat.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-3">
+                <div className="grid grid-cols-2 gap-2 mb-3">
                   {arqsCat.map(arq => {
                     const isImg = arq.tipo?.startsWith('image')
                     const isVideo = arq.tipo?.startsWith('video')
@@ -131,6 +133,7 @@ export default function MateriaisEvento({ eventoId, eventoNome, readOnly = false
           </div>
         )
       })}
+      </div>
     </div>
   )
 }
