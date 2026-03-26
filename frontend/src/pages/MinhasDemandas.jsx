@@ -139,7 +139,6 @@ export default function MinhasDemandas() {
   const [criandoPost, setCriandoPost] = useState(false)
   const [designerTab, setDesignerTab] = useState('briefings')
   const [statsExpanded, setStatsExpanded] = useState(false)
-  const [eventosTab, setEventosTab] = useState('proximos')
   const [expandedMembros, setExpandedMembros] = useState({})
   const [materiaisArquivos, setMateriaisArquivos] = useState({})
   const [loadingMateriais, setLoadingMateriais] = useState(false)
@@ -1697,62 +1696,30 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
             })()}
 
             {/* ===== MATERIAIS TAB ===== */}
-            {designerTab === 'materiais' && (() => {
-              const todayDate = new Date(); todayDate.setHours(0,0,0,0)
-              const evFuturos = data.eventos.filter(ev => !ev.data_evento || new Date(ev.data_evento + 'T00:00:00') >= todayDate).sort((a,b) => { if (!a.data_evento) return 1; if (!b.data_evento) return -1; return new Date(a.data_evento) - new Date(b.data_evento) })
-              const evPassados = data.eventos.filter(ev => ev.data_evento && new Date(ev.data_evento + 'T00:00:00') < todayDate).sort((a,b) => new Date(b.data_evento) - new Date(a.data_evento))
-              const listaEventos = eventosTab === 'proximos' ? evFuturos : evPassados
-              const eventosFiltrados = filtroEvento === 'todos' ? listaEventos : listaEventos.filter(ev => ev.id === Number(filtroEvento))
-
-              function contarDias(dataEvento) {
-                if (!dataEvento) return null
-                return Math.round((new Date(dataEvento + 'T00:00:00') - todayDate) / (1000*60*60*24))
-              }
-              function badgeDias(dias) {
-                if (dias === null) return { text: 'Sem data', cls: 'text-gray-400 dark:text-white/30 bg-gray-100 dark:bg-white/[0.06]' }
-                if (dias === 0) return { text: 'Hoje!', cls: 'text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-500/15 font-extrabold' }
-                if (dias === 1) return { text: 'Amanhã', cls: 'text-blue-700 dark:text-blue-400 bg-blue-100 dark:bg-blue-500/15 font-bold' }
-                if (dias < 0) return { text: `${Math.abs(dias)}d atrás`, cls: 'text-gray-500 dark:text-white/40 bg-gray-100 dark:bg-white/[0.06]' }
-                if (dias <= 7) return { text: `${dias}d`, cls: 'text-orange-700 dark:text-orange-400 bg-orange-100 dark:bg-orange-500/15 font-bold' }
-                if (dias <= 30) return { text: `${dias}d`, cls: 'text-blue-700 dark:text-blue-400 bg-blue-100 dark:bg-blue-500/15' }
-                return { text: `${dias}d`, cls: 'text-gray-500 dark:text-white/50 bg-gray-100 dark:bg-white/[0.06]' }
-              }
-
-              return (
+            {designerTab === 'materiais' && (
               <div className="space-y-4">
-                {/* Abas futuro/passado */}
-                <div className="flex items-center gap-2">
-                  <div className="flex bg-gray-100 dark:bg-white/[0.06] rounded-lg p-0.5">
-                    <button onClick={() => { setEventosTab('proximos'); setFiltroEvento('todos') }} className={'px-3 py-1.5 rounded-md text-xs font-bold transition-all ' + (eventosTab === 'proximos' ? 'bg-white dark:bg-white/[0.10] text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-white/50')}>
-                      Meus Eventos Futuros ({evFuturos.length})
-                    </button>
-                    <button onClick={() => { setEventosTab('passados'); setFiltroEvento('todos') }} className={'px-3 py-1.5 rounded-md text-xs font-bold transition-all ' + (eventosTab === 'passados' ? 'bg-white dark:bg-white/[0.10] text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-white/50')}>
-                      Eventos Passados ({evPassados.length})
-                    </button>
-                  </div>
-                  <button onClick={() => carregarMateriais()} className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.10] bg-white dark:bg-white/[0.06] text-xs font-bold text-blue-600 hover:bg-blue-50 dark:hover:bg-white/[0.10] transition ml-auto">Atualizar</button>
+                {/* Filtro evento */}
+                <div className="flex items-center gap-3">
+                  <select value={filtroEvento} onChange={e => setFiltroEvento(e.target.value)} className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.10] bg-white dark:bg-white/[0.06] text-sm font-semibold text-gray-600 dark:text-white/70 outline-none">
+                    <option value="todos">Todos os eventos</option>
+                    {eventosAtivos.map(ev => <option key={ev.id} value={ev.id}>{ev.nome}</option>)}
+                  </select>
+                  <button onClick={() => carregarMateriais()} className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.10] bg-white dark:bg-white/[0.06] text-xs font-bold text-blue-600 hover:bg-blue-50 dark:hover:bg-white/[0.10] transition">Atualizar</button>
                 </div>
 
                 {loadingMateriais ? (
                   <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
-                ) : eventosFiltrados.length === 0 ? (
-                  <div className="text-center py-10 text-sm text-gray-400 dark:text-white/30">{eventosTab === 'proximos' ? 'Nenhum evento futuro' : 'Nenhum evento passado'}</div>
                 ) : (
-                  eventosFiltrados.map(ev => {
+                  (filtroEvento === 'todos' ? data.eventos : data.eventos.filter(ev => ev.id === Number(filtroEvento))).map(ev => {
                     const evArqs = materiaisArquivos[ev.id] || []
-                    const dias = contarDias(ev.data_evento)
-                    const badge = badgeDias(dias)
                     return (
                       <div key={ev.id} className="bg-white dark:bg-white/[0.04] rounded-2xl border border-gray-200 dark:border-white/[0.08] overflow-hidden">
                         <div className="px-5 py-3 border-b border-gray-100 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] flex items-center gap-3">
                           <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center"><FolderOpen size={16} className="text-blue-600" /></div>
-                          <div className="flex-1 min-w-0">
+                          <div>
                             <h3 className="font-bold text-gray-900 dark:text-white/90 text-sm">{ev.nome}</h3>
-                            <span className="text-xs text-gray-400 dark:text-white/40">{evArqs.length} arquivo{evArqs.length !== 1 ? 's' : ''}{ev.data_evento ? ' · ' + new Date(ev.data_evento + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}</span>
+                            <span className="text-xs text-gray-400 dark:text-white/40">{evArqs.length} arquivo{evArqs.length !== 1 ? 's' : ''}</span>
                           </div>
-                          <span className={'text-[11px] px-2.5 py-1 rounded-full flex-shrink-0 ' + badge.cls}>
-                            {dias !== null && dias > 0 ? `Faltam ${badge.text}` : badge.text}
-                          </span>
                         </div>
                         <div className="p-4 space-y-4">
                           {categoriasMateriaisOptions.map(cat => {
@@ -1814,7 +1781,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                   })
                 )}
               </div>
-            )})()}
+            )}
           </div>
         )
       })()}
@@ -1850,62 +1817,12 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
       {/* ===== FILTERS & VIEWS (SocialMedia only) ===== */}
       {!isGestor && !isDesigner && (
         <>
-        {/* Meus Eventos - abas futuro/passado */}
-        {(() => {
-          const todayDate = new Date(); todayDate.setHours(0,0,0,0)
-          const evFuturos = data.eventos.filter(ev => !ev.data_evento || new Date(ev.data_evento + 'T00:00:00') >= todayDate).sort((a,b) => { if (!a.data_evento) return 1; if (!b.data_evento) return -1; return new Date(a.data_evento) - new Date(b.data_evento) })
-          const evPassados = data.eventos.filter(ev => ev.data_evento && new Date(ev.data_evento + 'T00:00:00') < todayDate).sort((a,b) => new Date(b.data_evento) - new Date(a.data_evento))
-          const listaEv = eventosTab === 'proximos' ? evFuturos : evPassados
-
-          function contarDias(dt) {
-            if (!dt) return null
-            return Math.round((new Date(dt + 'T00:00:00') - todayDate) / (1000*60*60*24))
-          }
-          function badgeDias(dias) {
-            if (dias === null) return { text: 'Sem data', cls: 'text-gray-400 dark:text-white/30 bg-gray-100 dark:bg-white/[0.06]' }
-            if (dias === 0) return { text: 'Hoje!', cls: 'text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-500/15 font-extrabold' }
-            if (dias === 1) return { text: 'Amanhã', cls: 'text-blue-700 dark:text-blue-400 bg-blue-100 dark:bg-blue-500/15 font-bold' }
-            if (dias < 0) return { text: `${Math.abs(dias)}d atrás`, cls: 'text-gray-500 dark:text-white/40 bg-gray-100 dark:bg-white/[0.06]' }
-            if (dias <= 7) return { text: `${dias}d`, cls: 'text-orange-700 dark:text-orange-400 bg-orange-100 dark:bg-orange-500/15 font-bold' }
-            if (dias <= 30) return { text: `${dias}d`, cls: 'text-blue-700 dark:text-blue-400 bg-blue-100 dark:bg-blue-500/15' }
-            return { text: `${dias}d`, cls: 'text-gray-500 dark:text-white/50 bg-gray-100 dark:bg-white/[0.06]' }
-          }
-
-          return (
-            <div className="bg-white dark:bg-white/[0.04] rounded-xl border border-gray-100 dark:border-white/[0.08] overflow-hidden">
-              <div className="flex items-center border-b border-gray-100 dark:border-white/[0.08]">
-                <button onClick={() => { setEventosTab('proximos'); setFiltroEvento('todos') }} className={'flex-1 px-3 py-2 text-xs font-bold transition-all text-center ' + (eventosTab === 'proximos' ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-500 bg-blue-50/50 dark:bg-blue-500/10' : 'text-gray-500 dark:text-white/50')}>
-                  Meus Eventos Futuros ({evFuturos.length})
-                </button>
-                <button onClick={() => { setEventosTab('passados'); setFiltroEvento('todos') }} className={'flex-1 px-3 py-2 text-xs font-bold transition-all text-center ' + (eventosTab === 'passados' ? 'text-gray-700 dark:text-white/80 border-b-2 border-gray-400 bg-gray-50 dark:bg-white/[0.06]' : 'text-gray-400 dark:text-white/40')}>
-                  Eventos Passados ({evPassados.length})
-                </button>
-              </div>
-              {listaEv.length === 0 ? (
-                <div className="px-4 py-4 text-center text-xs text-gray-400 dark:text-white/30">{eventosTab === 'proximos' ? 'Nenhum evento futuro' : 'Nenhum evento passado'}</div>
-              ) : (
-                <div className="flex gap-2 p-2.5 overflow-x-auto">
-                  {listaEv.map(ev => {
-                    const dias = contarDias(ev.data_evento)
-                    const badge = badgeDias(dias)
-                    return (
-                      <div key={ev.id} onClick={() => setFiltroEvento(filtroEvento === String(ev.id) ? 'todos' : String(ev.id))}
-                        className={'flex-shrink-0 rounded-lg border px-3 py-2 cursor-pointer transition-all min-w-[130px] ' + (filtroEvento === String(ev.id) ? 'border-blue-400 dark:border-blue-500/50 bg-blue-50 dark:bg-blue-500/10' : 'border-gray-100 dark:border-white/[0.08] hover:border-gray-300 dark:hover:border-white/20')}>
-                        <p className="text-xs font-bold text-gray-800 dark:text-white/85 truncate">{ev.nome}</p>
-                        {ev.data_evento && <p className="text-[10px] text-gray-400 dark:text-white/35 mt-0.5">{new Date(ev.data_evento + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</p>}
-                        <span className={'inline-block text-[10px] px-1.5 py-0.5 rounded-full mt-1 ' + badge.cls}>
-                          {dias !== null && dias > 0 ? `Faltam ${badge.text}` : badge.text}
-                        </span>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          )
-        })()}
         <div className="space-y-2">
           <div className="flex gap-2 items-center flex-wrap">
+            <select value={filtroEvento} onChange={e => setFiltroEvento(e.target.value)} className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.10] bg-white dark:bg-white/[0.06] text-xs font-semibold text-gray-600 dark:text-white/70 outline-none cursor-pointer flex-shrink-0">
+              <option value="todos">Todos os eventos</option>
+              {eventosAtivos.map(ev => <option key={ev.id} value={ev.id}>{ev.nome}</option>)}
+            </select>
             <div className="relative" style={{width:240}}>
               <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/40" />
               <input
