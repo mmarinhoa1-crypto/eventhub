@@ -263,6 +263,7 @@ export default function EventosPage() {
                         clickable={canManage}
                         onClick={() => canManage && navigate(`/eventos/${ev.id}`)}
                         onDelete={canManage ? handleDelete : undefined}
+                        showResponsaveis={aba === 'meus' || (canManage && aba === 'proximos')}
                       />
                     ))}
                   </div>

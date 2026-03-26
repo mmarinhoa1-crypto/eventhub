@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MapPin, ArrowRight, Trash2, AlertTriangle, Clock } from 'lucide-react'
+import { MapPin, ArrowRight, Trash2, AlertTriangle, Clock, Palette, Megaphone } from 'lucide-react'
 import { useTema } from '../../contexts/ThemeContext'
 
 const MESES_CURTO = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
@@ -14,7 +14,7 @@ function parseData(str) {
   return null
 }
 
-export default function EventoCard({ evento, diasDiff, abaAtual, clickable = true, onClick, onDelete }) {
+export default function EventoCard({ evento, diasDiff, abaAtual, clickable = true, onClick, onDelete, showResponsaveis = false }) {
   const [confirmando, setConfirmando] = useState(false)
   const { tema } = useTema()
   const isDark = tema === 'dark'
@@ -108,6 +108,22 @@ export default function EventoCard({ evento, diasDiff, abaAtual, clickable = tru
           )}
         </div>
       </div>
+
+      {/* Responsáveis */}
+      {showResponsaveis && (evento.designer_nome || evento.social_media_nome) && (
+        <div className="px-4 pb-2 flex flex-wrap gap-1.5">
+          {evento.designer_nome && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-100 dark:border-violet-500/20">
+              <Palette size={9} /> {evento.designer_nome.split(' ')[0]}
+            </span>
+          )}
+          {evento.social_media_nome && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-pink-50 dark:bg-pink-500/10 text-pink-600 dark:text-pink-400 border border-pink-100 dark:border-pink-500/20">
+              <Megaphone size={9} /> {evento.social_media_nome.split(' ')[0]}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Financeiro compacto */}
       <div className="px-4 pb-3.5 flex gap-2">
