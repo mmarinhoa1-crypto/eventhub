@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MapPin, ArrowRight, Trash2, AlertTriangle, Clock, Palette, Megaphone } from 'lucide-react'
+import { MapPin, ArrowRight, Trash2, AlertTriangle, Clock, Palette, Megaphone, Instagram, Link2 } from 'lucide-react'
 import { useTema } from '../../contexts/ThemeContext'
 
 const MESES_CURTO = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
@@ -14,7 +14,7 @@ function parseData(str) {
   return null
 }
 
-export default function EventoCard({ evento, diasDiff, abaAtual, clickable = true, onClick, onDelete, showResponsaveis = false }) {
+export default function EventoCard({ evento, diasDiff, abaAtual, clickable = true, onClick, onDelete, showResponsaveis = false, onConnectIG, canManage = false }) {
   const [confirmando, setConfirmando] = useState(false)
   const { tema } = useTema()
   const isDark = tema === 'dark'
@@ -124,6 +124,26 @@ export default function EventoCard({ evento, diasDiff, abaAtual, clickable = tru
           )}
         </div>
       )}
+
+      {/* Instagram */}
+      <div className="px-4 pb-2">
+        {evento.ig_connected_username ? (
+          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-pink-50 dark:bg-pink-500/10 text-pink-600 dark:text-pink-400 border border-pink-100 dark:border-pink-500/20">
+            <Instagram size={9} /> @{evento.ig_connected_username}
+          </span>
+        ) : canManage && onConnectIG ? (
+          <button
+            onClick={e => { e.stopPropagation(); onConnectIG(evento.id) }}
+            className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-full bg-gray-100 dark:bg-white/[0.04] text-gray-400 dark:text-white/30 border border-gray-200 dark:border-white/[0.06] hover:border-pink-300 hover:text-pink-500 dark:hover:text-pink-400 transition"
+          >
+            <Link2 size={9} /> Conectar Instagram
+          </button>
+        ) : (
+          <span className="inline-flex items-center gap-1 text-[10px] text-gray-300 dark:text-white/20">
+            <Instagram size={9} /> Sem Instagram
+          </span>
+        )}
+      </div>
 
       {/* Financeiro compacto */}
       <div className="px-4 pb-3.5 flex gap-2">

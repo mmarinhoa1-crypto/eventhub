@@ -33,10 +33,10 @@ res.json({briefings:briefR.rows,posts:postR.rows,eventos:evR.rows});
 }catch(e){console.error(e);res.status(500).json({erro:e.message})}});
 
 router.get('/api/eventos',auth,async(req,res)=>{try{
-let q='SELECT e.*,COALESCE(SUM(d.valor),0) as total,COUNT(d.id) as quantidade,ud.nome as designer_nome,us.nome as social_media_nome FROM eventos e LEFT JOIN despesas d ON d.id_evento=e.id LEFT JOIN usuarios ud ON e.designer_id=ud.id LEFT JOIN usuarios us ON e.social_media_id=us.id WHERE e.org_id=$1';
+let q='SELECT e.*,COALESCE(SUM(d.valor),0) as total,COUNT(d.id) as quantidade,ud.nome as designer_nome,us.nome as social_media_nome,ic.ig_username as ig_connected_username FROM eventos e LEFT JOIN despesas d ON d.id_evento=e.id LEFT JOIN usuarios ud ON e.designer_id=ud.id LEFT JOIN usuarios us ON e.social_media_id=us.id LEFT JOIN instagram_connections ic ON ic.evento_id=e.id AND ic.org_id=e.org_id WHERE e.org_id=$1';
 const params=[req.user.org_id];
 // Todos os usuários veem todos os eventos da org (permissões controladas no frontend)
-q+=' GROUP BY e.id,ud.nome,us.nome ORDER BY e.data_evento ASC';
+q+=' GROUP BY e.id,ud.nome,us.nome,ic.ig_username ORDER BY e.data_evento ASC';
 const r=await pool.query(q,params);
 res.json(r.rows)}catch(e){res.status(500).json({erro:e.message})}});
 

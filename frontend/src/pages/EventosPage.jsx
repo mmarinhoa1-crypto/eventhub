@@ -57,6 +57,8 @@ export default function EventosPage() {
   const [showModal, setShowModal] = useState(false)
   const [busca, setBusca] = useState('')
   const [aba, setAba] = useState('proximos')
+  const [showIGModal, setShowIGModal] = useState(null) // eventoId
+  const [igAccounts, setIgAccounts] = useState([])
   const navigate = useNavigate()
 
   function carregarEventos() {
@@ -76,6 +78,31 @@ export default function EventosPage() {
     } catch {
       toast.error('Erro ao excluir evento')
     }
+  }
+
+  function handleConnectIG(eventoId) {
+    api.get('/instagram/accounts').then(r => setIgAccounts(r.data || [])).catch(() => setIgAccounts([]))
+    setShowIGModal(eventoId)
+  }
+
+  async function selecionarContaIG(accountId) {
+    try {
+      const { data } = await api.post('/eventos/' + showIGModal + '/instagram/connect', { account_id: accountId })
+      toast.success('Instagram @' + data.username + ' conectado!')
+      setShowIGModal(null)
+      carregarEventos()
+    } catch (err) { toast.error(err.response?.data?.erro || 'Erro ao conectar') }
+  }
+
+  function conectarNovoIG() {
+    const eventoId = showIGModal
+    api.get('/instagram/connect/' + eventoId).then(r => {
+      localStorage.setItem('ig_connect_evento_id', eventoId)
+      const popup = window.open(r.data.url, 'ig_connect', 'width=600,height=700')
+      const timer = setInterval(() => {
+        if (popup?.closed) { clearInterval(timer); setShowIGModal(null); carregarEventos() }
+      }, 1000)
+    }).catch(() => toast.error('Erro ao iniciar conexão'))
   }
 
   const hoje = new Date()
@@ -264,6 +291,8 @@ export default function EventosPage() {
                         onClick={() => navigate(`/eventos/${ev.id}`)}
                         onDelete={canManage ? handleDelete : undefined}
                         showResponsaveis={aba === 'meus' || (canManage && aba === 'proximos')}
+                        canManage={canManage}
+                        onConnectIG={canManage ? handleConnectIG : undefined}
                       />
                     ))}
                   </div>
@@ -279,6 +308,42 @@ export default function EventosPage() {
         onClose={() => setShowModal(false)}
         onCreated={carregarEventos}
       />
+
+      {/* Modal conectar Instagram */}
+      {showIGModal && (
+        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4" onClick={() => setShowIGModal(null)}>
+          <div className="bg-white dark:bg-[#1c1c24] rounded-2xl max-w-sm w-full shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="px-5 py-4 border-b border-gray-100 dark:border-white/[0.08] flex items-center justify-between">
+              <h3 className="font-bold text-gray-900 dark:text-white/90 text-sm">Conectar Instagram</h3>
+              <button onClick={() => setShowIGModal(null)} className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-white/[0.06] flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-white/60 text-xs font-bold">✕</button>
+            </div>
+            <div className="p-5 space-y-3">
+              {igAccounts.length > 0 && (
+                <>
+                  <p className="text-xs text-gray-500 dark:text-white/40 font-medium">Contas salvas na organização:</p>
+                  <div className="space-y-2">
+                    {igAccounts.map(acc => (
+                      <button key={acc.id} onClick={() => selecionarContaIG(acc.ig_account_id)}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] hover:border-pink-300 dark:hover:border-pink-500/30 hover:bg-pink-50/50 dark:hover:bg-pink-500/5 transition text-left">
+                        {acc.profile_picture && <img src={acc.profile_picture} className="w-8 h-8 rounded-full" />}
+                        <div>
+                          <p className="text-sm font-bold text-gray-900 dark:text-white/90">@{acc.ig_username}</p>
+                          <p className="text-[10px] text-gray-400 dark:text-white/30">Clique para conectar</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-3"><div className="flex-1 h-px bg-gray-200 dark:bg-white/[0.06]" /><span className="text-[10px] text-gray-400 dark:text-white/30">ou</span><div className="flex-1 h-px bg-gray-200 dark:bg-white/[0.06]" /></div>
+                </>
+              )}
+              <button onClick={conectarNovoIG}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 text-white text-sm font-bold hover:opacity-90 transition shadow-sm">
+                Login com Instagram
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
