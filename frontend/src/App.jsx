@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import DashboardLayout from './components/layout/DashboardLayout'
 import LoginPage from './pages/LoginPage'
@@ -41,6 +41,7 @@ export default function App() {
         <Route path="eventos/:id" element={<EventoDetalhePage />} />
         <Route path="financeiro" element={<FinanceiroPage />} />
         <Route path="demandas" element={<MinhasDemandas />} />
+        <Route path="marketing" element={<Navigate to="/demandas" replace />} />
         <Route path="previsao" element={<PrevisaoPage />} />
         <Route path="vendas" element={<VendasPage />} />
         <Route path="consumo" element={<ConsumoPage />} />
