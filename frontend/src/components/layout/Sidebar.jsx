@@ -235,9 +235,9 @@ export default function Sidebar() {
               })}
               <NavLink to="/eventos" className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}>Eventos</NavLink>
               {showMarketing ? (
-                <NavLink to="/demandas" className={({ isActive }) => `${linkBase} ${isActive || isMarketingActive ? linkActive : linkInactive}`}>Demandas</NavLink>
+                <NavLink to="/demandas" className={({ isActive }) => `${linkBase} ${isActive || isMarketingActive ? linkActive : linkInactive}`}>Marketing</NavLink>
               ) : (
-                <span className={`${linkBase} text-gray-300 dark:text-white/20 cursor-default select-none`}>Demandas</span>
+                <span className={`${linkBase} text-gray-300 dark:text-white/20 cursor-default select-none`}>Marketing</span>
               )}
               {canTrafego ? (
                 <button onClick={() => toggleMenu('trafego')} className={`${linkBase} flex items-center gap-1 ${isTrafegoActive || openMenu === 'trafego' ? linkActive : linkInactive}`}>
@@ -337,9 +337,9 @@ export default function Sidebar() {
                 {/* Marketing */}
                 {showMarketing ? (
                   <button onClick={() => { navigate('/demandas'); setMobileOpen(false) }}
-                    className={`${mobileLinkBase} w-full text-left ${isMarketingActive ? mobileLinkActive : mobileLinkInactive}`}>Demandas</button>
+                    className={`${mobileLinkBase} w-full text-left ${isMarketingActive ? mobileLinkActive : mobileLinkInactive}`}>Marketing</button>
                 ) : (
-                  <span className={`${mobileLinkBase} block text-gray-300 dark:text-white/20`}>Demandas</span>
+                  <span className={`${mobileLinkBase} block text-gray-300 dark:text-white/20`}>Marketing</span>
                 )}
                 {/* Tráfego */}
                 {canTrafego ? (
