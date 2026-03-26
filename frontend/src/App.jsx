@@ -18,6 +18,7 @@ import PrevisaoPage from './pages/PrevisaoPage'
 import VendasPage from './pages/VendasPage'
 import ConsumoPage from './pages/ConsumoPage'
 import AnunciosPage from './pages/AnunciosPage'
+import IAPage from './pages/IAPage'
 import InstagramCallbackPage from './pages/InstagramCallbackPage'
 
 export default function App() {
@@ -45,6 +46,7 @@ export default function App() {
         <Route path="vendas" element={<VendasPage />} />
         <Route path="consumo" element={<ConsumoPage />} />
         <Route path="anuncios" element={<AnunciosPage />} />
+        <Route path="ia" element={<IAPage />} />
         <Route
           path="equipe"
           element={

@@ -16,6 +16,11 @@ const marketingSubLinks = [
   { to: '/anuncios', label: 'Anúncios', roles: ['admin', 'diretor', 'gestor_trafego'] },
 ]
 
+const iaSubLinks = [
+  { to: '/ia', label: 'Campanhas IA' },
+  { to: '/ia?subtab=analise', label: 'Análise IA' },
+]
+
 const financeiroSubLinks = [
   { to: '/financeiro', label: 'Planilha' },
   { to: '/vendas', label: 'Vendas' },
@@ -49,9 +54,11 @@ export default function Sidebar() {
   const showMarketing = ['admin', 'social_media', 'designer', 'diretor', 'gestor_trafego'].includes(funcao)
   const canFinanceiro = funcao === 'admin' || funcao === 'diretor'
   const canEquipe = funcao === 'admin' || funcao === 'diretor'
+  const canIA = funcao === 'admin' || funcao === 'diretor'
   const canDashboard = funcao === 'admin' || funcao === 'agent' || funcao === 'diretor'
 
   const isMarketingActive = ['/marketing', '/demandas', '/anuncios'].some(p => location.pathname.startsWith(p))
+  const isIAActive = location.pathname.startsWith('/ia')
   const isFinanceiroActive = ['/financeiro', '/vendas', '/consumo', '/previsao'].some(p => location.pathname.startsWith(p))
 
   // Carregar foto de perfil
@@ -192,6 +199,15 @@ export default function Sidebar() {
                 </div>
               </div>
             )}
+            {openMenu === 'ia' && canIA && (
+              <div className="absolute top-full mt-3 left-1/2 -translate-x-1/2 rounded-2xl overflow-hidden shadow-2xl min-w-[180px]" style={submenuStyle}>
+                <div className="px-2 py-2 space-y-0.5">
+                  {iaSubLinks.map(({ to, label }) => (
+                    <a key={label} href={to} onClick={e => { e.preventDefault(); navigate(to); setOpenMenu(null) }} className={`${subLinkBase} ${location.pathname === '/ia' && ((label.includes('Campanhas') && !location.search.includes('analise')) || (label.includes('Análise') && location.search.includes('analise'))) ? subLinkActive : subLinkInactive}`}>{label}</a>
+                  ))}
+                </div>
+              </div>
+            )}
             {openMenu === 'financeiro' && canFinanceiro && (
               <div className="absolute top-full mt-3 left-1/2 -translate-x-1/2 rounded-2xl overflow-hidden shadow-2xl min-w-[180px]" style={submenuStyle}>
                 <div className="px-2 py-2 space-y-0.5">
@@ -222,6 +238,15 @@ export default function Sidebar() {
               ) : (
                 <span className={`${linkBase} flex items-center gap-1 text-gray-300 dark:text-white/20 cursor-default select-none`}>
                   Marketing <ChevronDown size={12} />
+                </span>
+              )}
+              {canIA ? (
+                <button onClick={() => toggleMenu('ia')} className={`${linkBase} flex items-center gap-1 ${isIAActive || openMenu === 'ia' ? linkActive : linkInactive}`}>
+                  IA <ChevronDown size={12} className={'transition-transform duration-200 ' + (openMenu === 'ia' ? 'rotate-180' : '')} />
+                </button>
+              ) : (
+                <span className={`${linkBase} flex items-center gap-1 text-gray-300 dark:text-white/20 cursor-default select-none`}>
+                  IA <ChevronDown size={12} />
                 </span>
               )}
               {canFinanceiro ? (
@@ -319,6 +344,25 @@ export default function Sidebar() {
                   </div>
                 ) : (
                   <span className={`${mobileLinkBase} block text-gray-300 dark:text-white/20`}>Marketing</span>
+                )}
+                {/* IA */}
+                {canIA ? (
+                  <div>
+                    <button onClick={() => setOpenMenu(openMenu === 'ia' ? null : 'ia')}
+                      className={`${mobileLinkBase} w-full text-left flex items-center justify-between ${isIAActive ? mobileLinkActive : mobileLinkInactive}`}>
+                      IA <ChevronDown size={14} className={'transition-transform duration-200 ' + (openMenu === 'ia' ? 'rotate-180' : '')} />
+                    </button>
+                    {openMenu === 'ia' && (
+                      <div className="mt-1 space-y-0.5">
+                        {iaSubLinks.map(({ to, label }) => (
+                          <button key={label} onClick={() => { navigate(to); setMobileOpen(false) }}
+                            className={`${mobileSubLinkBase} w-full text-left ${mobileLinkInactive}`}>{label}</button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <span className={`${mobileLinkBase} block text-gray-300 dark:text-white/20`}>IA</span>
                 )}
                 {/* Financeiro */}
                 {canFinanceiro ? (
