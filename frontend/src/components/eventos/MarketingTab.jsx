@@ -13,10 +13,6 @@ import { useAuth } from '../../hooks/useAuth'
 const subTabs = [
   { key: 'cronograma', label: 'Cronograma', icon: '📅', desc: 'Calendário de posts' },
   { key: 'briefings', label: 'Briefings', icon: '🎨', desc: 'Kanban de criação' },
-  { key: 'materiais', label: 'Materiais', icon: '📁', desc: 'Arquivos e assets' },
-  { key: 'aprovacoes', label: 'Aprovações', icon: '✅', desc: 'Revisar e aprovar' },
-  { key: 'campanhas', label: 'Campanhas IA', icon: '🤖', desc: 'Gerador de campanhas' },
-  { key: 'analise', label: 'Análise IA', icon: '📊', desc: 'Insights e métricas' },
 ]
 
 const tiposBriefing = ['post', 'stories', 'reels', 'banner', 'flyer', 'video']
@@ -822,8 +818,7 @@ export default function MarketingTab({ eventoId }) {
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-1.5">
         <div className="flex gap-1 overflow-x-auto">
           {subTabs.filter(tab => {
-            if (isReadOnly) return ['briefings', 'cronograma', 'materiais'].includes(tab.key)
-            if (isSocialMedia || isDesigner) return tab.key !== 'campanhas' && tab.key !== 'analise' && tab.key !== 'aprovacoes'
+            if (isReadOnly) return ['briefings', 'cronograma'].includes(tab.key)
             return true
           }).map((tab) => {
             const isActive = activeSubTab === tab.key
