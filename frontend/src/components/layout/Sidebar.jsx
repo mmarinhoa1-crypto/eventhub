@@ -13,7 +13,11 @@ const mainLinks = [
 const marketingSubLinks = [
   { to: '/marketing', label: 'Cronograma', roles: ['admin', 'social_media', 'diretor'] },
   { to: '/demandas', label: 'Minhas Demandas', roles: ['admin', 'social_media', 'designer', 'diretor', 'gestor_trafego'] },
-  { to: '/anuncios', label: 'Anúncios', roles: ['admin', 'diretor', 'gestor_trafego'] },
+]
+
+const trafegoSubLinks = [
+  { to: '/trafego', label: 'Funil de Tráfego' },
+  { to: '/anuncios', label: 'Anúncios' },
 ]
 
 const iaSubLinks = [
@@ -54,10 +58,12 @@ export default function Sidebar() {
   const showMarketing = ['admin', 'social_media', 'designer', 'diretor', 'gestor_trafego'].includes(funcao)
   const canFinanceiro = funcao === 'admin' || funcao === 'diretor'
   const canEquipe = funcao === 'admin' || funcao === 'diretor'
+  const canTrafego = funcao === 'admin' || funcao === 'diretor' || funcao === 'gestor_trafego'
   const canIA = funcao === 'admin' || funcao === 'diretor'
   const canDashboard = funcao === 'admin' || funcao === 'agent' || funcao === 'diretor'
 
-  const isMarketingActive = ['/marketing', '/demandas', '/anuncios'].some(p => location.pathname.startsWith(p))
+  const isMarketingActive = ['/marketing', '/demandas'].some(p => location.pathname.startsWith(p))
+  const isTrafegoActive = ['/trafego', '/anuncios'].some(p => location.pathname.startsWith(p))
   const isIAActive = location.pathname.startsWith('/ia')
   const isFinanceiroActive = ['/financeiro', '/vendas', '/consumo', '/previsao'].some(p => location.pathname.startsWith(p))
 
@@ -199,6 +205,15 @@ export default function Sidebar() {
                 </div>
               </div>
             )}
+            {openMenu === 'trafego' && canTrafego && (
+              <div className="absolute top-full mt-3 left-1/2 -translate-x-1/2 rounded-2xl overflow-hidden shadow-2xl min-w-[180px]" style={submenuStyle}>
+                <div className="px-2 py-2 space-y-0.5">
+                  {trafegoSubLinks.map(({ to, label }) => (
+                    <NavLink key={to} to={to} className={({ isActive }) => `${subLinkBase} ${isActive ? subLinkActive : subLinkInactive}`}>{label}</NavLink>
+                  ))}
+                </div>
+              </div>
+            )}
             {openMenu === 'ia' && canIA && (
               <div className="absolute top-full mt-3 left-1/2 -translate-x-1/2 rounded-2xl overflow-hidden shadow-2xl min-w-[180px]" style={submenuStyle}>
                 <div className="px-2 py-2 space-y-0.5">
@@ -238,6 +253,15 @@ export default function Sidebar() {
               ) : (
                 <span className={`${linkBase} flex items-center gap-1 text-gray-300 dark:text-white/20 cursor-default select-none`}>
                   Marketing <ChevronDown size={12} />
+                </span>
+              )}
+              {canTrafego ? (
+                <button onClick={() => toggleMenu('trafego')} className={`${linkBase} flex items-center gap-1 ${isTrafegoActive || openMenu === 'trafego' ? linkActive : linkInactive}`}>
+                  Tráfego <ChevronDown size={12} className={'transition-transform duration-200 ' + (openMenu === 'trafego' ? 'rotate-180' : '')} />
+                </button>
+              ) : (
+                <span className={`${linkBase} flex items-center gap-1 text-gray-300 dark:text-white/20 cursor-default select-none`}>
+                  Tráfego <ChevronDown size={12} />
                 </span>
               )}
               {canIA ? (
@@ -344,6 +368,25 @@ export default function Sidebar() {
                   </div>
                 ) : (
                   <span className={`${mobileLinkBase} block text-gray-300 dark:text-white/20`}>Marketing</span>
+                )}
+                {/* Tráfego */}
+                {canTrafego ? (
+                  <div>
+                    <button onClick={() => setOpenMenu(openMenu === 'trafego' ? null : 'trafego')}
+                      className={`${mobileLinkBase} w-full text-left flex items-center justify-between ${isTrafegoActive ? mobileLinkActive : mobileLinkInactive}`}>
+                      Tráfego <ChevronDown size={14} className={'transition-transform duration-200 ' + (openMenu === 'trafego' ? 'rotate-180' : '')} />
+                    </button>
+                    {openMenu === 'trafego' && (
+                      <div className="mt-1 space-y-0.5">
+                        {trafegoSubLinks.map(({ to, label }) => (
+                          <button key={to} onClick={() => { navigate(to); setMobileOpen(false) }}
+                            className={`${mobileSubLinkBase} w-full text-left ${location.pathname === to ? mobileLinkActive : mobileLinkInactive}`}>{label}</button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <span className={`${mobileLinkBase} block text-gray-300 dark:text-white/20`}>Tráfego</span>
                 )}
                 {/* IA */}
                 {canIA ? (
