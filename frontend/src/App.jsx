@@ -37,7 +37,7 @@ export default function App() {
         <Route path="chamados" element={<ChamadosPage />} />
         <Route path="chamados/:id" element={<ChamadoDetalhePage />} />
         <Route path="eventos" element={<EventosPage />} />
-        <Route path="eventos/:id" element={<ProtectedRoute adminOnly><EventoDetalhePage /></ProtectedRoute>} />
+        <Route path="eventos/:id" element={<EventoDetalhePage />} />
         <Route path="financeiro" element={<FinanceiroPage />} />
         <Route path="marketing" element={<MarketingPage />} />
         <Route path="demandas" element={<MinhasDemandas />} />

@@ -260,8 +260,8 @@ export default function EventosPage() {
                         evento={ev}
                         diasDiff={diasDiferenca(ev.data_evento)}
                         abaAtual={aba}
-                        clickable={canManage}
-                        onClick={() => canManage && navigate(`/eventos/${ev.id}`)}
+                        clickable={true}
+                        onClick={() => navigate(`/eventos/${ev.id}`)}
                         onDelete={canManage ? handleDelete : undefined}
                         showResponsaveis={aba === 'meus' || (canManage && aba === 'proximos')}
                       />
