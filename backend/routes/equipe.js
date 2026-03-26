@@ -1,4 +1,20 @@
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const storage = multer.diskStorage({
+  destination: '/app/uploads/',
+  filename: function(req, file, cb) { cb(null, 'avatar-' + req.user.id + '-' + Date.now() + path.extname(file.originalname)) }
+});
+const avatarUpload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: function(req, file, cb) {
+    const allowed = ['image/png', 'image/jpeg', 'image/jpg'];
+    if (allowed.includes(file.mimetype)) cb(null, true);
+    else cb(new Error('Formato inválido. Apenas PNG e JPEG são aceitos.'));
+  }
+});
+
 module.exports = function({ pool, bcrypt, auth }) {
   const router = express.Router();
 
@@ -9,7 +25,7 @@ const r=await pool.query('SELECT id,nome,email,funcao FROM usuarios WHERE org_id
 res.json(r.rows)}catch(e){res.status(500).json({erro:e.message})}});
 router.get('/api/equipe',auth,async(req,res)=>{try{
 if(req.user.role!=='admin'&&req.user.role!=='diretor')return res.status(403).json({erro:'Sem permissao'});
-const r=await pool.query('SELECT id,nome,email,funcao,criado_em FROM usuarios WHERE org_id=$1 ORDER BY criado_em',[req.user.org_id]);
+const r=await pool.query('SELECT id,nome,email,funcao,foto_url,criado_em FROM usuarios WHERE org_id=$1 ORDER BY criado_em',[req.user.org_id]);
 res.json(r.rows)}catch(e){res.status(500).json({erro:e.message})}});
 
 router.post('/api/equipe/convidar',auth,async(req,res)=>{try{
@@ -59,6 +75,26 @@ if(!funcoesValidas.includes(funcao))return res.status(400).json({erro:'Funcao in
 if(req.user.role==='diretor'){const alvo=await pool.query('SELECT funcao FROM usuarios WHERE id=$1 AND org_id=$2',[req.params.id,req.user.org_id]);if(alvo.rows[0]&&alvo.rows[0].funcao==='admin')return res.status(403).json({erro:'Sem permissao para alterar admin'})}
 const r=await pool.query('UPDATE usuarios SET funcao=$1 WHERE id=$2 AND org_id=$3 RETURNING id,nome,email,funcao',[funcao,req.params.id,req.user.org_id]);
 res.json(r.rows[0])}catch(e){res.status(500).json({erro:e.message})}});
+
+// Upload de foto de perfil de um membro (admin/diretor)
+router.post('/api/equipe/:id/foto',auth,function(req,res,next){avatarUpload.single('foto')(req,res,function(err){if(err)return res.status(400).json({erro:err.message});next()})},async(req,res)=>{try{
+if(req.user.role!=='admin'&&req.user.role!=='diretor')return res.status(403).json({erro:'Sem permissao'});
+if(!req.file)return res.status(400).json({erro:'Arquivo obrigatório'});
+const url='/uploads/'+req.file.filename;
+await pool.query('UPDATE usuarios SET foto_url=$1 WHERE id=$2 AND org_id=$3',[url,req.params.id,req.user.org_id]);
+res.json({sucesso:true,foto_url:url})}catch(e){res.status(500).json({erro:e.message})}});
+
+// Upload de foto de perfil (próprio usuário)
+router.post('/api/equipe/foto',auth,function(req,res,next){avatarUpload.single('foto')(req,res,function(err){if(err)return res.status(400).json({erro:err.message});next()})},async(req,res)=>{try{
+if(!req.file)return res.status(400).json({erro:'Arquivo obrigatório'});
+const url='/uploads/'+req.file.filename;
+await pool.query('UPDATE usuarios SET foto_url=$1 WHERE id=$2',[url,req.user.id]);
+res.json({sucesso:true,foto_url:url})}catch(e){res.status(500).json({erro:e.message})}});
+
+// Obter foto do usuário atual
+router.get('/api/equipe/me',auth,async(req,res)=>{try{
+const r=await pool.query('SELECT id,nome,email,funcao,foto_url FROM usuarios WHERE id=$1',[req.user.id]);
+res.json(r.rows[0]||{})}catch(e){res.status(500).json({erro:e.message})}});
 
   return router;
 };

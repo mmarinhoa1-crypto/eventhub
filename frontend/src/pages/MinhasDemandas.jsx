@@ -83,7 +83,7 @@ export default function MinhasDemandas() {
   const isDiretor = funcao === 'diretor'
   const isGestorTrafego = funcao === 'gestor_trafego'
   const isReadOnly = isGestorTrafego
-  const isGestor = isAdmin || isDiretor
+  const isGestor = isAdmin || isDiretor || isGestorTrafego
 
   const [data, setData] = useState({ briefings: [], posts: [], eventos: [] })
   const [equipe, setEquipe] = useState([])
@@ -118,6 +118,9 @@ export default function MinhasDemandas() {
   const [previewArquivoIndex, setPreviewArquivoIndex] = useState(0)
   const [adminRefArquivos, setAdminRefArquivos] = useState([])
   const [refArquivos, setRefArquivos] = useState([])
+  const [boostingId, setBoostingId] = useState(null)
+  const [showBoostConfig, setShowBoostConfig] = useState(null)
+  const [boostForm, setBoostForm] = useState({ budget: 2000, duration: 3, age_min: 18, age_max: 45, cities: '' })
   const [showNovoPost, setShowNovoPost] = useState(false)
   const [comentarios, setComentarios] = useState([])
   const [novoComentario, setNovoComentario] = useState('')
@@ -294,6 +297,17 @@ export default function MinhasDemandas() {
     try {
       if (detalhe._tipo === 'briefing') {
         await api.patch('/briefings/' + detalhe.id, editForm)
+        // Toggle designer usando cronograma_id do briefing vinculado
+        if (editForm.aparecer_designer !== undefined && detalhe.cronograma_id) {
+          await api.post('/cronograma/' + detalhe.cronograma_id + '/toggle-designer', {
+            ativo: editForm.aparecer_designer,
+            descricao: editForm.descricao || '',
+            tipo_conteudo: editForm.tipo_conteudo || '',
+            formato: editForm.formato || '',
+            referencia: editForm.referencia || '',
+            musica: editForm.musica || '',
+          })
+        }
       } else {
         await api.patch('/cronograma/' + detalhe.id, editForm)
         if (editForm.aparecer_designer !== undefined) {
@@ -318,6 +332,17 @@ export default function MinhasDemandas() {
     try {
       if (adminDetalhe._tipo === 'briefing') {
         await api.patch('/briefings/' + adminDetalhe.id, adminEditForm)
+        // Toggle designer usando cronograma_id do briefing vinculado
+        if (adminEditForm.aparecer_designer !== undefined && adminDetalhe.cronograma_id) {
+          await api.post('/cronograma/' + adminDetalhe.cronograma_id + '/toggle-designer', {
+            ativo: adminEditForm.aparecer_designer,
+            descricao: adminEditForm.descricao || '',
+            tipo_conteudo: adminEditForm.tipo_conteudo || '',
+            formato: adminEditForm.formato || '',
+            referencia: adminEditForm.referencia || '',
+            musica: adminEditForm.musica || '',
+          })
+        }
       } else {
         await api.patch('/cronograma/' + adminDetalhe.id, adminEditForm)
         // Sincronizar visibilidade para o designer
@@ -390,6 +415,34 @@ export default function MinhasDemandas() {
       toast.success(!current ? 'Publicação agendada!' : 'Agendamento removido')
       carregar()
     } catch { toast.error('Erro ao alterar agendamento') }
+  }
+
+  async function impulsionarPost(postId) {
+    setBoostingId(postId)
+    try {
+      await api.post('/cronograma/' + postId + '/boost', boostForm)
+      toast.success('Campanha criada!')
+      setShowBoostConfig(null)
+      carregar()
+    } catch (err) {
+      toast.error(err.response?.data?.erro || 'Erro ao impulsionar')
+    } finally { setBoostingId(null) }
+  }
+
+  async function pararBoost(postId) {
+    try {
+      await api.post('/cronograma/' + postId + '/boost-stop')
+      toast.success('Campanha pausada')
+      carregar()
+    } catch { toast.error('Erro ao pausar') }
+  }
+
+  async function toggleBoostEnabled(postId, current) {
+    try {
+      await api.patch('/cronograma/' + postId, { boost_enabled: !current, ...(!current ? boostForm : {}) })
+      carregar()
+      toast.success(!current ? 'Impulsionamento ativado' : 'Impulsionamento desativado')
+    } catch { toast.error('Erro') }
   }
 
   async function carregar() {
@@ -892,11 +945,11 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                               return (
                                 <div
                                   key={d._tipo+'-'+d.id}
-                                  draggable
-                                  onDragStart={e => { e.stopPropagation(); setDraggedItem({...d}) }}
+                                  draggable={!isReadOnly}
+                                  onDragStart={e => { if (isReadOnly) return; e.stopPropagation(); setDraggedItem({...d}) }}
                                   onDragEnd={() => { setDraggedItem(null); setDragOverDay(null); setDragOverCard(null) }}
-                                  onDragOver={e => handleCardDragOver(e, d._tipo+'-'+d.id)}
-                                  onDrop={e => handleCardDrop(e, d, dayStr, dayItems)}
+                                  onDragOver={e => !isReadOnly && handleCardDragOver(e, d._tipo+'-'+d.id)}
+                                  onDrop={e => !isReadOnly && handleCardDrop(e, d, dayStr, dayItems)}
                                   onClick={e => { e.stopPropagation(); const next = isSelected ? null : d; setAdminDetalhe(next); if(next) { setAdminArquivos([]); carregarAdminArqs(next); carregarComentarios(next._tipo, next.id, true) } }}
                                   className={'rounded-xl bg-white dark:bg-white/[0.06] border cursor-grab select-none transition-all duration-150 hover:shadow-md '
                                     + (isDraggingThis ? 'opacity-40 scale-95 ' : '')
@@ -987,7 +1040,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                             </span>
                           </div>
                           <div className="flex items-center gap-2 ml-3">
-                            <button
+                            {!isReadOnly && <button
                               onClick={() => {
                                 if (adminEditMode) { setAdminEditMode(false); setAdminEditForm({}) }
                                 else {
@@ -1009,7 +1062,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                               className={'text-xs px-3 py-1.5 rounded-lg font-bold transition ' + (adminEditMode ? 'bg-gray-100 dark:bg-white/[0.08] text-gray-600 dark:text-white/60 hover:bg-gray-200 dark:hover:bg-white/[0.12]' : 'bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/25')}
                             >
                               {adminEditMode ? 'Cancelar' : '✏️ Editar'}
-                            </button>
+                            </button>}
                             <button onClick={() => { setAdminDetalhe(null); setAdminEditMode(false); setAdminEditForm({}) }}
                               className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-white/[0.08] flex items-center justify-center text-gray-400 dark:text-white/50 hover:text-gray-600 dark:hover:text-white/80 hover:bg-gray-200 dark:hover:bg-white/[0.12] transition font-bold">✕</button>
                           </div>
@@ -1038,8 +1091,8 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                               {ETIQUETAS_PADRAO.map(et => {
                                 const ativa = etqs.includes(et.key)
                                 return (
-                                  <button key={et.key} onClick={() => toggleEtiqueta(d._tipo, d.id, et.key)}
-                                    className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border-2 transition-all"
+                                  <button key={et.key} onClick={() => !isReadOnly && toggleEtiqueta(d._tipo, d.id, et.key)} disabled={isReadOnly}
+                                    className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border-2 transition-all disabled:cursor-not-allowed"
                                     style={ativa
                                       ? { backgroundColor: isDark ? et.darkBg : et.bg, color: isDark ? et.darkColor : et.color, borderColor: isDark ? et.darkBorder : et.border }
                                       : { backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
@@ -1057,8 +1110,8 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                               {TAGS_STATUS.map(tag => {
                                 const ativa = getTag(d._tipo, d.id) === tag.key
                                 return (
-                                  <button key={tag.key} onClick={() => setTagStatus(d._tipo, d.id, tag.key)}
-                                    className="text-xs font-semibold px-2.5 py-1 rounded-full border-2 transition-all"
+                                  <button key={tag.key} onClick={() => !isReadOnly && setTagStatus(d._tipo, d.id, tag.key)} disabled={isReadOnly}
+                                    className="text-xs font-semibold px-2.5 py-1 rounded-full border-2 transition-all disabled:cursor-not-allowed"
                                     style={ativa
                                       ? { backgroundColor: tag.color + '20', color: tag.color, borderColor: tag.color }
                                       : { backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
@@ -1249,24 +1302,98 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                   {(d.formato||'').split(',').filter(Boolean).map(fm => <span key={fm} className="text-xs font-bold px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">{fm}</span>)}
                                 </div>
                               )}
-                              {/* Ações Instagram (posts) */}
-                              {d._tipo === 'post' && d.status !== 'publicado' && (
+                              {/* Ações Instagram (todos os tipos) */}
+                              {(() => {
+                                const igPostId = d._tipo === 'post' ? d.id : d.cronograma_id
+                                if (!igPostId) return null
+                                const linkedPost = d._tipo === 'post' ? d : data.posts.find(p => p.id === d.cronograma_id)
+                                const igStatus = linkedPost?.status || d.status
+                                const igAutoPublish = linkedPost?.auto_publish || false
+                                const igHora = linkedPost?.hora_publicacao || d.hora_publicacao
+                                const igBoostStatus = linkedPost?.boost_status || null
+                                return (
                                 <div className="space-y-2">
-                                  <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-gray-50 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.10]">
-                                    <span className={'text-xs font-semibold ' + (d.auto_publish ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-white/40')}>
-                                      {d.auto_publish ? `⏰ Agendado ${d.hora_publicacao ? d.hora_publicacao.slice(0,5) : ''}` : 'Agendar publicação'}
-                                    </span>
-                                    <button onClick={e => { e.stopPropagation(); toggleAutoPublish(d.id, d.auto_publish) }}
-                                      className={'relative w-10 h-5 rounded-full transition-colors ' + (d.auto_publish ? 'bg-green-500' : 'bg-gray-300')}>
-                                      <span className={'absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ' + (d.auto_publish ? 'translate-x-5' : 'translate-x-0.5')} />
-                                    </button>
-                                  </div>
-                                  <button onClick={e => { e.stopPropagation(); publicarInstagram(d.id) }}
-                                    className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 hover:opacity-90 transition text-white text-xs font-bold shadow-sm">
-                                    📸 Publicar no Instagram
-                                  </button>
+                                  {igStatus !== 'publicado' && (
+                                    <>
+                                      <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-gray-50 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.10]">
+                                        <span className={'text-xs font-semibold ' + (igAutoPublish ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-white/40')}>
+                                          {igAutoPublish ? `⏰ Agendado ${igHora ? igHora.slice(0,5) : ''}` : 'Agendar publicação'}
+                                        </span>
+                                        <button onClick={e => { e.stopPropagation(); toggleAutoPublish(igPostId, igAutoPublish) }}
+                                          className={'relative w-10 h-5 rounded-full transition-colors ' + (igAutoPublish ? 'bg-green-500' : 'bg-gray-300')}>
+                                          <span className={'absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ' + (igAutoPublish ? 'translate-x-5' : 'translate-x-0.5')} />
+                                        </button>
+                                      </div>
+                                      <button onClick={e => { e.stopPropagation(); publicarInstagram(igPostId) }}
+                                        className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 hover:opacity-90 transition text-white text-xs font-bold shadow-sm">
+                                        📸 Publicar no Instagram
+                                      </button>
+                                    </>
+                                  )}
+                                  {igStatus === 'publicado' && (
+                                    <>
+                                      <div className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20">
+                                        <span className="text-xs font-bold text-green-600 dark:text-green-400">✅ Publicado</span>
+                                      </div>
+                                      {showBoostConfig === igPostId ? (
+                                        <div className="space-y-2 p-3 rounded-xl border border-orange-200 dark:border-orange-500/20 bg-orange-50/50 dark:bg-orange-500/5">
+                                          <p className="text-[11px] font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wide">Configurar Impulsionamento</p>
+                                          <div className="grid grid-cols-2 gap-2">
+                                            <div>
+                                              <label className="text-[10px] text-gray-500 font-semibold">Orçamento (centavos)</label>
+                                              <input type="number" value={boostForm.budget} onChange={e => setBoostForm({...boostForm, budget: Number(e.target.value)})}
+                                                className="w-full border border-gray-200 dark:border-white/[0.12] rounded-lg px-2 py-1.5 text-xs bg-white dark:bg-white/[0.04] text-gray-800 dark:text-white/80" />
+                                            </div>
+                                            <div>
+                                              <label className="text-[10px] text-gray-500 font-semibold">Duração (dias)</label>
+                                              <input type="number" value={boostForm.duration} onChange={e => setBoostForm({...boostForm, duration: Number(e.target.value)})}
+                                                className="w-full border border-gray-200 dark:border-white/[0.12] rounded-lg px-2 py-1.5 text-xs bg-white dark:bg-white/[0.04] text-gray-800 dark:text-white/80" />
+                                            </div>
+                                            <div>
+                                              <label className="text-[10px] text-gray-500 font-semibold">Idade mín.</label>
+                                              <input type="number" value={boostForm.age_min} onChange={e => setBoostForm({...boostForm, age_min: Number(e.target.value)})}
+                                                className="w-full border border-gray-200 dark:border-white/[0.12] rounded-lg px-2 py-1.5 text-xs bg-white dark:bg-white/[0.04] text-gray-800 dark:text-white/80" />
+                                            </div>
+                                            <div>
+                                              <label className="text-[10px] text-gray-500 font-semibold">Idade máx.</label>
+                                              <input type="number" value={boostForm.age_max} onChange={e => setBoostForm({...boostForm, age_max: Number(e.target.value)})}
+                                                className="w-full border border-gray-200 dark:border-white/[0.12] rounded-lg px-2 py-1.5 text-xs bg-white dark:bg-white/[0.04] text-gray-800 dark:text-white/80" />
+                                            </div>
+                                          </div>
+                                          <div>
+                                            <label className="text-[10px] text-gray-500 font-semibold">Cidades (separadas por vírgula)</label>
+                                            <input value={boostForm.cities} onChange={e => setBoostForm({...boostForm, cities: e.target.value})} placeholder="Ex: São Paulo, Rio de Janeiro"
+                                              className="w-full border border-gray-200 dark:border-white/[0.12] rounded-lg px-2 py-1.5 text-xs bg-white dark:bg-white/[0.04] text-gray-800 dark:text-white/80" />
+                                          </div>
+                                          <div className="flex gap-2">
+                                            <button onClick={() => setShowBoostConfig(null)}
+                                              className="flex-1 py-1.5 rounded-lg text-xs font-bold bg-gray-100 dark:bg-white/[0.08] text-gray-600 dark:text-white/60 hover:bg-gray-200 dark:hover:bg-white/[0.12] transition">Cancelar</button>
+                                            <button onClick={() => impulsionarPost(igPostId)} disabled={boostingId === igPostId}
+                                              className={'flex-1 py-1.5 rounded-lg text-xs font-bold text-white transition ' + (boostingId === igPostId ? 'bg-gray-400 animate-pulse' : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600')}>
+                                              {boostingId === igPostId ? 'Criando...' : '🚀 Confirmar'}
+                                            </button>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <>
+                                          {igBoostStatus === 'active' ? (
+                                            <button onClick={e => { e.stopPropagation(); pararBoost(igPostId) }}
+                                              className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 text-xs font-bold hover:bg-red-100 dark:hover:bg-red-500/20 transition">
+                                              ⏸️ Pausar Impulsionamento
+                                            </button>
+                                          ) : (
+                                            <button onClick={e => { e.stopPropagation(); setShowBoostConfig(igPostId) }}
+                                              className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 transition text-white text-xs font-bold shadow-sm">
+                                              🚀 Impulsionar
+                                            </button>
+                                          )}
+                                        </>
+                                      )}
+                                    </>
+                                  )}
                                 </div>
-                              )}
+                                )
+                              })()}
                               {d.descricao && (
                                 <div className="bg-gray-50 dark:bg-white/[0.04] rounded-xl px-4 py-3">
                                   <p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide mb-1.5">Briefing para o Designer</p>
@@ -1376,10 +1503,10 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                             </div>
                           </div>
 
-                          <button onClick={() => { setAdminDetalhe(null); navigate('/marketing?evento='+d.id_evento) }}
+                          {!isReadOnly && <button onClick={() => { setAdminDetalhe(null); navigate('/marketing?evento='+d.id_evento) }}
                             className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition text-center">
                             Abrir no Marketing
-                          </button>
+                          </button>}
                         </div>
                       </div>
                     </div>
@@ -2351,24 +2478,96 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                   </div>
                 )}
 
-                {/* Ações Instagram (posts) */}
-                {d._tipo === 'post' && d.status !== 'publicado' && (
+                {/* Ações Instagram (posts e briefings com cronograma vinculado) */}
+                {(d._tipo === 'post' || (d._tipo === 'briefing' && d.cronograma_id)) && (() => {
+                  const igPostId = d._tipo === 'post' ? d.id : d.cronograma_id
+                  const igStatus = d._tipo === 'post' ? d.status : (data.posts.find(p => p.id === d.cronograma_id)?.status || d.status)
+                  const igAutoPublish = d._tipo === 'post' ? d.auto_publish : (data.posts.find(p => p.id === d.cronograma_id)?.auto_publish || false)
+                  const igHora = d._tipo === 'post' ? d.hora_publicacao : (data.posts.find(p => p.id === d.cronograma_id)?.hora_publicacao || d.hora_publicacao)
+                  const igBoostStatus = d._tipo === 'post' ? d.boost_status : (data.posts.find(p => p.id === d.cronograma_id)?.boost_status || null)
+                  return (
                   <div className="border-t border-gray-100 pt-4 space-y-2">
-                    <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-gray-50 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.10]">
-                      <span className={'text-xs font-semibold ' + (d.auto_publish ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-white/40')}>
-                        {d.auto_publish ? `⏰ Agendado ${d.hora_publicacao ? d.hora_publicacao.slice(0,5) : ''}` : 'Agendar publicação'}
-                      </span>
-                      <button onClick={e => { e.stopPropagation(); toggleAutoPublish(d.id, d.auto_publish) }}
-                        className={'relative w-10 h-5 rounded-full transition-colors ' + (d.auto_publish ? 'bg-green-500' : 'bg-gray-300')}>
-                        <span className={'absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ' + (d.auto_publish ? 'translate-x-5' : 'translate-x-0.5')} />
-                      </button>
-                    </div>
-                    <button onClick={e => { e.stopPropagation(); publicarInstagram(d.id) }}
-                      className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 hover:opacity-90 transition text-white text-xs font-bold shadow-sm">
-                      📸 Publicar no Instagram
-                    </button>
+                    {igStatus !== 'publicado' && (
+                      <>
+                        <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-gray-50 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.10]">
+                          <span className={'text-xs font-semibold ' + (igAutoPublish ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-white/40')}>
+                            {igAutoPublish ? `⏰ Agendado ${igHora ? igHora.slice(0,5) : ''}` : 'Agendar publicação'}
+                          </span>
+                          <button onClick={e => { e.stopPropagation(); toggleAutoPublish(igPostId, igAutoPublish) }}
+                            className={'relative w-10 h-5 rounded-full transition-colors ' + (igAutoPublish ? 'bg-green-500' : 'bg-gray-300')}>
+                            <span className={'absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ' + (igAutoPublish ? 'translate-x-5' : 'translate-x-0.5')} />
+                          </button>
+                        </div>
+                        <button onClick={e => { e.stopPropagation(); publicarInstagram(igPostId) }}
+                          className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 hover:opacity-90 transition text-white text-xs font-bold shadow-sm">
+                          📸 Publicar no Instagram
+                        </button>
+                      </>
+                    )}
+                    {igStatus === 'publicado' && (
+                      <>
+                        <div className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20">
+                          <span className="text-xs font-bold text-green-600 dark:text-green-400">✅ Publicado</span>
+                        </div>
+                        {showBoostConfig === igPostId ? (
+                          <div className="space-y-2 p-3 rounded-xl border border-orange-200 dark:border-orange-500/20 bg-orange-50/50 dark:bg-orange-500/5">
+                            <p className="text-[11px] font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wide">Configurar Impulsionamento</p>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="text-[10px] text-gray-500 font-semibold">Orçamento (centavos)</label>
+                                <input type="number" value={boostForm.budget} onChange={e => setBoostForm({...boostForm, budget: Number(e.target.value)})}
+                                  className="w-full border border-gray-200 dark:border-white/[0.12] rounded-lg px-2 py-1.5 text-xs bg-white dark:bg-white/[0.04] text-gray-800 dark:text-white/80" />
+                              </div>
+                              <div>
+                                <label className="text-[10px] text-gray-500 font-semibold">Duração (dias)</label>
+                                <input type="number" value={boostForm.duration} onChange={e => setBoostForm({...boostForm, duration: Number(e.target.value)})}
+                                  className="w-full border border-gray-200 dark:border-white/[0.12] rounded-lg px-2 py-1.5 text-xs bg-white dark:bg-white/[0.04] text-gray-800 dark:text-white/80" />
+                              </div>
+                              <div>
+                                <label className="text-[10px] text-gray-500 font-semibold">Idade mín.</label>
+                                <input type="number" value={boostForm.age_min} onChange={e => setBoostForm({...boostForm, age_min: Number(e.target.value)})}
+                                  className="w-full border border-gray-200 dark:border-white/[0.12] rounded-lg px-2 py-1.5 text-xs bg-white dark:bg-white/[0.04] text-gray-800 dark:text-white/80" />
+                              </div>
+                              <div>
+                                <label className="text-[10px] text-gray-500 font-semibold">Idade máx.</label>
+                                <input type="number" value={boostForm.age_max} onChange={e => setBoostForm({...boostForm, age_max: Number(e.target.value)})}
+                                  className="w-full border border-gray-200 dark:border-white/[0.12] rounded-lg px-2 py-1.5 text-xs bg-white dark:bg-white/[0.04] text-gray-800 dark:text-white/80" />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="text-[10px] text-gray-500 font-semibold">Cidades (separadas por vírgula)</label>
+                              <input value={boostForm.cities} onChange={e => setBoostForm({...boostForm, cities: e.target.value})} placeholder="Ex: São Paulo, Rio de Janeiro"
+                                className="w-full border border-gray-200 dark:border-white/[0.12] rounded-lg px-2 py-1.5 text-xs bg-white dark:bg-white/[0.04] text-gray-800 dark:text-white/80" />
+                            </div>
+                            <div className="flex gap-2">
+                              <button onClick={() => setShowBoostConfig(null)}
+                                className="flex-1 py-1.5 rounded-lg text-xs font-bold bg-gray-100 dark:bg-white/[0.08] text-gray-600 dark:text-white/60 hover:bg-gray-200 dark:hover:bg-white/[0.12] transition">Cancelar</button>
+                              <button onClick={() => impulsionarPost(igPostId)} disabled={boostingId === igPostId}
+                                className={'flex-1 py-1.5 rounded-lg text-xs font-bold text-white transition ' + (boostingId === igPostId ? 'bg-gray-400 animate-pulse' : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600')}>
+                                {boostingId === igPostId ? 'Criando...' : '🚀 Confirmar'}
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            {igBoostStatus === 'active' ? (
+                              <button onClick={e => { e.stopPropagation(); pararBoost(igPostId) }}
+                                className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 text-xs font-bold hover:bg-red-100 dark:hover:bg-red-500/20 transition">
+                                ⏸️ Pausar Impulsionamento
+                              </button>
+                            ) : (
+                              <button onClick={e => { e.stopPropagation(); setShowBoostConfig(igPostId) }}
+                                className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 transition text-white text-xs font-bold shadow-sm">
+                                🚀 Impulsionar
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </>
+                    )}
                   </div>
-                )}
+                  )
+                })()}
 
                 {/* Arquivos Publicáveis */}
                 <div className="border-t border-gray-100 pt-4">

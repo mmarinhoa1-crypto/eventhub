@@ -1,16 +1,26 @@
 import { useState } from 'react'
-import { Calendar, MapPin, TrendingUp, ArrowRight, Trash2, AlertTriangle } from 'lucide-react'
+import { MapPin, ArrowRight, Trash2, AlertTriangle, Clock, Palette, Megaphone, Instagram, Link2 } from 'lucide-react'
+import { useTema } from '../../contexts/ThemeContext'
 
-export default function EventoCard({ evento, onClick, onDelete }) {
+const MESES_CURTO = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+
+function parseData(str) {
+  if (!str) return null
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) return new Date(str + 'T12:00:00')
+  if (/^\d{2}\/\d{2}\/\d{4}/.test(str)) {
+    const [d, m, y] = str.split('/')
+    return new Date(`${y}-${m}-${d}T12:00:00`)
+  }
+  return null
+}
+
+export default function EventoCard({ evento, diasDiff, abaAtual, clickable = true, onClick, onDelete, showResponsaveis = false, onConnectIG, canManage = false }) {
   const [confirmando, setConfirmando] = useState(false)
+  const { tema } = useTema()
+  const isDark = tema === 'dark'
 
   const orcamento = Number(evento.orcamento) || 0
-  const gasto     = Number(evento.total) || 0
-  const receita   = Number(evento.baladapp_receita) || 0
-  const pct       = orcamento > 0 ? Math.min((gasto / orcamento) * 100, 100) : 0
-  const saldo     = receita - gasto
-
-  const barColor = pct > 90 ? 'bg-rose-500' : pct > 70 ? 'bg-amber-500' : 'bg-blue-500'
+  const gasto = Number(evento.total) || 0
 
   function fmtV(v) {
     return v >= 1000 ? 'R$ ' + (v / 1000).toFixed(1) + 'K' : 'R$ ' + v.toLocaleString('pt-BR')
@@ -20,130 +30,158 @@ export default function EventoCard({ evento, onClick, onDelete }) {
     e.stopPropagation()
     setConfirmando(true)
   }
-
   function handleConfirm(e) {
     e.stopPropagation()
     setConfirmando(false)
     onDelete?.(evento.id)
   }
-
   function handleCancel(e) {
     e.stopPropagation()
     setConfirmando(false)
   }
 
+  const dt = parseData(evento.data_evento)
+  const dia = dt ? dt.getDate() : null
+  const mes = dt ? MESES_CURTO[dt.getMonth()] : null
+
+  // Label de tempo
+  let tempoLabel = null
+  if (diasDiff !== null && diasDiff !== undefined) {
+    if (diasDiff === 0) tempoLabel = 'Hoje'
+    else if (diasDiff === 1) tempoLabel = 'Amanhã'
+    else if (diasDiff > 0) tempoLabel = `Faltam ${diasDiff} dias`
+    else if (diasDiff === -1) tempoLabel = 'Ontem'
+    else tempoLabel = `Há ${Math.abs(diasDiff)} dias`
+  }
+
+  const cardStyle = {
+    background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.80)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    border: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(0,0,0,0.05)',
+    cursor: clickable ? 'pointer' : 'default',
+  }
+
   return (
     <div
-      className="group relative bg-white dark:bg-[rgba(19,19,22,0.98)] rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer flex-shrink-0"
-      style={{ border: '1px solid #f80d52', width: 280 }}
-      onMouseEnter={e => e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(248,13,82,0.15)'}
-      onMouseLeave={e => e.currentTarget.style.boxShadow = ''}
-      onClick={() => !confirmando && onClick(evento)}
+      className={'group relative rounded-xl overflow-hidden transition-all duration-200 ' + (clickable ? 'hover:shadow-lg' : '')}
+      style={cardStyle}
+      onMouseEnter={e => { if (clickable) e.currentTarget.style.borderColor = '#f80d52' }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)' }}
+      onClick={() => clickable && !confirmando && onClick?.(evento)}
     >
-      {/* Barra de cor superior */}
-      <div className="h-1 w-full" style={{ background: 'linear-gradient(to right, #f80d52, #ff3d7a)' }} />
-
-      <div className="p-4">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1 min-w-0 pr-2">
-            <h4 className="font-bold text-gray-900 dark:text-white/90 text-sm leading-snug truncate group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors">
-              {evento.nome}
-            </h4>
-            <div className="flex flex-wrap items-center gap-2 mt-1.5">
-              {evento.data_evento && (
-                <span className="flex items-center gap-1 text-[11px] text-gray-400">
-                  <Calendar size={11} />
-                  {evento.data_evento}
-                </span>
-              )}
-              {evento.cidade && (
-                <span className="flex items-center gap-1 text-[11px] text-gray-400">
-                  <MapPin size={11} />
-                  {evento.cidade}
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="p-1.5 rounded-xl transition-all flex-shrink-0 group-hover:!bg-[#f80d52] group-hover:text-white" style={{ backgroundColor: 'rgba(248,13,82,0.08)', color: '#f80d52' }}>
-            <ArrowRight size={14} />
-          </div>
-        </div>
-
-        {/* Financeiro */}
-        <div className="grid grid-cols-2 gap-2 mb-3">
-          <div className="bg-gray-50 rounded-xl px-3 py-2">
-            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Gasto</p>
-            <p className="text-sm font-bold text-gray-800 mt-0.5">{fmtV(gasto)}</p>
-          </div>
-          {receita > 0 ? (
-            <div className="bg-emerald-50 dark:bg-emerald-500/10 rounded-xl px-3 py-2">
-              <p className="text-[9px] font-bold text-emerald-500 dark:text-emerald-400 uppercase tracking-wider">Receita</p>
-              <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">{fmtV(receita)}</p>
-            </div>
-          ) : (
-            <div className="rounded-xl px-3 py-2" style={{ backgroundColor: 'rgba(248,13,82,0.08)' }}>
-              <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: '#f80d52' }}>Orçamento</p>
-              <p className="text-sm font-bold mt-0.5" style={{ color: '#f80d52' }}>
-                {orcamento > 0 ? fmtV(orcamento) : '—'}
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Barra de progresso */}
-        {orcamento > 0 && (
-          <div className="mb-3">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] text-gray-400">Orçamento usado</span>
-              <span className={`text-[10px] font-bold ${pct > 90 ? 'text-rose-500' : pct > 70 ? 'text-amber-500' : 'text-blue-500'}`}>
-                {pct.toFixed(0)}%
-              </span>
-            </div>
-            <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-              <div className={`h-full rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
-            </div>
+      <div className="p-4 flex gap-3.5">
+        {/* Badge data */}
+        {dia && (
+          <div className="flex flex-col items-center justify-center w-12 h-12 rounded-xl flex-shrink-0 bg-accent/8 dark:bg-accent/15">
+            <span className="text-base font-extrabold text-accent leading-none">{dia}</span>
+            <span className="text-[9px] font-bold text-accent/70 uppercase mt-0.5">{mes}</span>
           </div>
         )}
 
-        {/* Saldo */}
-        {receita > 0 && (
-          <div className="flex justify-end">
-            <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-              saldo >= 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-600 border-rose-200'
-            }`}>
-              <TrendingUp size={9} />
-              {saldo >= 0 ? '+' : ''}{fmtV(Math.abs(saldo))}
-            </span>
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <h4 className={'text-sm font-bold leading-snug truncate ' + (clickable ? 'text-gray-900 dark:text-white/90 group-hover:text-accent transition-colors' : 'text-gray-700 dark:text-white/70')}>
+              {evento.nome}
+            </h4>
+            {clickable && (
+              <div className="p-1 rounded-lg flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity bg-accent/10 text-accent">
+                <ArrowRight size={12} />
+              </div>
+            )}
           </div>
+
+          {evento.cidade && (
+            <p className="flex items-center gap-1 text-[11px] text-gray-400 dark:text-white/35 mt-1">
+              <MapPin size={10} className="flex-shrink-0" />
+              <span className="truncate">{evento.cidade}</span>
+            </p>
+          )}
+
+          {/* Tempo */}
+          {tempoLabel && (
+            <p className={'flex items-center gap-1 text-[10px] font-semibold mt-1.5 ' + (abaAtual === 'proximos' ? 'text-accent' : 'text-gray-400 dark:text-white/30')}>
+              <Clock size={9} />
+              {tempoLabel}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Responsáveis */}
+      {showResponsaveis && (evento.designer_nome || evento.social_media_nome) && (
+        <div className="px-4 pb-2 flex flex-wrap gap-1.5">
+          {evento.designer_nome && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-100 dark:border-violet-500/20">
+              <Palette size={9} /> {evento.designer_nome.split(' ')[0]}
+            </span>
+          )}
+          {evento.social_media_nome && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-pink-50 dark:bg-pink-500/10 text-pink-600 dark:text-pink-400 border border-pink-100 dark:border-pink-500/20">
+              <Megaphone size={9} /> {evento.social_media_nome.split(' ')[0]}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Instagram */}
+      <div className="px-4 pb-2">
+        {evento.ig_connected_username ? (
+          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-pink-50 dark:bg-pink-500/10 text-pink-600 dark:text-pink-400 border border-pink-100 dark:border-pink-500/20">
+            <Instagram size={9} /> @{evento.ig_connected_username}
+          </span>
+        ) : canManage && onConnectIG ? (
+          <button
+            onClick={e => { e.stopPropagation(); onConnectIG(evento.id) }}
+            className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-full bg-gray-100 dark:bg-white/[0.04] text-gray-400 dark:text-white/30 border border-gray-200 dark:border-white/[0.06] hover:border-pink-300 hover:text-pink-500 dark:hover:text-pink-400 transition"
+          >
+            <Link2 size={9} /> Conectar Instagram
+          </button>
+        ) : (
+          <span className="inline-flex items-center gap-1 text-[10px] text-gray-300 dark:text-white/20">
+            <Instagram size={9} /> Sem Instagram
+          </span>
         )}
       </div>
 
-      {/* Botão de excluir — aparece no hover */}
+      {/* Financeiro compacto */}
+      <div className="px-4 pb-3.5 flex gap-2">
+        <div className="flex-1 rounded-lg px-2.5 py-1.5 bg-gray-50 dark:bg-white/[0.03]">
+          <p className="text-[8px] font-bold text-gray-400 dark:text-white/30 uppercase tracking-wider">Gasto</p>
+          <p className="text-xs font-bold text-gray-800 dark:text-white/80 mt-0.5">{fmtV(gasto)}</p>
+        </div>
+        <div className="flex-1 rounded-lg px-2.5 py-1.5 bg-accent/5 dark:bg-accent/8">
+          <p className="text-[8px] font-bold text-accent/70 uppercase tracking-wider">Orçamento</p>
+          <p className="text-xs font-bold text-accent mt-0.5">{orcamento > 0 ? fmtV(orcamento) : '—'}</p>
+        </div>
+      </div>
+
+      {/* Excluir hover */}
       {!confirmando && onDelete && (
         <button
           onClick={handleDeleteClick}
-          className="absolute bottom-3 left-3 opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-gray-300 hover:text-rose-500 hover:bg-rose-50 transition-all duration-200"
+          className="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-gray-300 dark:text-white/20 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all duration-200"
           title="Excluir evento"
         >
-          <Trash2 size={13} />
+          <Trash2 size={12} />
         </button>
       )}
 
-      {/* Confirmação de exclusão */}
+      {/* Confirmação exclusão */}
       {confirmando && (
         <div
-          className="absolute inset-0 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center gap-3 rounded-2xl z-10"
+          className="absolute inset-0 bg-white/95 dark:bg-[#131316]/95 backdrop-blur-sm flex flex-col items-center justify-center gap-2.5 rounded-xl z-10"
           onClick={e => e.stopPropagation()}
         >
-          <AlertTriangle size={22} className="text-rose-400" />
-          <p className="text-sm font-bold text-gray-800">Excluir evento?</p>
-          <p className="text-xs text-gray-400 text-center px-4">Esta ação não pode ser desfeita.</p>
+          <AlertTriangle size={20} className="text-rose-400" />
+          <p className="text-sm font-bold text-gray-800 dark:text-white/80">Excluir evento?</p>
+          <p className="text-[11px] text-gray-400 dark:text-white/40 text-center px-4">Esta ação não pode ser desfeita.</p>
           <div className="flex gap-2">
-            <button onClick={handleCancel} className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-600 hover:bg-gray-200 transition">
+            <button onClick={handleCancel} className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-white/60 hover:bg-gray-200 dark:hover:bg-white/[0.10] transition">
               Cancelar
             </button>
-            <button onClick={handleConfirm} className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-rose-500 text-white hover:bg-rose-600 transition">
+            <button onClick={handleConfirm} className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-rose-500 text-white hover:bg-rose-600 transition">
               Excluir
             </button>
           </div>

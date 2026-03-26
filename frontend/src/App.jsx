@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import DashboardLayout from './components/layout/DashboardLayout'
 import LoginPage from './pages/LoginPage'
@@ -12,12 +12,13 @@ import EventoDetalhePage from './pages/EventoDetalhePage'
 import EquipePage from './pages/EquipePage'
 import NotFoundPage from './pages/NotFoundPage'
 import FinanceiroPage from './pages/FinanceiroPage'
-import MarketingPage from './pages/MarketingPage'
 import MinhasDemandas from './pages/MinhasDemandas'
 import PrevisaoPage from './pages/PrevisaoPage'
 import VendasPage from './pages/VendasPage'
 import ConsumoPage from './pages/ConsumoPage'
 import AnunciosPage from './pages/AnunciosPage'
+import IAPage from './pages/IAPage'
+import TrafegoPage from './pages/TrafegoPage'
 import InstagramCallbackPage from './pages/InstagramCallbackPage'
 
 export default function App() {
@@ -36,15 +37,17 @@ export default function App() {
         <Route index element={<HomePage />} />
         <Route path="chamados" element={<ChamadosPage />} />
         <Route path="chamados/:id" element={<ChamadoDetalhePage />} />
-        <Route path="eventos" element={<ProtectedRoute adminOnly><EventosPage /></ProtectedRoute>} />
-        <Route path="eventos/:id" element={<ProtectedRoute adminOnly><EventoDetalhePage /></ProtectedRoute>} />
+        <Route path="eventos" element={<EventosPage />} />
+        <Route path="eventos/:id" element={<EventoDetalhePage />} />
         <Route path="financeiro" element={<FinanceiroPage />} />
-        <Route path="marketing" element={<MarketingPage />} />
         <Route path="demandas" element={<MinhasDemandas />} />
+        <Route path="marketing" element={<Navigate to="/demandas" replace />} />
         <Route path="previsao" element={<PrevisaoPage />} />
         <Route path="vendas" element={<VendasPage />} />
         <Route path="consumo" element={<ConsumoPage />} />
         <Route path="anuncios" element={<AnunciosPage />} />
+        <Route path="trafego" element={<TrafegoPage />} />
+        <Route path="ia" element={<IAPage />} />
         <Route
           path="equipe"
           element={
