@@ -12,7 +12,6 @@ import EventoDetalhePage from './pages/EventoDetalhePage'
 import EquipePage from './pages/EquipePage'
 import NotFoundPage from './pages/NotFoundPage'
 import FinanceiroPage from './pages/FinanceiroPage'
-import MarketingPage from './pages/MarketingPage'
 import MinhasDemandas from './pages/MinhasDemandas'
 import PrevisaoPage from './pages/PrevisaoPage'
 import VendasPage from './pages/VendasPage'
@@ -41,7 +40,6 @@ export default function App() {
         <Route path="eventos" element={<EventosPage />} />
         <Route path="eventos/:id" element={<EventoDetalhePage />} />
         <Route path="financeiro" element={<FinanceiroPage />} />
-        <Route path="marketing" element={<MarketingPage />} />
         <Route path="demandas" element={<MinhasDemandas />} />
         <Route path="previsao" element={<PrevisaoPage />} />
         <Route path="vendas" element={<VendasPage />} />
