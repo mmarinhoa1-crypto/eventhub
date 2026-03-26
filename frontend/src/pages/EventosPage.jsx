@@ -122,7 +122,12 @@ export default function EventosPage() {
     }
     // Separar por aba
     if (aba === 'meus') {
-      list = list.filter(ev => ev.designer_id === usuario?.id || ev.social_media_id === usuario?.id)
+      list = list.filter(ev => {
+        const isMeu = ev.designer_id === usuario?.id || ev.social_media_id === usuario?.id
+        if (!isMeu) return false
+        const d = parseData(ev.data_evento)
+        return d ? d >= hoje : true
+      })
     } else {
       list = list.filter(ev => {
         const d = parseData(ev.data_evento)
@@ -162,7 +167,12 @@ export default function EventosPage() {
 
   const totalProximos = eventos.filter(ev => { const d = parseData(ev.data_evento); return d ? d >= hoje : true }).length
   const totalPassados = eventos.filter(ev => { const d = parseData(ev.data_evento); return d ? d < hoje : false }).length
-  const totalMeus = showMeusEventos ? eventos.filter(ev => ev.designer_id === usuario?.id || ev.social_media_id === usuario?.id).length : 0
+  const totalMeus = showMeusEventos ? eventos.filter(ev => {
+    const isMeu = ev.designer_id === usuario?.id || ev.social_media_id === usuario?.id
+    if (!isMeu) return false
+    const d = parseData(ev.data_evento)
+    return d ? d >= hoje : true
+  }).length : 0
 
   if (loading) {
     return <div className="flex justify-center py-32"><LoadingSpinner size="lg" /></div>
@@ -225,7 +235,7 @@ export default function EventosPage() {
                   ? 'bg-white dark:bg-white/[0.10] text-gray-900 dark:text-white shadow-sm'
                   : 'text-gray-500 dark:text-white/40 hover:text-gray-700 dark:hover:text-white/60')}
               >
-                Meus Eventos
+                Meus Próximos Eventos
                 <span className="ml-1.5 text-xs font-bold text-accent">{totalMeus}</span>
               </button>
             )}
