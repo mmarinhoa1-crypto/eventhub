@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Calendar, Clock, CheckCircle, AlertCircle, FileText, Palette, Megaphone, ArrowRight, X as XIcon, Paperclip, ChevronLeft, ChevronRight, Plus, FolderOpen, Download, Search } from 'lucide-react'
+import { Calendar, Clock, CheckCircle, AlertCircle, FileText, Palette, Megaphone, ArrowRight, X as XIcon, Paperclip, ChevronLeft, ChevronRight, ChevronDown, Plus, FolderOpen, Download, Search } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import api from '../api/client'
 import toast from 'react-hot-toast'
@@ -138,6 +138,8 @@ export default function MinhasDemandas() {
   const [novoPostArquivos, setNovoPostArquivos] = useState([])
   const [criandoPost, setCriandoPost] = useState(false)
   const [designerTab, setDesignerTab] = useState('briefings')
+  const [statsExpanded, setStatsExpanded] = useState(false)
+  const [expandedMembros, setExpandedMembros] = useState({})
   const [materiaisArquivos, setMateriaisArquivos] = useState({})
   const [loadingMateriais, setLoadingMateriais] = useState(false)
   const navigate = useNavigate()
@@ -814,12 +816,12 @@ export default function MinhasDemandas() {
             </div>
 
             {/* Busca */}
-            <div className="relative">
+            <div className="relative" style={{width:240}}>
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/40" />
               <input
                 value={filtroBusca}
                 onChange={e => setFiltroBusca(e.target.value)}
-                placeholder="Buscar demanda por título..."
+                placeholder="Buscar demanda..."
                 className="w-full pl-9 pr-8 py-2 rounded-lg border border-gray-200 dark:border-white/[0.10] bg-white dark:bg-white/[0.06] text-sm text-gray-700 dark:text-white/80 placeholder-gray-400 dark:placeholder-white/30 outline-none focus:ring-2 focus:ring-accent/40 transition"
               />
               {filtroBusca && (
@@ -828,28 +830,39 @@ export default function MinhasDemandas() {
             </div>
 
             {/* Cards equipe */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               {equipeFiltrada.map(m => {
                 const stats = getStats(m.id)
                 const isActive = filtroMembro === String(m.id)
+                const isExpanded = expandedMembros[m.id]
                 return (
-                  <div key={m.id} onClick={() => setFiltroMembro(isActive ? 'todos' : String(m.id))} className={'rounded-2xl p-3.5 cursor-pointer transition-all border-2 ' + (isActive ? 'bg-accent/10 border-accent' : 'bg-white border-gray-200 hover:border-accent/40')}>
-                    <div className="flex items-center gap-2.5 mb-2.5">
-                      <div className={'w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold ' + (m.funcao === 'designer' ? 'bg-gradient-to-br from-blue-500 to-blue-600' : 'bg-gradient-to-br from-blue-500 to-blue-600')}>
-                        {(m.nome||'?').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-gray-900">{m.nome}</p>
-                        <p className="text-[10px] text-gray-400">{m.funcao === 'designer' ? 'Designer' : 'Social Media'}</p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-4 gap-1.5">
-                      {[{n:stats.total,l:'Total',c:'text-gray-600',bg:'bg-gray-100'},{n:stats.pendente,l:'Pend',c:'text-yellow-700',bg:'bg-yellow-50'},{n:stats.producao,l:'Prod',c:'text-blue-700',bg:'bg-blue-50'},{n:stats.atrasado,l:'Atras',c:'text-red-600',bg:'bg-red-50'}].map((s,i) => (
-                        <div key={i} className={'text-center rounded-lg py-1 ' + s.bg}>
-                          <p className={'text-sm font-extrabold ' + s.c}>{s.n}</p>
-                          <p className="text-gray-400" style={{fontSize:8,textTransform:'uppercase',letterSpacing:0.5}}>{s.l}</p>
+                  <div key={m.id} className={'rounded-xl cursor-pointer transition-all border ' + (isActive ? 'bg-accent/10 border-accent' : 'bg-white dark:bg-white/[0.04] border-gray-200 dark:border-white/[0.08] hover:border-accent/40')}>
+                    <div
+                      onClick={() => setExpandedMembros(prev => ({ ...prev, [m.id]: !prev[m.id] }))}
+                      className="flex items-center gap-2.5 px-3 py-2"
+                    >
+                      {m.foto_url ? (
+                        <img src={'/api' + m.foto_url} alt={m.nome} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                      ) : (
+                        <div className={'w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 ' + (m.funcao === 'designer' ? 'bg-gradient-to-br from-blue-500 to-blue-600' : 'bg-gradient-to-br from-pink-500 to-purple-600')}>
+                          {(m.nome||'?').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}
                         </div>
-                      ))}
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-gray-900 dark:text-white/90 truncate">{m.nome}</p>
+                        <p className="text-[10px] text-gray-400 dark:text-white/40">{m.funcao === 'designer' ? 'Designer' : 'Social Media'}</p>
+                      </div>
+                      <ChevronDown size={14} className={'text-gray-400 dark:text-white/40 transition-transform duration-200 flex-shrink-0 ' + (isExpanded ? 'rotate-180' : '')} />
+                    </div>
+                    <div className={'overflow-hidden transition-all duration-200 ' + (isExpanded ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0')}>
+                      <div onClick={() => setFiltroMembro(isActive ? 'todos' : String(m.id))} className="grid grid-cols-4 gap-1.5 px-3 pb-2.5">
+                        {[{n:stats.total,l:'Total',c:'text-gray-600 dark:text-white/60',bg:'bg-gray-100 dark:bg-white/[0.06]'},{n:stats.pendente,l:'Pend',c:'text-yellow-700 dark:text-yellow-400',bg:'bg-yellow-50 dark:bg-yellow-500/10'},{n:stats.producao,l:'Prod',c:'text-blue-700 dark:text-blue-400',bg:'bg-blue-50 dark:bg-blue-500/10'},{n:stats.atrasado,l:'Atras',c:'text-red-600 dark:text-red-400',bg:'bg-red-50 dark:bg-red-500/10'}].map((s,i) => (
+                          <div key={i} className={'text-center rounded-lg py-1 ' + s.bg}>
+                            <p className={'text-xs font-extrabold ' + s.c}>{s.n}</p>
+                            <p className="text-gray-400 dark:text-white/30" style={{fontSize:8,textTransform:'uppercase',letterSpacing:0.5}}>{s.l}</p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )
@@ -1537,12 +1550,12 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
             </div>
 
             {/* Busca (Designer) */}
-            <div className="relative">
+            <div className="relative" style={{width:240}}>
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/40" />
               <input
                 value={filtroBusca}
                 onChange={e => setFiltroBusca(e.target.value)}
-                placeholder="Buscar demanda por título..."
+                placeholder="Buscar demanda..."
                 className="w-full pl-9 pr-8 py-2 rounded-lg border border-gray-200 dark:border-white/[0.10] bg-white dark:bg-white/[0.06] text-sm text-gray-700 dark:text-white/80 placeholder-gray-400 dark:placeholder-white/30 outline-none focus:ring-2 focus:ring-accent/40 transition"
               />
               {filtroBusca && (
@@ -1775,23 +1788,29 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
 
       {/* ===== SOCIAL MEDIA VIEW ===== */}
       {isSocialMedia && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div onClick={() => { setFiltro('todas'); setCalendarFilter('todos') }} className="bg-white dark:bg-white/[0.04] rounded-xl border border-gray-100 dark:border-white/[0.08] p-4 shadow-sm cursor-pointer hover:border-blue-200 dark:hover:border-blue-500/30 transition">
-            <div className="flex items-center justify-between mb-1"><span className="text-xs text-gray-400 dark:text-white/40 font-semibold uppercase">Total Posts</span><Megaphone size={14} className="text-blue-400" /></div>
-            <p className="text-2xl font-bold text-blue-600">{totalPosts}</p><span className="text-xs text-gray-400 dark:text-white/40">programados</span>
-          </div>
-          <div onClick={() => { setFiltro('pendentes'); setCalendarFilter('pendente') }} className="bg-white dark:bg-white/[0.04] rounded-xl border border-gray-100 dark:border-white/[0.08] p-4 shadow-sm cursor-pointer hover:border-yellow-200 dark:hover:border-yellow-500/30 transition">
-            <div className="flex items-center justify-between mb-1"><span className="text-xs text-gray-400 dark:text-white/40 font-semibold uppercase">Pendentes</span><Clock size={14} className="text-yellow-400" /></div>
-            <p className="text-2xl font-bold text-yellow-600">{pendentesPost}</p><span className="text-xs text-gray-400 dark:text-white/40">posts</span>
-          </div>
-          <div onClick={() => { setFiltro('atrasadas'); setCalendarFilter('atrasado') }} className="bg-white dark:bg-white/[0.04] rounded-xl border border-gray-100 dark:border-white/[0.08] p-4 shadow-sm cursor-pointer hover:border-red-200 dark:hover:border-red-500/30 transition">
-            <div className="flex items-center justify-between mb-1"><span className="text-xs text-gray-400 dark:text-white/40 font-semibold uppercase">Atrasados</span><AlertCircle size={14} className="text-red-400" /></div>
-            <p className="text-2xl font-bold text-red-600">{atrasadosPost}</p><span className="text-xs text-gray-400 dark:text-white/40">posts</span>
-          </div>
-          <div onClick={() => { setFiltro('todas') }} className="bg-white dark:bg-white/[0.04] rounded-xl border border-gray-100 dark:border-white/[0.08] p-4 shadow-sm cursor-pointer hover:border-blue-200 dark:hover:border-blue-500/30 transition">
-            <div className="flex items-center justify-between mb-1"><span className="text-xs text-gray-400 dark:text-white/40 font-semibold uppercase">Briefings</span><Palette size={14} className="text-blue-400" /></div>
-            <p className="text-2xl font-bold text-blue-600">{totalBriefings}</p><span className="text-xs text-gray-400 dark:text-white/40">para revisar</span>
-          </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          {[
+            { label: 'Total Posts', value: totalPosts, sub: 'programados', icon: <Megaphone size={13} className="text-blue-400" />, color: 'text-blue-600', hover: 'hover:border-blue-200 dark:hover:border-blue-500/30', onClick: () => { setFiltro('todas'); setCalendarFilter('todos') } },
+            { label: 'Pendentes', value: pendentesPost, sub: 'posts', icon: <Clock size={13} className="text-yellow-400" />, color: 'text-yellow-600', hover: 'hover:border-yellow-200 dark:hover:border-yellow-500/30', onClick: () => { setFiltro('pendentes'); setCalendarFilter('pendente') } },
+            { label: 'Atrasados', value: atrasadosPost, sub: 'posts', icon: <AlertCircle size={13} className="text-red-400" />, color: 'text-red-600', hover: 'hover:border-red-200 dark:hover:border-red-500/30', onClick: () => { setFiltro('atrasadas'); setCalendarFilter('atrasado') } },
+            { label: 'Briefings', value: totalBriefings, sub: 'para revisar', icon: <Palette size={13} className="text-blue-400" />, color: 'text-blue-600', hover: 'hover:border-blue-200 dark:hover:border-blue-500/30', onClick: () => { setFiltro('todas') } },
+          ].map((card, i) => (
+            <div key={i} className={'bg-white dark:bg-white/[0.04] rounded-xl border border-gray-100 dark:border-white/[0.08] shadow-sm cursor-pointer transition ' + card.hover}>
+              <div onClick={() => setStatsExpanded(prev => prev === i ? null : i)} className="flex items-center justify-between px-3 py-2">
+                <div className="flex items-center gap-1.5">
+                  {card.icon}
+                  <span className="text-[11px] text-gray-500 dark:text-white/50 font-semibold uppercase">{card.label}</span>
+                </div>
+                <ChevronDown size={14} className={'text-gray-400 dark:text-white/40 transition-transform duration-200 ' + (statsExpanded === i ? 'rotate-180' : '')} />
+              </div>
+              <div className={'overflow-hidden transition-all duration-200 ' + (statsExpanded === i ? 'max-h-16 opacity-100' : 'max-h-0 opacity-0')}>
+                <div onClick={card.onClick} className="px-3 pb-2">
+                  <p className={'text-xl font-bold ' + card.color}>{card.value}</p>
+                  <span className="text-[10px] text-gray-400 dark:text-white/40">{card.sub}</span>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -1804,7 +1823,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
               <option value="todos">Todos os eventos</option>
               {eventosAtivos.map(ev => <option key={ev.id} value={ev.id}>{ev.nome}</option>)}
             </select>
-            <div className="relative flex-1 min-w-[140px]">
+            <div className="relative" style={{width:240}}>
               <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/40" />
               <input
                 value={filtroBusca}
