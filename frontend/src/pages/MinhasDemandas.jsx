@@ -674,17 +674,26 @@ export default function MinhasDemandas() {
   const hoje = new Date().toISOString().split('T')[0]
   const eventosAtivos = data.eventos.filter(ev => !ev.data_evento || ev.data_evento >= hoje)
 
-  function isAtrasado(item, campoData) {
-    const d = item[campoData] || ''
-    const dataISO = d.includes('/') ? d.split('/').reverse().join('-') : d.slice(0,10)
-    return dataISO && dataISO < hoje && !['concluido','aprovado','publicado','cancelado'].includes(item.status)
+  // Status efetivo: tag visual tem prioridade sobre status do banco
+  function getStatusEfetivo(tipo, item) {
+    const tag = getTag(tipo, item.id)
+    if (tag && ['pendente','em_andamento','recebido','aprovado','publicado'].includes(tag)) return tag === 'recebido' ? 'em_revisao' : tag
+    return item.status
   }
 
-  function filtrarPorData(items, campoData) {
+  function isAtrasado(item, campoData, tipo) {
+    const d = item[campoData] || ''
+    const dataISO = d.includes('/') ? d.split('/').reverse().join('-') : d.slice(0,10)
+    const st = tipo ? getStatusEfetivo(tipo, item) : item.status
+    return dataISO && dataISO < hoje && !['concluido','aprovado','publicado','cancelado'].includes(st)
+  }
+
+  function filtrarPorData(items, campoData, tipo) {
     if (filtro === 'todas') return items
     return items.filter(item => {
       const d = item[campoData] || ''
       const dataISO = d.includes('/') ? d.split('/').reverse().join('-') : d.slice(0,10)
+      const st = tipo ? getStatusEfetivo(tipo, item) : item.status
       if (filtro === 'hoje') return dataISO === hoje
       if (filtro === 'semana') {
         const dt = new Date(dataISO + 'T12:00:00')
@@ -692,9 +701,9 @@ export default function MinhasDemandas() {
         const diff = (dt - now) / (1000 * 60 * 60 * 24)
         return diff >= -1 && diff <= 7
       }
-      if (filtro === 'atrasadas') return dataISO < hoje && !['concluido','aprovado','publicado','cancelado'].includes(item.status)
-      if (filtro === 'pendentes') return ['pendente','em_andamento'].includes(item.status)
-      if (filtro === 'aprovados') return ['aprovado','publicado','concluido'].includes(item.status)
+      if (filtro === 'atrasadas') return dataISO < hoje && !['concluido','aprovado','publicado','cancelado'].includes(st)
+      if (filtro === 'pendentes') return ['pendente','em_andamento'].includes(st)
+      if (filtro === 'aprovados') return ['aprovado','publicado','concluido'].includes(st)
       return true
     })
   }
@@ -706,28 +715,13 @@ export default function MinhasDemandas() {
     return p[2] + ' ' + ms[parseInt(p[1])-1]
   }
 
-  const briefingsFiltrados = filtroEvento === 'todos' ? filtrarPorData(data.briefings, 'data_vencimento') : filtrarPorData(data.briefings, 'data_vencimento').filter(b => b.id_evento === Number(filtroEvento))
-  const postsFiltrados = filtroEvento === 'todos' ? filtrarPorData(data.posts, 'data_publicacao') : filtrarPorData(data.posts, 'data_publicacao').filter(p => p.id_evento === Number(filtroEvento))
-
-  // Status efetivo: usa a tag visual se existir, senão o status do banco
-  function statusEfetivo(tipo, item) {
-    const tag = getTag(tipo, item.id)
-    if (tag) return tag
-    return item.status
-  }
+  const briefingsFiltrados = filtroEvento === 'todos' ? filtrarPorData(data.briefings, 'data_vencimento', 'briefing') : filtrarPorData(data.briefings, 'data_vencimento', 'briefing').filter(b => b.id_evento === Number(filtroEvento))
+  const postsFiltrados = filtroEvento === 'todos' ? filtrarPorData(data.posts, 'data_publicacao', 'post') : filtrarPorData(data.posts, 'data_publicacao', 'post').filter(p => p.id_evento === Number(filtroEvento))
 
   const totalBriefings = data.briefings.length
   const totalPosts = data.posts.length
-  const pendentesPost = data.posts.filter(p => {
-    const st = statusEfetivo('post', p)
-    return ['pendente','em_andamento'].includes(st)
-  }).length
-  const atrasadosPost = data.posts.filter(p => {
-    const tag = getTag('post', p.id)
-    if (tag === 'publicado' || tag === 'aprovado') return false
-    if (tag === 'atrasado') return true
-    return isAtrasado(p, 'data_publicacao')
-  }).length
+  const pendentesPost = data.posts.filter(p => ['pendente','em_andamento'].includes(getStatusEfetivo('post', p))).length
+  const atrasadosPost = data.posts.filter(p => isAtrasado(p, 'data_publicacao', 'post')).length
 
   if (loading) return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
 
@@ -1565,8 +1559,8 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
       {/* ===== DESIGNER VIEW (KANBAN + MATERIAIS) ===== */}
       {isDesigner && (() => {
         const bListBase = filtroEvento === 'todos' ? data.briefings : data.briefings.filter(b => b.id_evento === Number(filtroEvento))
-        const bList = filtrarPorData(bListBase, 'data_vencimento')
-        const atrasados = bListBase.filter(b => isAtrasado(b, 'data_vencimento')).length
+        const bList = filtrarPorData(bListBase, 'data_vencimento', 'briefing')
+        const atrasados = bListBase.filter(b => isAtrasado(b, 'data_vencimento', 'briefing')).length
         return (
           <div className="space-y-4">
             {/* Tab toggle */}
