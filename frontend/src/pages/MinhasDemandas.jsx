@@ -721,9 +721,11 @@ export default function MinhasDemandas() {
   const totalBriefings = data.briefings.length
   const totalPosts = data.posts.length
 
-  // Contadores baseados SOMENTE na tag salva no tagsStore
-  const pendentesPost = data.posts.filter(p => getTag('post', p.id) === 'pendente' || getTag('post', p.id) === 'em_andamento').length
+  // Contadores baseados SOMENTE na tag salva no tagsStore (posts + briefings)
+  const pendentesPost = data.posts.filter(p => { const t = getTag('post', p.id); return t === 'pendente' || t === 'em_andamento' }).length
+    + data.briefings.filter(b => { const t = getTag('briefing', b.id); return t === 'pendente' || t === 'em_andamento' }).length
   const atrasadosPost = data.posts.filter(p => getTag('post', p.id) === 'atrasado').length
+    + data.briefings.filter(b => getTag('briefing', b.id) === 'atrasado').length
 
   if (loading) return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
 
@@ -1050,9 +1052,11 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                 {adminDetalhe && (() => {
                   const d = adminDetalhe
                   const todayCheck = new Date().toISOString().split('T')[0]
-                  const st = stConfig[d.status] || stConfig.pendente
+                  const adminTag = getTag(d._tipo, d.id)
+                  const adminTagStatus = adminTag && TAGS_STATUS.find(t => t.key === adminTag)
+                  const st = adminTagStatus ? { bg:'', text:'', border:'', dot:'bg-gray-500', label: adminTagStatus.label } : (stConfig[d.status] || stConfig.pendente)
                   const resp = getResponsavel(d)
-                  const atrasado = d._data?.slice(0,10) < todayCheck && !['concluido','aprovado','publicado','cancelado'].includes(d.status)
+                  const atrasado = adminTag === 'atrasado' || (!adminTag && d._data?.slice(0,10) < todayCheck && !['concluido','aprovado','publicado','cancelado'].includes(d.status))
                   const etqs = getEtiquetas(d._tipo, d.id)
 
                   function toggleMultiAdmin(field, val) {
@@ -2223,9 +2227,14 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
               <div className="sticky top-0 bg-white dark:bg-[#1c1c24] border-b border-gray-100 dark:border-white/[0.08] px-5 py-4 flex items-center justify-between rounded-t-2xl z-10">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className={'text-[11px] font-bold px-2.5 py-1 rounded-full border ' + (statusColors[d.status] || 'bg-gray-100 text-gray-600 border-gray-200')}>
-                      {statusLabels[d.status] || d.status}
-                    </span>
+                    {(() => {
+                      const tag = getTag(d._tipo, d.id)
+                      const tagObj = tag && TAGS_STATUS.find(t => t.key === tag)
+                      if (tagObj) {
+                        return <span className="text-[11px] font-bold px-2.5 py-1 rounded-full border" style={{ backgroundColor: tagObj.color + '20', color: tagObj.color, borderColor: tagObj.color + '40' }}>{tagObj.label}</span>
+                      }
+                      return <span className={'text-[11px] font-bold px-2.5 py-1 rounded-full border ' + (statusColors[d.status] || 'bg-gray-100 text-gray-600 border-gray-200')}>{statusLabels[d.status] || d.status}</span>
+                    })()}
                     <span className={'text-[11px] font-bold px-2.5 py-1 rounded-full ' + (d._tipo === 'briefing' ? 'bg-violet-100 text-violet-700' : 'bg-pink-100 text-pink-700')}>
                       {d._tipo === 'briefing' ? '✏️ Briefing' : '📲 Post'}
                     </span>
