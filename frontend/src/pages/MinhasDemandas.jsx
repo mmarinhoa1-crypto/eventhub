@@ -718,10 +718,15 @@ export default function MinhasDemandas() {
   const briefingsFiltrados = filtroEvento === 'todos' ? filtrarPorData(data.briefings, 'data_vencimento', 'briefing') : filtrarPorData(data.briefings, 'data_vencimento', 'briefing').filter(b => b.id_evento === Number(filtroEvento))
   const postsFiltrados = filtroEvento === 'todos' ? filtrarPorData(data.posts, 'data_publicacao', 'post') : filtrarPorData(data.posts, 'data_publicacao', 'post').filter(p => p.id_evento === Number(filtroEvento))
 
-  const totalBriefings = data.briefings.length
-  const totalPosts = data.posts.length
+  // Só contar posts/briefings de eventos ativos (futuros)
+  const activeEventIds = new Set(eventosAtivos.map(ev => ev.id))
+  const postsAtivos = data.posts.filter(p => activeEventIds.has(p.id_evento))
+  const briefingsAtivos = data.briefings.filter(b => activeEventIds.has(b.id_evento))
 
-  // Usar mesma lógica do calendário: tag manual > autoTag (baseada em data+status)
+  const totalBriefings = briefingsAtivos.length
+  const totalPosts = postsAtivos.length
+
+  // Mesma lógica do calendário: tag manual > autoTag (baseada em data+status)
   function getTagEfetiva(tipo, item, campoData) {
     const tag = getTag(tipo, item.id)
     if (tag) return tag
@@ -730,11 +735,11 @@ export default function MinhasDemandas() {
     return STATUS_TO_TAG[item.status] || null
   }
 
-  const pendentesPost = data.posts.filter(p => {
+  const pendentesPost = postsAtivos.filter(p => {
     const t = getTagEfetiva('post', p, 'data_publicacao')
     return t === 'pendente' || t === 'em_andamento'
   }).length
-  const atrasadosPost = data.posts.filter(p => getTagEfetiva('post', p, 'data_publicacao') === 'atrasado').length
+  const atrasadosPost = postsAtivos.filter(p => getTagEfetiva('post', p, 'data_publicacao') === 'atrasado').length
 
   if (loading) return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
 
