@@ -498,12 +498,27 @@ export default function MinhasDemandas() {
     return tagsStore[(tipo || 'item') + '-' + id] || null
   }
 
+  // Mapeamento tag → status real do backend
+  const TAG_TO_STATUS = {
+    pendente: 'pendente',
+    em_andamento: 'em_andamento',
+    recebido: 'em_revisao',
+    aprovado: 'aprovado',
+    publicado: 'publicado',
+  }
+
   function setTagStatus(tipo, id, tagKey) {
     const key = (tipo || 'item') + '-' + id
     const current = tagsStore[key]
     const newTag = current === tagKey ? null : tagKey
     setTagsStore(prev => ({ ...prev, [key]: newTag }))
     api.put('/tags-demandas/' + tipo + '/' + id, { tag_key: newTag }).catch(() => {})
+    // Sincronizar status real quando a tag corresponde a um status do backend
+    if (newTag && TAG_TO_STATUS[newTag]) {
+      const novoStatus = TAG_TO_STATUS[newTag]
+      const endpoint = tipo === 'briefing' ? '/briefings/' + id : '/cronograma/' + id
+      api.patch(endpoint, { status: novoStatus }).then(() => carregar()).catch(() => {})
+    }
   }
 
   async function carregarComentarios(tipo, id, isAdmin = false) {
