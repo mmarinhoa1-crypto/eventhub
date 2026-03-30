@@ -720,8 +720,21 @@ export default function MinhasDemandas() {
 
   const totalBriefings = data.briefings.length
   const totalPosts = data.posts.length
-  const pendentesPost = data.posts.filter(p => ['pendente','em_andamento'].includes(getStatusEfetivo('post', p))).length
-  const atrasadosPost = data.posts.filter(p => isAtrasado(p, 'data_publicacao', 'post')).length
+
+  // Usar mesma lógica do calendário: tag manual > autoTag (baseada em data+status)
+  function getTagEfetiva(tipo, item, campoData) {
+    const tag = getTag(tipo, item.id)
+    if (tag) return tag
+    const d = (item[campoData] || '').slice(0, 10)
+    if (d && d < hoje && !['concluido','aprovado','publicado','cancelado'].includes(item.status)) return 'atrasado'
+    return STATUS_TO_TAG[item.status] || null
+  }
+
+  const pendentesPost = data.posts.filter(p => {
+    const t = getTagEfetiva('post', p, 'data_publicacao')
+    return t === 'pendente' || t === 'em_andamento'
+  }).length
+  const atrasadosPost = data.posts.filter(p => getTagEfetiva('post', p, 'data_publicacao') === 'atrasado').length
 
   if (loading) return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
 
