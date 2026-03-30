@@ -709,10 +709,25 @@ export default function MinhasDemandas() {
   const briefingsFiltrados = filtroEvento === 'todos' ? filtrarPorData(data.briefings, 'data_vencimento') : filtrarPorData(data.briefings, 'data_vencimento').filter(b => b.id_evento === Number(filtroEvento))
   const postsFiltrados = filtroEvento === 'todos' ? filtrarPorData(data.posts, 'data_publicacao') : filtrarPorData(data.posts, 'data_publicacao').filter(p => p.id_evento === Number(filtroEvento))
 
+  // Status efetivo: usa a tag visual se existir, senão o status do banco
+  function statusEfetivo(tipo, item) {
+    const tag = getTag(tipo, item.id)
+    if (tag) return tag
+    return item.status
+  }
+
   const totalBriefings = data.briefings.length
   const totalPosts = data.posts.length
-  const pendentesPost = data.posts.filter(p => ['pendente','em_andamento'].includes(p.status)).length
-  const atrasadosPost = data.posts.filter(p => isAtrasado(p, 'data_publicacao')).length
+  const pendentesPost = data.posts.filter(p => {
+    const st = statusEfetivo('post', p)
+    return ['pendente','em_andamento'].includes(st)
+  }).length
+  const atrasadosPost = data.posts.filter(p => {
+    const tag = getTag('post', p.id)
+    if (tag === 'publicado' || tag === 'aprovado') return false
+    if (tag === 'atrasado') return true
+    return isAtrasado(p, 'data_publicacao')
+  }).length
 
   if (loading) return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
 
