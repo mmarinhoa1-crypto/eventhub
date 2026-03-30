@@ -718,14 +718,16 @@ export default function MinhasDemandas() {
   const briefingsFiltrados = filtroEvento === 'todos' ? filtrarPorData(data.briefings, 'data_vencimento', 'briefing') : filtrarPorData(data.briefings, 'data_vencimento', 'briefing').filter(b => b.id_evento === Number(filtroEvento))
   const postsFiltrados = filtroEvento === 'todos' ? filtrarPorData(data.posts, 'data_publicacao', 'post') : filtrarPorData(data.posts, 'data_publicacao', 'post').filter(p => p.id_evento === Number(filtroEvento))
 
-  const totalBriefings = data.briefings.length
-  const totalPosts = data.posts.length
+  // Lista unificada de todas as demandas (posts + briefings = mesma coisa)
+  const todasDemandas = [
+    ...data.posts.map(p => ({ ...p, _tipo: 'post' })),
+    ...data.briefings.map(b => ({ ...b, _tipo: 'briefing' })),
+  ]
+  const totalDemandas = todasDemandas.length
 
-  // Contadores baseados SOMENTE na tag salva no tagsStore (posts + briefings)
-  const pendentesPost = data.posts.filter(p => { const t = getTag('post', p.id); return t === 'pendente' || t === 'em_andamento' }).length
-    + data.briefings.filter(b => { const t = getTag('briefing', b.id); return t === 'pendente' || t === 'em_andamento' }).length
-  const atrasadosPost = data.posts.filter(p => getTag('post', p.id) === 'atrasado').length
-    + data.briefings.filter(b => getTag('briefing', b.id) === 'atrasado').length
+  // Contadores baseados SOMENTE na tag salva no tagsStore
+  const pendentesDemandas = todasDemandas.filter(d => { const t = getTag(d._tipo, d.id); return t === 'pendente' || t === 'em_andamento' }).length
+  const atrasadosDemandas = todasDemandas.filter(d => getTag(d._tipo, d.id) === 'atrasado').length
 
   if (loading) return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
 
@@ -1820,10 +1822,9 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
       {isSocialMedia && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
           {[
-            { label: 'Total Posts', value: totalPosts, sub: 'programados', icon: <Megaphone size={13} className="text-blue-400" />, color: 'text-blue-600', hover: 'hover:border-blue-200 dark:hover:border-blue-500/30', onClick: () => { setFiltro('todas'); setCalendarFilter('todos') } },
-            { label: 'Pendentes', value: pendentesPost, sub: 'posts', icon: <Clock size={13} className="text-yellow-400" />, color: 'text-yellow-600', hover: 'hover:border-yellow-200 dark:hover:border-yellow-500/30', onClick: () => { setFiltro('pendentes'); setCalendarFilter('pendente') } },
-            { label: 'Atrasados', value: atrasadosPost, sub: 'posts', icon: <AlertCircle size={13} className="text-red-400" />, color: 'text-red-600', hover: 'hover:border-red-200 dark:hover:border-red-500/30', onClick: () => { setFiltro('atrasadas'); setCalendarFilter('atrasado') } },
-            { label: 'Briefings', value: totalBriefings, sub: 'para revisar', icon: <Palette size={13} className="text-blue-400" />, color: 'text-blue-600', hover: 'hover:border-blue-200 dark:hover:border-blue-500/30', onClick: () => { setFiltro('todas') } },
+            { label: 'Total Demandas', value: totalDemandas, sub: 'programadas', icon: <Megaphone size={13} className="text-blue-400" />, color: 'text-blue-600', hover: 'hover:border-blue-200 dark:hover:border-blue-500/30', onClick: () => { setFiltro('todas'); setCalendarFilter('todos') } },
+            { label: 'Pendentes', value: pendentesDemandas, sub: 'demandas', icon: <Clock size={13} className="text-yellow-400" />, color: 'text-yellow-600', hover: 'hover:border-yellow-200 dark:hover:border-yellow-500/30', onClick: () => { setFiltro('pendentes'); setCalendarFilter('pendente') } },
+            { label: 'Atrasados', value: atrasadosDemandas, sub: 'demandas', icon: <AlertCircle size={13} className="text-red-400" />, color: 'text-red-600', hover: 'hover:border-red-200 dark:hover:border-red-500/30', onClick: () => { setFiltro('atrasadas'); setCalendarFilter('atrasado') } },
           ].map((card, i) => (
             <div key={i} onClick={card.onClick} className={'bg-white dark:bg-white/[0.04] rounded-xl border border-gray-100 dark:border-white/[0.08] shadow-sm cursor-pointer transition ' + card.hover}>
               <div onClick={e => { e.stopPropagation(); setStatsExpanded(prev => !prev) }} className="flex items-center justify-between px-3 py-2">
