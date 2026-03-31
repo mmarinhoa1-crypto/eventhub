@@ -729,9 +729,9 @@ export default function MinhasDemandas() {
           const items = allItems.filter(d => pertenceAoMembro(d, membroId))
           return {
             total: items.length,
-            pendente: items.filter(x => { const t = adminTagEfetiva(x); return t === 'pendente' || t === 'em_andamento' }).length,
-            producao: items.filter(x => { const t = adminTagEfetiva(x); return t === 'recebido' }).length,
-            atrasado: items.filter(x => adminTagEfetiva(x) === 'atrasado').length,
+            pendente: items.filter(x => { const t = tagEfetiva(x); return t === 'pendente' || t === 'em_andamento' }).length,
+            producao: items.filter(x => { const t = tagEfetiva(x); return t === 'recebido' }).length,
+            atrasado: items.filter(x => tagEfetiva(x) === 'atrasado').length,
           }
         }
 
