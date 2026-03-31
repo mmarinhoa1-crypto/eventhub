@@ -710,19 +710,23 @@ export default function MinhasDemandas() {
         const eventosMap = {}
         data.eventos.forEach(ev => { eventosMap[ev.id] = ev })
 
+        // Verifica se uma demanda pertence a um membro (social media ou designer)
+        function pertenceAoMembro(item, membroId) {
+          const ev = eventosMap[item.id_evento]
+          if (!ev) return false
+          if (ev.social_media_id === membroId) return true
+          if (item.aparecer_designer && ev.designer_id === membroId) return true
+          return false
+        }
+
         function getResponsavel(item) {
           const ev = eventosMap[item.id_evento]
           if (!ev) return null
-          // Demanda aparece para o social media do evento; se aparecer_designer, também para o designer
           return equipe.find(m => m.id === ev.social_media_id) || (item.aparecer_designer ? equipe.find(m => m.id === ev.designer_id) : null)
         }
 
-        function adminTagEfetiva(x) {
-          return tagEfetiva(x)
-        }
-
         function getStats(membroId) {
-          const items = allItems.filter(d => { const r = getResponsavel(d); return r && r.id === membroId })
+          const items = allItems.filter(d => pertenceAoMembro(d, membroId))
           return {
             total: items.length,
             pendente: items.filter(x => { const t = adminTagEfetiva(x); return t === 'pendente' || t === 'em_andamento' }).length,
@@ -732,8 +736,14 @@ export default function MinhasDemandas() {
         }
 
         let filteredItems = allItems
-        if (filtroMembro !== 'todos') filteredItems = filteredItems.filter(d => { const r = getResponsavel(d); return r && r.id === Number(filtroMembro) })
-        else if (filtroFuncao !== 'todos') filteredItems = filteredItems.filter(d => { const r = getResponsavel(d); return r && r.funcao === filtroFuncao })
+        if (filtroMembro !== 'todos') filteredItems = filteredItems.filter(d => pertenceAoMembro(d, Number(filtroMembro)))
+        else if (filtroFuncao !== 'todos') filteredItems = filteredItems.filter(d => {
+          const ev = eventosMap[d.id_evento]
+          if (!ev) return false
+          if (filtroFuncao === 'social_media') return equipe.some(m => m.id === ev.social_media_id && m.funcao === 'social_media')
+          if (filtroFuncao === 'designer') return d.aparecer_designer && equipe.some(m => m.id === ev.designer_id && m.funcao === 'designer')
+          return false
+        })
         if (filtroEvento !== 'todos') filteredItems = filteredItems.filter(d => d.id_evento === Number(filtroEvento))
         if (filtroStatusAdmin !== 'todos') {
           filteredItems = filteredItems.filter(d => {
