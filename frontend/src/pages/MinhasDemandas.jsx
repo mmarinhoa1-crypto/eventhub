@@ -166,11 +166,10 @@ export default function MinhasDemandas() {
   }, [])
 
   useEffect(() => {
-    if (data.briefings.length || data.posts.length) {
-      data.briefings.forEach(b => carregarCardArquivos('briefing', b.id))
+    if (data.posts.length) {
       data.posts.forEach(p => carregarCardArquivos('post', p.id))
     }
-  }, [data.briefings.length, data.posts.length])
+  }, [data.posts.length])
 
   useEffect(() => {
     if (designerTab === 'materiais' && data.eventos.length > 0 && Object.keys(materiaisArquivos).length === 0) {
@@ -197,13 +196,8 @@ export default function MinhasDemandas() {
     if (!tipo || !id) return
     const numId = Number(id)
     let item = null
-    if (tipo === 'briefing') {
-      const b = data.briefings.find(x => x.id === numId)
-      if (b) item = { ...b, _tipo: 'briefing', _data: b.data_vencimento }
-    } else if (tipo === 'post') {
-      const p = data.posts.find(x => x.id === numId)
-      if (p) item = { ...p, _tipo: 'post', _data: p.data_publicacao }
-    }
+    const p = data.posts.find(x => x.id === numId)
+    if (p) item = { ...p, _tipo: 'post', _data: p.data_publicacao }
     if (item) {
       if (isGestor) {
         setAdminDetalhe(item)
@@ -216,7 +210,7 @@ export default function MinhasDemandas() {
       }
       setSearchParams({}, { replace: true })
     }
-  }, [loading, data.briefings.length, data.posts.length])
+  }, [loading, data.posts.length])
 
   async function carregarArquivos(briefingId) {
     try {
@@ -227,7 +221,7 @@ export default function MinhasDemandas() {
 
   async function carregarArquivosDetalhe(tipo, id) {
     try {
-      const endpoint = tipo === 'briefing' ? '/briefings/' + id + '/arquivos' : '/cronograma/' + id + '/arquivos'
+      const endpoint = '/cronograma/' + id + '/arquivos'
       const { data } = await api.get(endpoint)
       setArquivos(data.filter(a => !a.is_referencia))
       setRefArquivos(data.filter(a => a.is_referencia))
@@ -237,7 +231,7 @@ export default function MinhasDemandas() {
   async function carregarAdminArqs(item) {
     setAdminLoadArqs(true)
     try {
-      const endpoint = item._tipo === 'briefing' ? '/briefings/' + item.id + '/arquivos' : '/cronograma/' + item.id + '/arquivos'
+      const endpoint = '/cronograma/' + item.id + '/arquivos'
       const { data } = await api.get(endpoint)
       setAdminArquivos(data.filter(a => !a.is_referencia))
       setAdminRefArquivos(data.filter(a => a.is_referencia))
@@ -250,7 +244,7 @@ export default function MinhasDemandas() {
     try {
       const formData = new FormData()
       formData.append('arquivo', file)
-      const endpoint = tipo === 'briefing' ? '/briefings/' + id + '/arquivos' : '/cronograma/' + id + '/arquivos'
+      const endpoint = '/cronograma/' + id + '/arquivos'
       await api.post(endpoint, formData, { timeout: 600000 })
       toast.success('Arquivo enviado!')
       carregarArquivosDetalhe(tipo, id)
@@ -272,7 +266,7 @@ export default function MinhasDemandas() {
       const formData = new FormData()
       formData.append('arquivo', file)
       formData.append('is_referencia', 'true')
-      const endpoint = tipo === 'briefing' ? '/briefings/' + id + '/arquivos' : '/cronograma/' + id + '/arquivos'
+      const endpoint = '/cronograma/' + id + '/arquivos'
       await api.post(endpoint, formData, { timeout: 600000 })
       toast.success('Referência enviada!')
       carregarArquivosDetalhe(tipo, id)
@@ -297,31 +291,16 @@ export default function MinhasDemandas() {
 
   async function salvarEdicao() {
     try {
-      if (detalhe._tipo === 'briefing') {
-        await api.patch('/briefings/' + detalhe.id, editForm)
-        // Toggle designer usando cronograma_id do briefing vinculado
-        if (editForm.aparecer_designer !== undefined && detalhe.cronograma_id) {
-          await api.post('/cronograma/' + detalhe.cronograma_id + '/toggle-designer', {
-            ativo: editForm.aparecer_designer,
-            descricao: editForm.descricao || '',
-            tipo_conteudo: editForm.tipo_conteudo || '',
-            formato: editForm.formato || '',
-            referencia: editForm.referencia || '',
-            musica: editForm.musica || '',
-          })
-        }
-      } else {
-        await api.patch('/cronograma/' + detalhe.id, editForm)
-        if (editForm.aparecer_designer !== undefined) {
-          await api.post('/cronograma/' + detalhe.id + '/toggle-designer', {
-            ativo: editForm.aparecer_designer,
-            descricao: editForm.descricao || '',
-            tipo_conteudo: editForm.tipo_conteudo || '',
-            formato: editForm.formato || '',
-            referencia: editForm.referencia || '',
-            musica: editForm.musica || '',
-          })
-        }
+      await api.patch('/cronograma/' + detalhe.id, editForm)
+      if (editForm.aparecer_designer !== undefined) {
+        await api.post('/cronograma/' + detalhe.id + '/toggle-designer', {
+          ativo: editForm.aparecer_designer,
+          descricao: editForm.descricao || '',
+          tipo_conteudo: editForm.tipo_conteudo || '',
+          formato: editForm.formato || '',
+          referencia: editForm.referencia || '',
+          musica: editForm.musica || '',
+        })
       }
       toast.success('Atualizado!')
       setDetalhe({...detalhe, ...editForm})
@@ -332,32 +311,16 @@ export default function MinhasDemandas() {
 
   async function adminSalvarEdicao() {
     try {
-      if (adminDetalhe._tipo === 'briefing') {
-        await api.patch('/briefings/' + adminDetalhe.id, adminEditForm)
-        // Toggle designer usando cronograma_id do briefing vinculado
-        if (adminEditForm.aparecer_designer !== undefined && adminDetalhe.cronograma_id) {
-          await api.post('/cronograma/' + adminDetalhe.cronograma_id + '/toggle-designer', {
-            ativo: adminEditForm.aparecer_designer,
-            descricao: adminEditForm.descricao || '',
-            tipo_conteudo: adminEditForm.tipo_conteudo || '',
-            formato: adminEditForm.formato || '',
-            referencia: adminEditForm.referencia || '',
-            musica: adminEditForm.musica || '',
-          })
-        }
-      } else {
-        await api.patch('/cronograma/' + adminDetalhe.id, adminEditForm)
-        // Sincronizar visibilidade para o designer
-        if (adminEditForm.aparecer_designer !== undefined) {
-          await api.post('/cronograma/' + adminDetalhe.id + '/toggle-designer', {
-            ativo: adminEditForm.aparecer_designer,
-            descricao: adminEditForm.descricao || '',
-            tipo_conteudo: adminEditForm.tipo_conteudo || '',
-            formato: adminEditForm.formato || '',
-            referencia: adminEditForm.referencia || '',
-            musica: adminEditForm.musica || '',
-          })
-        }
+      await api.patch('/cronograma/' + adminDetalhe.id, adminEditForm)
+      if (adminEditForm.aparecer_designer !== undefined) {
+        await api.post('/cronograma/' + adminDetalhe.id + '/toggle-designer', {
+          ativo: adminEditForm.aparecer_designer,
+          descricao: adminEditForm.descricao || '',
+          tipo_conteudo: adminEditForm.tipo_conteudo || '',
+          formato: adminEditForm.formato || '',
+          referencia: adminEditForm.referencia || '',
+          musica: adminEditForm.musica || '',
+        })
       }
       toast.success('Atualizado!')
       setAdminDetalhe({...adminDetalhe, ...adminEditForm})
@@ -368,11 +331,7 @@ export default function MinhasDemandas() {
 
   async function atualizarStatus(tipo, id, novoStatus) {
     try {
-      if (tipo === 'briefing') {
-        await api.patch('/briefings/' + id, { status: novoStatus })
-      } else {
-        await api.patch('/cronograma/' + id, { status: novoStatus })
-      }
+      await api.patch('/cronograma/' + id, { status: novoStatus })
       toast.success('Status atualizado!')
       carregar()
     } catch { toast.error('Erro ao atualizar') }
@@ -380,7 +339,7 @@ export default function MinhasDemandas() {
 
   async function carregarCardArquivos(tipo, id) {
     try {
-      const endpoint = tipo === 'briefing' ? '/briefings/' + id + '/arquivos' : '/cronograma/' + id + '/arquivos'
+      const endpoint = '/cronograma/' + id + '/arquivos'
       const { data } = await api.get(endpoint)
       setCardArquivos(prev => ({...prev, [tipo + '-' + id]: data}))
     } catch {}
@@ -391,7 +350,7 @@ export default function MinhasDemandas() {
     try {
       const formData = new FormData()
       formData.append('arquivo', file)
-      const endpoint = tipo === 'briefing' ? '/briefings/' + id + '/arquivos' : '/cronograma/' + id + '/arquivos'
+      const endpoint = '/cronograma/' + id + '/arquivos'
       await api.post(endpoint, formData, { timeout: 600000 })
       toast.success('Arquivo enviado!', { id: toastId })
       carregarCardArquivos(tipo, id)
@@ -457,11 +416,7 @@ export default function MinhasDemandas() {
 
   async function atualizarData(tipo, id, novaData) {
     try {
-      if (tipo === 'briefing') {
-        await api.patch('/briefings/' + id, { data_vencimento: novaData })
-      } else {
-        await api.patch('/cronograma/' + id, { data_publicacao: novaData })
-      }
+      await api.patch('/cronograma/' + id, { data_publicacao: novaData })
       toast.success('Data atualizada!')
       carregar()
     } catch { toast.error('Erro ao atualizar data') }
@@ -516,7 +471,7 @@ export default function MinhasDemandas() {
     // Sincronizar status real quando a tag corresponde a um status do backend
     if (newTag && TAG_TO_STATUS[newTag]) {
       const novoStatus = TAG_TO_STATUS[newTag]
-      const endpoint = tipo === 'briefing' ? '/briefings/' + id : '/cronograma/' + id
+      const endpoint = '/cronograma/' + id
       api.patch(endpoint, { status: novoStatus }).then(() => carregar()).catch(() => {})
     }
   }
@@ -711,19 +666,15 @@ export default function MinhasDemandas() {
     return p[2] + ' ' + ms[parseInt(p[1])-1]
   }
 
-  const briefingsFiltrados = filtroEvento === 'todos' ? filtrarPorData(data.briefings, 'data_vencimento', 'briefing') : filtrarPorData(data.briefings, 'data_vencimento', 'briefing').filter(b => b.id_evento === Number(filtroEvento))
-  const postsFiltrados = filtroEvento === 'todos' ? filtrarPorData(data.posts, 'data_publicacao', 'post') : filtrarPorData(data.posts, 'data_publicacao', 'post').filter(p => p.id_evento === Number(filtroEvento))
+  const demandasFiltradas = filtroEvento === 'todos' ? filtrarPorData(data.posts, 'data_publicacao', 'post') : filtrarPorData(data.posts, 'data_publicacao', 'post').filter(p => p.id_evento === Number(filtroEvento))
 
-  // Lista unificada de todas as demandas (posts + briefings = mesma coisa)
-  const todasDemandas = [
-    ...data.posts.map(p => ({ ...p, _tipo: 'post', _data: p.data_publicacao })),
-    ...data.briefings.map(b => ({ ...b, _tipo: 'briefing', _data: b.data_vencimento })),
-  ]
+  // Lista unificada de todas as demandas (tudo é demanda, não existe mais briefing separado)
+  const todasDemandas = data.posts.map(p => ({ ...p, _tipo: 'post', _data: p.data_publicacao }))
   const totalDemandas = todasDemandas.length
 
   // Tag efetiva: 1) tag manual, 2) status do banco, 3) cálculo por data
   function tagEfetiva(d) {
-    const tag = getTag(d._tipo, d.id)
+    const tag = getTag('post', d.id)
     if (tag) return tag
     // Se o status do banco já indica concluído/publicado, não é atrasado
     if (['concluido','aprovado','publicado','cancelado'].includes(d.status)) return STATUS_TO_TAG[d.status] || d.status
@@ -747,7 +698,7 @@ export default function MinhasDemandas() {
           </div>
           <div>
             <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white/90">Minhas Demandas</h1>
-            <p className="text-sm text-gray-500 dark:text-white/50">{isDesigner ? 'Briefings e artes para criar' : isSocialMedia ? 'Posts e conteudos para publicar' : 'Acompanhe as entregas da equipe'}</p>
+            <p className="text-sm text-gray-500 dark:text-white/50">{isDesigner ? 'Demandas e artes para criar' : isSocialMedia ? 'Demandas e conteúdos para publicar' : 'Acompanhe as entregas da equipe'}</p>
           </div>
         </div>
       </div>
@@ -755,15 +706,15 @@ export default function MinhasDemandas() {
       {/* ===== ADMIN/DIRETOR VIEW ===== */}
       {isGestor && (() => {
         const equipeFiltrada = filtroFuncao === 'todos' ? equipe : equipe.filter(m => m.funcao === filtroFuncao)
-        const allItems = [...data.briefings.map(b => ({...b, _tipo:'briefing', _data: b.data_vencimento})), ...data.posts.map(p => ({...p, _tipo:'post', _data: p.data_publicacao}))]
+        const allItems = data.posts.map(p => ({...p, _tipo:'post', _data: p.data_publicacao}))
         const eventosMap = {}
         data.eventos.forEach(ev => { eventosMap[ev.id] = ev })
 
         function getResponsavel(item) {
           const ev = eventosMap[item.id_evento]
           if (!ev) return null
-          if (item._tipo === 'briefing') return equipe.find(m => m.id === ev.designer_id) || null
-          return equipe.find(m => m.id === ev.social_media_id) || null
+          // Demanda aparece para o social media do evento; se aparecer_designer, também para o designer
+          return equipe.find(m => m.id === ev.social_media_id) || (item.aparecer_designer ? equipe.find(m => m.id === ev.designer_id) : null)
         }
 
         function adminTagEfetiva(x) {
@@ -985,7 +936,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                             <div className="overflow-y-auto space-y-2 flex-1 min-h-0">
                             {dayItems.map(d => {
                               const atrasado = dayStr < todayStr && !['concluido','aprovado','publicado','cancelado'].includes(d.status)
-                              const accentColor = atrasado ? '#ef4444' : (d._tipo === 'briefing' ? '#8b5cf6' : (plataformaColor[d.plataforma] || '#6b7280'))
+                              const accentColor = atrasado ? '#ef4444' : (plataformaColor[d.plataforma] || '#6b7280')
                               const isDraggingThis = draggedItem && draggedItem.id === d.id && draggedItem._tipo === d._tipo
                               const isSelected = adminDetalhe && adminDetalhe.id === d.id && adminDetalhe._tipo === d._tipo
 
@@ -1108,9 +1059,9 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                     tipo_conteudo: d.tipo_conteudo||'', formato: d.formato||'',
                                     plataforma: d.plataforma||'Instagram', status: d.status||'pendente',
                                     id_evento: d.id_evento||'',
-                                    aparecer_designer: d._tipo === 'briefing'
+                                    aparecer_designer: !!d.aparecer_designer
                                       ? true
-                                      : !!(data.briefings.find(b => b.cronograma_id === d.id)),
+                                      : !!d.aparecer_designer,
                                   })
                                 }
                               }}
@@ -1127,7 +1078,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                           {/* Info grid */}
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
                             {[
-                              { l: 'Tipo', v: d._tipo === 'briefing' ? '✏️ Briefing' : '📲 Post' },
+                              { l: 'Tipo', v: '📲 Demanda' },
                               { l: 'Responsável', v: resp?.nome || '—' },
                               { l: 'Função', v: resp?.funcao === 'designer' ? 'Designer' : 'Social Media' },
                               { l: 'Data', v: fmtData(d._data) },
@@ -1311,7 +1262,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                   <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block" style={{color:'#16a34a'}}>📤 Upload Publicável <span className="text-[9px] font-normal normal-case text-gray-400">(pode ser publicado no Instagram)</span></label>
                                   <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-green-300 text-xs text-green-600 hover:border-green-500 hover:bg-green-50/50 transition cursor-pointer">
                                     <input type="file" accept="image/*,video/*,.pdf" multiple className="hidden"
-                                      onChange={e => { Array.from(e.target.files).forEach(file => { const tipo = d._tipo; const id = d.id; const endpoint = tipo === 'briefing' ? '/briefings/' + id + '/arquivos' : '/cronograma/' + id + '/arquivos'; const fd = new FormData(); fd.append('arquivo', file); api.post(endpoint, fd, {timeout:600000}).then(() => { toast.success('Arquivo enviado!'); carregarAdminArqs(d) }).catch(() => toast.error('Erro ao enviar')) }); e.target.value='' }} />
+                                      onChange={e => { Array.from(e.target.files).forEach(file => { const tipo = d._tipo; const id = d.id; const endpoint = '/cronograma/' + id + '/arquivos'; const fd = new FormData(); fd.append('arquivo', file); api.post(endpoint, fd, {timeout:600000}).then(() => { toast.success('Arquivo enviado!'); carregarAdminArqs(d) }).catch(() => toast.error('Erro ao enviar')) }); e.target.value='' }} />
                                     <Paperclip size={13} /> Clique para anexar arquivo publicável
                                   </label>
                                 </div>
@@ -1321,7 +1272,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                   <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block" style={{color:'#d97706'}}>📎 Upload de Referência <span className="text-[9px] font-normal normal-case text-gray-400">(uso interno — NÃO publica no Instagram)</span></label>
                                   <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-amber-300 text-xs text-amber-600 hover:border-amber-500 hover:bg-amber-50/50 transition cursor-pointer">
                                     <input type="file" accept="image/*,video/*,.pdf,.psd,.ai,.zip" multiple className="hidden"
-                                      onChange={e => { Array.from(e.target.files).forEach(file => { const tipo = d._tipo; const id = d.id; const endpoint = tipo === 'briefing' ? '/briefings/' + id + '/arquivos' : '/cronograma/' + id + '/arquivos'; const fd = new FormData(); fd.append('arquivo', file); fd.append('is_referencia', 'true'); api.post(endpoint, fd, {timeout:600000}).then(() => { toast.success('Referência enviada!'); carregarAdminArqs(d) }).catch(() => toast.error('Erro ao enviar referência')) }); e.target.value='' }} />
+                                      onChange={e => { Array.from(e.target.files).forEach(file => { const tipo = d._tipo; const id = d.id; const endpoint = '/cronograma/' + id + '/arquivos'; const fd = new FormData(); fd.append('arquivo', file); fd.append('is_referencia', 'true'); api.post(endpoint, fd, {timeout:600000}).then(() => { toast.success('Referência enviada!'); carregarAdminArqs(d) }).catch(() => toast.error('Erro ao enviar referência')) }); e.target.value='' }} />
                                     <Paperclip size={13} /> Clique para anexar referência
                                   </label>
                                 </div>
@@ -1359,9 +1310,9 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                               )}
                               {/* Ações Instagram (todos os tipos) */}
                               {(() => {
-                                const igPostId = d._tipo === 'post' ? d.id : d.cronograma_id
+                                const igPostId = d.id
                                 if (!igPostId) return null
-                                const linkedPost = d._tipo === 'post' ? d : data.posts.find(p => p.id === d.cronograma_id)
+                                const linkedPost = d
                                 const igStatus = linkedPost?.status || d.status
                                 const igAutoPublish = linkedPost?.auto_publish || false
                                 const igHora = linkedPost?.hora_publicacao || d.hora_publicacao
@@ -1576,15 +1527,15 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
 
       {/* ===== DESIGNER VIEW (KANBAN + MATERIAIS) ===== */}
       {isDesigner && (() => {
-        const bListBase = filtroEvento === 'todos' ? data.briefings : data.briefings.filter(b => b.id_evento === Number(filtroEvento))
-        const bList = filtrarPorData(bListBase, 'data_vencimento', 'briefing')
-        const atrasados = bListBase.filter(b => isAtrasado(b, 'data_vencimento', 'briefing')).length
+        const bListBase = filtroEvento === 'todos' ? data.posts.filter(p => p.aparecer_designer) : data.posts.filter(p => p.aparecer_designer && p.id_evento === Number(filtroEvento))
+        const bList = filtrarPorData(bListBase, 'data_publicacao', 'post')
+        const atrasados = bListBase.filter(b => isAtrasado(b, 'data_publicacao', 'post')).length
         return (
           <div className="space-y-4">
             {/* Tab toggle */}
             <div className="flex gap-1 bg-gray-100 dark:bg-white/[0.06] rounded-xl p-1">
               <button onClick={() => setDesignerTab('briefings')} className={'flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all flex-1 justify-center ' + (designerTab === 'briefings' ? 'bg-white dark:bg-white/[0.10] text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-white/50 hover:text-gray-700 dark:hover:text-white/70')}>
-                <Palette size={16} /> Briefings
+                <Palette size={16} /> Demandas
               </button>
               <button onClick={() => setDesignerTab('materiais')} className={'flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all flex-1 justify-center ' + (designerTab === 'materiais' ? 'bg-white dark:bg-white/[0.10] text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-white/50 hover:text-gray-700 dark:hover:text-white/70')}>
                 <FolderOpen size={16} /> Material
@@ -1614,7 +1565,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
               const todayStr = new Date().toISOString().split('T')[0]
               const monthDays = Array.from({ length: daysInMonth }, (_, i) => new Date(year, month, i + 1))
               const isCurrentMonth = year === new Date().getFullYear() && month === new Date().getMonth()
-              let allItems = bList.map(b => ({...b, _tipo:'briefing', _data: b.data_vencimento}))
+              let allItems = bList.map(b => ({...b, _tipo:'post', _data: b.data_publicacao}))
               if (filtroBusca.trim()) { const q = filtroBusca.toLowerCase(); allItems = allItems.filter(d => (d.titulo||'').toLowerCase().includes(q) || (d.evento_nome||'').toLowerCase().includes(q)) }
               const dsStatusConf = {
                 pendente:     { label: 'Pendente',    cls: 'bg-yellow-100 text-yellow-700' },
@@ -1906,11 +1857,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
           const todayStr = new Date().toISOString().split('T')[0]
           const monthDays = Array.from({ length: daysInMonth }, (_, i) => new Date(year, month, i + 1))
           const isCurrentMonth = year === new Date().getFullYear() && month === new Date().getMonth()
-          const linkedPostIds2 = new Set(briefingsFiltrados.filter(b => b.cronograma_id).map(b => b.cronograma_id))
-          let allItems = [
-            ...briefingsFiltrados.map(b => ({...b, _tipo:'briefing', _data: b.data_vencimento})),
-            ...postsFiltrados.filter(p => !linkedPostIds2.has(p.id)).map(p => ({...p, _tipo:'post', _data: p.data_publicacao}))
-          ]
+          let allItems = demandasFiltradas.map(p => ({...p, _tipo:'post', _data: p.data_publicacao}))
           if (filtroBusca.trim()) { const q = filtroBusca.toLowerCase(); allItems = allItems.filter(d => (d.titulo||'').toLowerCase().includes(q) || (d.evento_nome||'').toLowerCase().includes(q)) }
           if (filtro !== 'todas') {
             const hoje2 = new Date().toISOString().split('T')[0]
@@ -1986,7 +1933,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                         <div className="overflow-y-auto space-y-2 flex-1 min-h-0">
                           {dayItems.map(d => {
                             const atrasado = dayStr < todayStr && !['concluido','aprovado','publicado','cancelado'].includes(d.status)
-                            const accentColor = atrasado ? '#ef4444' : (d._tipo === 'briefing' ? '#8b5cf6' : (plataformaColor[d.plataforma] || '#6b7280'))
+                            const accentColor = atrasado ? '#ef4444' : (plataformaColor[d.plataforma] || '#6b7280')
                             const isDraggingThis = draggedItem && draggedItem.id === d.id && draggedItem._tipo === d._tipo
                             const cardTag = getTag(d._tipo, d.id)
                             const autoTagKey = atrasado ? 'atrasado' : (STATUS_TO_TAG[d.status] || null)
@@ -2246,8 +2193,8 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                       }
                       return <span className={'text-[11px] font-bold px-2.5 py-1 rounded-full border ' + (statusColors[d.status] || 'bg-gray-100 text-gray-600 border-gray-200')}>{statusLabels[d.status] || d.status}</span>
                     })()}
-                    <span className={'text-[11px] font-bold px-2.5 py-1 rounded-full ' + (d._tipo === 'briefing' ? 'bg-violet-100 text-violet-700' : 'bg-pink-100 text-pink-700')}>
-                      {d._tipo === 'briefing' ? '✏️ Briefing' : '📲 Post'}
+                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400">
+                      📲 Demanda
                     </span>
                     {d.plataforma && d._tipo === 'post' && <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-accent/10 text-accent">{d.plataforma}</span>}
                   </div>
@@ -2268,9 +2215,9 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                           tipo_conteudo: d.tipo_conteudo||'', formato: d.formato||'',
                           plataforma: d.plataforma||'Instagram', status: d.status||'pendente',
                           id_evento: d.id_evento||'',
-                          aparecer_designer: d._tipo === 'briefing'
+                          aparecer_designer: !!d.aparecer_designer
                             ? true
-                            : !!(data.briefings.find(b => b.cronograma_id === d.id)),
+                            : !!d.aparecer_designer,
                         })
                       }
                     }}
@@ -2352,13 +2299,6 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                       </select>
                     </div>
 
-                    {d._tipo === 'briefing' && (
-                      <div>
-                        <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Data de Vencimento</label>
-                        <input type="date" value={editForm.data_vencimento?.slice(0,10)||''} onChange={e => setEditForm({...editForm, data_vencimento: e.target.value})}
-                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
-                      </div>
-                    )}
 
                     {d._tipo === 'post' && (
                       <div className="grid grid-cols-2 gap-3">
@@ -2423,7 +2363,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                     {/* Briefing / Descrição */}
                     <div>
                       <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">
-                        {d._tipo === 'briefing' ? 'Briefing / Descrição' : 'Briefing para o Designer'}
+                        Briefing para o Designer
                       </label>
                       <textarea value={editForm.descricao||''} onChange={e => setEditForm({...editForm, descricao: e.target.value})}
                         rows={3} placeholder="Descreva o que precisa ser criado..."
@@ -2544,12 +2484,12 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                 )}
 
                 {/* Ações Instagram (posts e briefings com cronograma vinculado) */}
-                {(d._tipo === 'post' || (d._tipo === 'briefing' && d.cronograma_id)) && (() => {
-                  const igPostId = d._tipo === 'post' ? d.id : d.cronograma_id
-                  const igStatus = d._tipo === 'post' ? d.status : (data.posts.find(p => p.id === d.cronograma_id)?.status || d.status)
-                  const igAutoPublish = d._tipo === 'post' ? d.auto_publish : (data.posts.find(p => p.id === d.cronograma_id)?.auto_publish || false)
-                  const igHora = d._tipo === 'post' ? d.hora_publicacao : (data.posts.find(p => p.id === d.cronograma_id)?.hora_publicacao || d.hora_publicacao)
-                  const igBoostStatus = d._tipo === 'post' ? d.boost_status : (data.posts.find(p => p.id === d.cronograma_id)?.boost_status || null)
+                {d._tipo === 'post' && (() => {
+                  const igPostId = d.id
+                  const igStatus = d.status
+                  const igAutoPublish = d.auto_publish || false
+                  const igHora = d.hora_publicacao
+                  const igBoostStatus = d.boost_status || null
                   return (
                   <div className="border-t border-gray-100 pt-4 space-y-2">
                     {igStatus !== 'publicado' && (
