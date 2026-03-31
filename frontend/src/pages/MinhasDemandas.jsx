@@ -764,9 +764,9 @@ export default function MinhasDemandas() {
           const items = allItems.filter(d => { const r = getResponsavel(d); return r && r.id === membroId })
           return {
             total: items.length,
-            pendente: items.filter(x => ['pendente','em_andamento'].includes(x.status)).length,
-            producao: items.filter(x => ['em_producao','em_revisao'].includes(x.status)).length,
-            atrasado: items.filter(x => { const dt = x._data?.slice(0,10); return dt && dt < hoje && !['concluido','aprovado','publicado','cancelado'].includes(x.status) }).length,
+            pendente: items.filter(x => { const t = getTag(x._tipo, x.id); return t === 'pendente' || t === 'em_andamento' }).length,
+            producao: items.filter(x => { const t = getTag(x._tipo, x.id); return t === 'recebido' || t === 'em_revisao' }).length,
+            atrasado: items.filter(x => getTag(x._tipo, x.id) === 'atrasado').length,
           }
         }
 
