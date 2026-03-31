@@ -674,26 +674,22 @@ export default function MinhasDemandas() {
   const hoje = new Date().toISOString().split('T')[0]
   const eventosAtivos = data.eventos.filter(ev => !ev.data_evento || ev.data_evento >= hoje)
 
-  // Status efetivo: tag visual tem prioridade sobre status do banco
-  function getStatusEfetivo(tipo, item) {
-    const tag = getTag(tipo, item.id)
-    if (tag && ['pendente','em_andamento','recebido','aprovado','publicado'].includes(tag)) return tag === 'recebido' ? 'em_revisao' : tag
-    return item.status
-  }
-
   function isAtrasado(item, campoData, tipo) {
+    if (tipo) {
+      const te = tagEfetiva({ ...item, _tipo: tipo, _data: item[campoData] })
+      return te === 'atrasado'
+    }
     const d = item[campoData] || ''
     const dataISO = d.includes('/') ? d.split('/').reverse().join('-') : d.slice(0,10)
-    const st = tipo ? getStatusEfetivo(tipo, item) : item.status
-    return dataISO && dataISO < hoje && !['concluido','aprovado','publicado','cancelado'].includes(st)
+    return dataISO && dataISO < hoje && !['concluido','aprovado','publicado','cancelado'].includes(item.status)
   }
 
   function filtrarPorData(items, campoData, tipo) {
     if (filtro === 'todas') return items
     return items.filter(item => {
+      const te = tipo ? tagEfetiva({ ...item, _tipo: tipo, _data: item[campoData] }) : null
       const d = item[campoData] || ''
       const dataISO = d.includes('/') ? d.split('/').reverse().join('-') : d.slice(0,10)
-      const st = tipo ? getStatusEfetivo(tipo, item) : item.status
       if (filtro === 'hoje') return dataISO === hoje
       if (filtro === 'semana') {
         const dt = new Date(dataISO + 'T12:00:00')
@@ -701,9 +697,9 @@ export default function MinhasDemandas() {
         const diff = (dt - now) / (1000 * 60 * 60 * 24)
         return diff >= -1 && diff <= 7
       }
-      if (filtro === 'atrasadas') return dataISO < hoje && !['concluido','aprovado','publicado','cancelado'].includes(st)
-      if (filtro === 'pendentes') return ['pendente','em_andamento'].includes(st)
-      if (filtro === 'aprovados') return ['aprovado','publicado','concluido'].includes(st)
+      if (filtro === 'atrasadas') return te ? te === 'atrasado' : (dataISO < hoje && !['concluido','aprovado','publicado','cancelado'].includes(item.status))
+      if (filtro === 'pendentes') return te ? (te === 'pendente' || te === 'em_andamento') : ['pendente','em_andamento'].includes(item.status)
+      if (filtro === 'aprovados') return te ? (te === 'aprovado' || te === 'publicado') : ['aprovado','publicado','concluido'].includes(item.status)
       return true
     })
   }
@@ -725,13 +721,14 @@ export default function MinhasDemandas() {
   ]
   const totalDemandas = todasDemandas.length
 
-  // Tag efetiva: tag manual se existir, senão calcula automático
-  // (mesma lógica que o calendário usa para mostrar "Atrasado", "Pendente", etc.)
+  // Tag efetiva: 1) tag manual, 2) status do banco, 3) cálculo por data
   function tagEfetiva(d) {
     const tag = getTag(d._tipo, d.id)
     if (tag) return tag
+    // Se o status do banco já indica concluído/publicado, não é atrasado
+    if (['concluido','aprovado','publicado','cancelado'].includes(d.status)) return STATUS_TO_TAG[d.status] || d.status
     const dt = d._data?.slice(0, 10)
-    if (dt && dt < hoje && !['concluido','aprovado','publicado','cancelado'].includes(d.status)) return 'atrasado'
+    if (dt && dt < hoje) return 'atrasado'
     return STATUS_TO_TAG[d.status] || null
   }
 
@@ -770,11 +767,7 @@ export default function MinhasDemandas() {
         }
 
         function adminTagEfetiva(x) {
-          const tag = getTag(x._tipo, x.id)
-          if (tag) return tag
-          const dt = x._data?.slice(0, 10)
-          if (dt && dt < hoje && !['concluido','aprovado','publicado','cancelado'].includes(x.status)) return 'atrasado'
-          return STATUS_TO_TAG[x.status] || null
+          return tagEfetiva(x)
         }
 
         function getStats(membroId) {
