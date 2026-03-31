@@ -18,18 +18,16 @@ const ev=await pool.query('SELECT id FROM eventos WHERE org_id=$1',[orgId]);
 eventosIds=ev.rows.map(e=>e.id);
 }
 
-if(!eventosIds.length)return res.json({briefings:[],posts:[],eventos:[]});
+if(!eventosIds.length)return res.json({briefings:[],posts:[],demandas:[],eventos:[]});
 
-// Briefings de todos os eventos do usuario
-const briefR=await pool.query('SELECT b.*,e.nome as evento_nome FROM briefings b JOIN eventos e ON b.id_evento=e.id WHERE b.id_evento=ANY($1) AND b.org_id=$2 ORDER BY b.data_vencimento ASC NULLS LAST,b.criado_em DESC',[eventosIds,orgId]);
-
-// Posts do cronograma de todos os eventos
-const postR=await pool.query('SELECT c.*,e.nome as evento_nome FROM cronograma_marketing c JOIN eventos e ON c.id_evento=e.id WHERE c.id_evento=ANY($1) AND c.org_id=$2 ORDER BY c.data_publicacao ASC NULLS LAST,c.hora_publicacao ASC',[eventosIds,orgId]);
+// Todas as demandas (unificado: posts + briefings = mesma coisa)
+const demR=await pool.query('SELECT c.*,e.nome as evento_nome FROM cronograma_marketing c JOIN eventos e ON c.id_evento=e.id WHERE c.id_evento=ANY($1) AND c.org_id=$2 ORDER BY c.data_publicacao ASC NULLS LAST,c.hora_publicacao ASC',[eventosIds,orgId]);
 
 // Eventos do usuario
 const evR=await pool.query('SELECT id,nome,data_evento,cidade,instagram,designer_id,social_media_id FROM eventos WHERE id=ANY($1) ORDER BY data_evento',[eventosIds]);
 
-res.json({briefings:briefR.rows,posts:postR.rows,eventos:evR.rows});
+// Manter compatibilidade: briefings=[] e posts=demandas
+res.json({briefings:[],posts:demR.rows,demandas:demR.rows,eventos:evR.rows});
 }catch(e){console.error(e);res.status(500).json({erro:e.message})}});
 
 router.get('/api/eventos',auth,async(req,res)=>{try{
