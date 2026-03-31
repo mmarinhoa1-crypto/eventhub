@@ -720,14 +720,23 @@ export default function MinhasDemandas() {
 
   // Lista unificada de todas as demandas (posts + briefings = mesma coisa)
   const todasDemandas = [
-    ...data.posts.map(p => ({ ...p, _tipo: 'post' })),
-    ...data.briefings.map(b => ({ ...b, _tipo: 'briefing' })),
+    ...data.posts.map(p => ({ ...p, _tipo: 'post', _data: p.data_publicacao })),
+    ...data.briefings.map(b => ({ ...b, _tipo: 'briefing', _data: b.data_vencimento })),
   ]
   const totalDemandas = todasDemandas.length
 
-  // Contadores baseados SOMENTE na tag salva no tagsStore
-  const pendentesDemandas = todasDemandas.filter(d => { const t = getTag(d._tipo, d.id); return t === 'pendente' || t === 'em_andamento' }).length
-  const atrasadosDemandas = todasDemandas.filter(d => getTag(d._tipo, d.id) === 'atrasado').length
+  // Tag efetiva: tag manual se existir, senão calcula automático
+  // (mesma lógica que o calendário usa para mostrar "Atrasado", "Pendente", etc.)
+  function tagEfetiva(d) {
+    const tag = getTag(d._tipo, d.id)
+    if (tag) return tag
+    const dt = d._data?.slice(0, 10)
+    if (dt && dt < hoje && !['concluido','aprovado','publicado','cancelado'].includes(d.status)) return 'atrasado'
+    return STATUS_TO_TAG[d.status] || null
+  }
+
+  const pendentesDemandas = todasDemandas.filter(d => { const t = tagEfetiva(d); return t === 'pendente' || t === 'em_andamento' }).length
+  const atrasadosDemandas = todasDemandas.filter(d => tagEfetiva(d) === 'atrasado').length
 
   if (loading) return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
 
@@ -760,13 +769,21 @@ export default function MinhasDemandas() {
           return equipe.find(m => m.id === ev.social_media_id) || null
         }
 
+        function adminTagEfetiva(x) {
+          const tag = getTag(x._tipo, x.id)
+          if (tag) return tag
+          const dt = x._data?.slice(0, 10)
+          if (dt && dt < hoje && !['concluido','aprovado','publicado','cancelado'].includes(x.status)) return 'atrasado'
+          return STATUS_TO_TAG[x.status] || null
+        }
+
         function getStats(membroId) {
           const items = allItems.filter(d => { const r = getResponsavel(d); return r && r.id === membroId })
           return {
             total: items.length,
-            pendente: items.filter(x => { const t = getTag(x._tipo, x.id); return t === 'pendente' || t === 'em_andamento' }).length,
-            producao: items.filter(x => { const t = getTag(x._tipo, x.id); return t === 'recebido' || t === 'em_revisao' }).length,
-            atrasado: items.filter(x => getTag(x._tipo, x.id) === 'atrasado').length,
+            pendente: items.filter(x => { const t = adminTagEfetiva(x); return t === 'pendente' || t === 'em_andamento' }).length,
+            producao: items.filter(x => { const t = adminTagEfetiva(x); return t === 'recebido' }).length,
+            atrasado: items.filter(x => adminTagEfetiva(x) === 'atrasado').length,
           }
         }
 
