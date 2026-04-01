@@ -32,7 +32,8 @@ const CustomTooltip = ({ active, payload, label }) => {
 export default function EventoDetalhe({ eventoId }) {
   const navigate = useNavigate()
   const { usuario } = useAuth()
-  const isReadOnly = usuario?.funcao === 'gestor_trafego'
+  const canEdit = usuario?.funcao === 'admin' || usuario?.funcao === 'diretor'
+  const isReadOnly = !canEdit
   const [evento, setEvento] = useState(null)
   const [despesas, setDespesas] = useState([])
   const [fornecedores, setFornecedores] = useState([])
