@@ -293,14 +293,7 @@ export default function MinhasDemandas() {
     try {
       await api.patch('/cronograma/' + detalhe.id, editForm)
       if (editForm.aparecer_designer !== undefined) {
-        await api.post('/cronograma/' + detalhe.id + '/toggle-designer', {
-          ativo: editForm.aparecer_designer,
-          descricao: editForm.descricao || '',
-          tipo_conteudo: editForm.tipo_conteudo || '',
-          formato: editForm.formato || '',
-          referencia: editForm.referencia || '',
-          musica: editForm.musica || '',
-        })
+        await api.post('/cronograma/' + detalhe.id + '/toggle-designer', { ativo: editForm.aparecer_designer })
       }
       toast.success('Atualizado!')
       setDetalhe({...detalhe, ...editForm})
@@ -313,14 +306,7 @@ export default function MinhasDemandas() {
     try {
       await api.patch('/cronograma/' + adminDetalhe.id, adminEditForm)
       if (adminEditForm.aparecer_designer !== undefined) {
-        await api.post('/cronograma/' + adminDetalhe.id + '/toggle-designer', {
-          ativo: adminEditForm.aparecer_designer,
-          descricao: adminEditForm.descricao || '',
-          tipo_conteudo: adminEditForm.tipo_conteudo || '',
-          formato: adminEditForm.formato || '',
-          referencia: adminEditForm.referencia || '',
-          musica: adminEditForm.musica || '',
-        })
+        await api.post('/cronograma/' + adminDetalhe.id + '/toggle-designer', { ativo: adminEditForm.aparecer_designer })
       }
       toast.success('Atualizado!')
       setAdminDetalhe({...adminDetalhe, ...adminEditForm})
@@ -1519,10 +1505,6 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                             </div>
                           </div>
 
-                          {!isReadOnly && <button onClick={() => { setAdminDetalhe(null); navigate('/marketing?evento='+d.id_evento) }}
-                            className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition text-center">
-                            Abrir no Marketing
-                          </button>}
                         </div>
                       </div>
                     </div>
@@ -2711,13 +2693,6 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                   </div>
                 </div>
 
-                {/* Footer actions */}
-                <div className="border-t border-gray-100 pt-4 space-y-3">
-                  <button onClick={() => { setDetalhe(null); navigate('/marketing?evento=' + d.id_evento) }}
-                    className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition">
-                    Abrir no Marketing
-                  </button>
-                </div>
               </div>
             </div>
           </div>
