@@ -2439,8 +2439,8 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                       </label>
                     </div>
 
-                    {/* Toggle: Aparecer para o Designer */}
-                    <div className="flex items-center justify-between p-3 rounded-xl border border-gray-200 dark:border-white/[0.10] bg-gray-50 dark:bg-white/[0.04]">
+                    {/* Toggle: Aparecer para o Designer (não aparece para designers) */}
+                    {!isDesigner && <div className="flex items-center justify-between p-3 rounded-xl border border-gray-200 dark:border-white/[0.10] bg-gray-50 dark:bg-white/[0.04]">
                       <div>
                         <p className="text-sm font-semibold text-gray-800 dark:text-white/80">🎨 Aparecer para o Designer?</p>
                         <p className="text-[10px] text-gray-400 dark:text-white/40 mt-0.5">O designer do evento também visualiza essa demanda</p>
@@ -2452,7 +2452,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                       >
                         <span className={'absolute left-0.5 top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ' + (editForm.aparecer_designer ? 'translate-x-5' : 'translate-x-0')} />
                       </button>
-                    </div>
+                    </div>}
 
                     <button onClick={salvarEdicao}
                       className="w-full px-4 py-2.5 bg-green-500 text-white rounded-xl text-sm font-bold hover:bg-green-600 transition">
