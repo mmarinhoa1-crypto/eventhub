@@ -292,9 +292,6 @@ export default function MinhasDemandas() {
   async function salvarEdicao() {
     try {
       await api.patch('/cronograma/' + detalhe.id, editForm)
-      if (editForm.aparecer_designer !== undefined) {
-        await api.post('/cronograma/' + detalhe.id + '/toggle-designer', { ativo: editForm.aparecer_designer })
-      }
       toast.success('Atualizado!')
       setDetalhe({...detalhe, ...editForm})
       setEditMode(false)
@@ -305,9 +302,6 @@ export default function MinhasDemandas() {
   async function adminSalvarEdicao() {
     try {
       await api.patch('/cronograma/' + adminDetalhe.id, adminEditForm)
-      if (adminEditForm.aparecer_designer !== undefined) {
-        await api.post('/cronograma/' + adminDetalhe.id + '/toggle-designer', { ativo: adminEditForm.aparecer_designer })
-      }
       toast.success('Atualizado!')
       setAdminDetalhe({...adminDetalhe, ...adminEditForm})
       setAdminEditMode(false)

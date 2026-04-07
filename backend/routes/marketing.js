@@ -62,10 +62,10 @@ res.json(r.rows)}catch(e){res.status(500).json({erro:e.message})}});
 
 router.post('/api/eventos/:id/cronograma',auth,async(req,res)=>{try{
 const b=req.body;
-const r=await pool.query('INSERT INTO cronograma_marketing(org_id,id_evento,titulo,plataforma,data_publicacao,hora_publicacao,conteudo,hashtags,formato,status,collaborators) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *',
-[req.user.org_id,req.params.id,b.titulo,b.plataforma||'',b.data_publicacao||'',b.hora_publicacao||'',b.conteudo||'',b.hashtags||'',b.formato||'',b.status||'pendente',b.collaborators||'']);
+const r=await pool.query('INSERT INTO cronograma_marketing(org_id,id_evento,titulo,plataforma,data_publicacao,hora_publicacao,conteudo,hashtags,formato,status,collaborators,aparecer_designer,descricao,tipo_conteudo,referencia,musica) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING *',
+[req.user.org_id,req.params.id,b.titulo,b.plataforma||'',b.data_publicacao||'',b.hora_publicacao||'',b.conteudo||'',b.hashtags||'',b.formato||'',b.status||'pendente',b.collaborators||'',b.destino==='design',b.descricao||'',b.tipo_conteudo||'',b.referencia||'',b.musica||'']);
 const post=r.rows[0];
-// Criar briefing automaticamente vinculado ao post (sempre)
+// Criar briefing automaticamente vinculado ao post (compatibilidade)
 try{
 const brf=await pool.query('INSERT INTO briefings(org_id,id_evento,titulo,tipo,descricao,status,data_vencimento,hora_vencimento,tipo_conteudo,formato,referencia,musica,cronograma_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id',
 [req.user.org_id,req.params.id,post.titulo,'post',b.descricao||post.conteudo||'','pendente',post.data_publicacao||'',post.hora_publicacao||'',b.tipo_conteudo||'',b.formato||'',b.referencia||'',b.musica||'',post.id]);
@@ -82,7 +82,7 @@ res.json({sucesso:true,ativo:!!ativo});
 
 router.patch('/api/cronograma/:id',auth,async(req,res)=>{try{
 const b=req.body;const fields=[];const vals=[];let idx=1;
-['titulo','plataforma','data_publicacao','hora_publicacao','conteudo','hashtags','formato','status','feedback','auto_publish','boost_enabled','boost_budget','boost_duration','boost_age_min','boost_age_max','boost_cities','collaborators','id_evento'].forEach(function(k){if(b[k]!==undefined){fields.push(k+'=$'+idx);vals.push(b[k]);idx++}});
+['titulo','plataforma','data_publicacao','hora_publicacao','conteudo','hashtags','formato','status','feedback','auto_publish','boost_enabled','boost_budget','boost_duration','boost_age_min','boost_age_max','boost_cities','collaborators','id_evento','aparecer_designer','descricao','referencia','musica','legenda','tipo_conteudo'].forEach(function(k){if(b[k]!==undefined){fields.push(k+'=$'+idx);vals.push(b[k]);idx++}});
 vals.push(parseInt(req.params.id));vals.push(req.user.org_id);
 const r=await pool.query('UPDATE cronograma_marketing SET '+fields.join(',')+' WHERE id=$'+idx+' AND org_id=$'+(idx+1)+' RETURNING *',vals);
 const updated=r.rows[0];
