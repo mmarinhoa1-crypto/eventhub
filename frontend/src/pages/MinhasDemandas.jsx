@@ -317,6 +317,16 @@ export default function MinhasDemandas() {
     } catch { toast.error('Erro ao salvar') }
   }
 
+  async function excluirDemanda(id, fecharModal) {
+    if (!confirm('Tem certeza que deseja excluir esta demanda?')) return
+    try {
+      await api.delete('/cronograma/' + id)
+      toast.success('Demanda excluída!')
+      fecharModal()
+      carregar()
+    } catch { toast.error('Erro ao excluir demanda') }
+  }
+
   async function adminSalvarEdicao() {
     try {
       await api.patch('/cronograma/' + adminDetalhe.id, adminEditForm)
@@ -940,7 +950,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                           <div className="p-2 space-y-2 flex-1 flex flex-col min-h-0">
                             {/* Add button */}
                             {!isReadOnly && <div
-                              onClick={() => { setNovoPostForm(f => ({...f, id_evento: data.eventos.length === 1 ? String(data.eventos[0].id) : '', data_publicacao: dayStr})); setShowNovoPost(true) }}
+                              onClick={() => { setNovoPostForm(f => ({...f, id_evento: filtroEvento !== 'todos' ? filtroEvento : (data.eventos.length === 1 ? String(data.eventos[0].id) : ''), data_publicacao: dayStr})); setShowNovoPost(true) }}
                               className="flex items-center justify-center py-1.5 rounded-lg border-2 border-dashed border-gray-200 dark:border-white/[0.10] text-gray-300 dark:text-white/20 hover:border-blue-400 hover:text-blue-400 hover:bg-blue-50/50 transition cursor-pointer group"
                             >
                               <Plus size={13} className="group-hover:scale-110 transition-transform" />
@@ -972,7 +982,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                   className={'rounded-xl bg-white dark:bg-white/[0.06] border cursor-grab select-none transition-all duration-150 hover:shadow-md '
                                     + (isDraggingThis ? 'opacity-40 scale-95 ' : '')
                                     + (dragOverCard === d._tipo+'-'+d.id && !isDraggingThis ? 'ring-2 ring-inset ring-blue-400 ' : '')
-                                    + (alertaHora ? 'animate-pulse ring-2 ring-red-500 ' : '')
+                                    + (alertaHora ? 'ring-2 ring-red-500 bg-red-50 dark:bg-red-500/10 ' : '')
                                     + (isSelected ? 'ring-2 ring-blue-500 shadow-md border-blue-200 ' : 'border-gray-100 dark:border-white/[0.08] shadow-sm ')}
                                   style={{ borderLeft: `4px solid ${alertaHora ? '#ef4444' : borderColor}` }}
                                 >
@@ -992,10 +1002,8 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                       )}
                                     </div>
 
-                                    {/* Título */}
+                                    {alertaHora && <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-red-500 text-white animate-pulse"><Clock size={10} /><span className="text-[10px] font-bold">HORÁRIO PRÓXIMO</span></div>}
                                     <p className="text-sm font-semibold text-gray-900 dark:text-white/90 line-clamp-2 leading-snug">{d.titulo || 'Sem título'}</p>
-
-                                    {/* Nome do evento */}
                                     <p className="text-xs font-medium truncate" style={{ color: borderColor }}>{d.evento_nome}</p>
 
                                     {/* Formatos / Tipo de conteúdo */}
@@ -1311,6 +1319,10 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                               <button onClick={adminSalvarEdicao}
                                 className="w-full px-4 py-2.5 bg-green-500 text-white rounded-xl text-sm font-bold hover:bg-green-600 transition">
                                 Salvar Alterações
+                              </button>
+                              <button onClick={() => excluirDemanda(d.id, () => setAdminDetalhe(null))}
+                                className="w-full px-4 py-2 bg-red-50 text-red-600 rounded-xl text-xs font-bold hover:bg-red-100 transition border border-red-200">
+                                Excluir Demanda
                               </button>
                             </div>
                           ) : (
@@ -1670,7 +1682,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                     key={'briefing-'+d.id}
                                     onClick={() => { setDetalhe({...d}); carregarArquivosDetalhe(d._tipo, d.id); setEditMode(false); setEditForm({}); carregarComentarios(d._tipo, d.id, false) }}
                                     className={'rounded-xl bg-white dark:bg-white/[0.06] border border-gray-100 dark:border-white/[0.08] cursor-pointer select-none transition-all duration-150 hover:shadow-md shadow-sm '
-                                      + (alertaHora ? 'animate-pulse ring-2 ring-red-500 ' : '')}
+                                      + (alertaHora ? 'ring-2 ring-red-500 bg-red-50 dark:bg-red-500/10 ' : '')}
                                     style={{ borderLeft: `4px solid ${alertaHora ? '#ef4444' : borderColor}` }}
                                   >
                                     <div className="px-3 py-2.5 space-y-2">
@@ -1687,6 +1699,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                           <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: tagConf.color + '20', color: tagConf.color }}>{tagConf.label}</span>
                                         )}
                                       </div>
+                                      {alertaHora && <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-red-500 text-white animate-pulse"><Clock size={10} /><span className="text-[10px] font-bold">HORÁRIO PRÓXIMO</span></div>}
                                       <p className="text-sm font-semibold text-gray-900 dark:text-white/90 line-clamp-2 leading-snug">{d.titulo || 'Sem título'}</p>
                                       <p className="text-xs font-medium truncate" style={{ color: borderColor }}>{d.evento_nome}</p>
                                       {(d.formato || d.tipo_conteudo) && (
@@ -1955,7 +1968,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                       </div>
                       <div className="p-2 space-y-2 flex-1 flex flex-col min-h-0">
                         {!isReadOnly && <div
-                          onClick={() => { setNovoPostForm(f => ({...f, id_evento: data.eventos.length === 1 ? String(data.eventos[0].id) : '', data_publicacao: dayStr})); setShowNovoPost(true) }}
+                          onClick={() => { setNovoPostForm(f => ({...f, id_evento: filtroEvento !== 'todos' ? filtroEvento : (data.eventos.length === 1 ? String(data.eventos[0].id) : ''), data_publicacao: dayStr})); setShowNovoPost(true) }}
                           className="flex items-center justify-center py-1.5 rounded-lg border-2 border-dashed border-gray-200 dark:border-white/[0.10] text-gray-300 dark:text-white/20 hover:border-blue-400 hover:text-blue-400 hover:bg-blue-50/50 transition cursor-pointer group"
                         >
                           <Plus size={13} className="group-hover:scale-110 transition-transform" />
@@ -1983,7 +1996,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                 className={'rounded-xl bg-white dark:bg-white/[0.06] border cursor-grab select-none transition-all duration-150 hover:shadow-md border-gray-100 dark:border-white/[0.08] shadow-sm '
                                   + (isDraggingThis ? 'opacity-40 scale-95 ' : '')
                                   + (dragOverCard === d._tipo+'-'+d.id && !isDraggingThis ? 'ring-2 ring-inset ring-blue-400 ' : '')
-                                  + (alertaHora ? 'animate-pulse ring-2 ring-red-500 ' : '')}
+                                  + (alertaHora ? 'ring-2 ring-red-500 bg-red-50 dark:bg-red-500/10 ' : '')}
                                 style={{ borderLeft: `4px solid ${alertaHora ? '#ef4444' : borderColor}` }}
                               >
                                 <div className="px-3 py-2.5 space-y-2">
@@ -2000,6 +2013,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: tagConf.color + '20', color: tagConf.color }}>{tagConf.label}</span>
                                     )}
                                   </div>
+                                  {alertaHora && <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-red-500 text-white animate-pulse"><Clock size={10} /><span className="text-[10px] font-bold">HORÁRIO PRÓXIMO</span></div>}
                                   <p className="text-sm font-semibold text-gray-900 dark:text-white/90 line-clamp-2 leading-snug">{d.titulo || 'Sem título'}</p>
                                   <p className="text-xs font-medium truncate" style={{ color: borderColor }}>{d.evento_nome}</p>
                                   {(d.formato || d.tipo_conteudo) && (
@@ -2318,7 +2332,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                       <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Evento</label>
                       <select value={editForm.id_evento||''} onChange={e => setEditForm({...editForm, id_evento: e.target.value})}
                         className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
-                        {data.eventos.map(ev => <option key={ev.id} value={ev.id}>{ev.nome}</option>)}
+                        {eventosAtivos.map(ev => <option key={ev.id} value={ev.id}>{ev.nome}</option>)}
                       </select>
                     </div>
 
@@ -2470,6 +2484,12 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                       className="w-full px-4 py-2.5 bg-green-500 text-white rounded-xl text-sm font-bold hover:bg-green-600 transition">
                       Salvar Alterações
                     </button>
+                    {(isSocialMedia || isAdmin || isDiretor) && (
+                      <button onClick={() => excluirDemanda(d.id, () => setDetalhe(null))}
+                        className="w-full px-4 py-2 bg-red-50 text-red-600 rounded-xl text-xs font-bold hover:bg-red-100 transition border border-red-200">
+                        Excluir Demanda
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-3 border-t border-gray-100 pt-4">
