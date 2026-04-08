@@ -1018,9 +1018,12 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                       </div>
                                     )}
                                     {/* Uploads */}
-                                    <div className="flex items-center gap-1 text-[10px] text-gray-400 dark:text-white/40">
-                                      <Paperclip size={10} />
-                                      <span className="font-semibold">Uploads: {(cardArquivos[d._tipo + '-' + d.id] || []).length}</span>
+                                    <div className="flex items-center justify-between text-[10px] text-gray-400 dark:text-white/40">
+                                      <div className="flex items-center gap-1">
+                                        <Paperclip size={10} />
+                                        <span className="font-semibold">Uploads: {(cardArquivos[d._tipo + '-' + d.id] || []).length}</span>
+                                      </div>
+                                      {d.hora_publicacao && <span className="flex items-center gap-0.5 font-bold text-gray-500 dark:text-white/50"><Clock size={9} />{d.hora_publicacao.slice(0,5)}</span>}
                                     </div>
                                   </div>
                                 </div>
