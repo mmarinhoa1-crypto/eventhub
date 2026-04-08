@@ -1003,7 +1003,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                         {d.formato && d.formato.split(',').filter(Boolean).map(f => (
                                           <span key={f} className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md">{f.trim()}</span>
                                         ))}
-                                        {d.tipo_conteudo && d.tipo_conteudo.split(',').filter(Boolean).slice(0,1).map(t => (
+                                        {d.tipo_conteudo && d.tipo_conteudo.split(',').filter(Boolean).map(t => (
                                           <span key={t} className="text-[10px] font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md">{t.trim()}</span>
                                         ))}
                                       </div>
@@ -1693,7 +1693,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                           {d.formato && d.formato.split(',').filter(Boolean).map(f => (
                                             <span key={f} className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md">{f.trim()}</span>
                                           ))}
-                                          {d.tipo_conteudo && d.tipo_conteudo.split(',').filter(Boolean).slice(0,1).map(t => (
+                                          {d.tipo_conteudo && d.tipo_conteudo.split(',').filter(Boolean).map(t => (
                                             <span key={t} className="text-[10px] font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md">{t.trim()}</span>
                                           ))}
                                         </div>
@@ -2006,7 +2006,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                       {d.formato && d.formato.split(',').filter(Boolean).map(f => (
                                         <span key={f} className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md">{f.trim()}</span>
                                       ))}
-                                      {d.tipo_conteudo && d.tipo_conteudo.split(',').filter(Boolean).slice(0,1).map(t => (
+                                      {d.tipo_conteudo && d.tipo_conteudo.split(',').filter(Boolean).map(t => (
                                         <span key={t} className="text-[10px] font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md">{t.trim()}</span>
                                       ))}
                                     </div>
@@ -2233,7 +2233,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                   <p className="text-xs text-blue-500 font-medium">{d.evento_nome}</p>
                 </div>
                 <div className="flex items-center gap-2 ml-3 flex-shrink-0">
-                  {!isReadOnly && <button
+                  {!isReadOnly && !isDesigner && <button
                     onClick={() => {
                       if (editMode) { setEditMode(false); setEditForm({}) }
                       else {
@@ -2287,9 +2287,10 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                   <div className="flex flex-wrap gap-1.5">
                     {TAGS_STATUS.map(tag => {
                       const ativa = getTag(d._tipo, d.id) === tag.key
+                      const designerBloqueado = isDesigner && tag.key !== 'em_andamento' && tag.key !== 'recebido'
                       return (
-                        <button key={tag.key} onClick={() => !isReadOnly && setTagStatus(d._tipo, d.id, tag.key)} disabled={isReadOnly}
-                          className="text-xs font-semibold px-2.5 py-1 rounded-full border-2 transition-all disabled:cursor-not-allowed"
+                        <button key={tag.key} onClick={() => !isReadOnly && !designerBloqueado && setTagStatus(d._tipo, d.id, tag.key)} disabled={isReadOnly || designerBloqueado}
+                          className="text-xs font-semibold px-2.5 py-1 rounded-full border-2 transition-all disabled:cursor-not-allowed disabled:opacity-40"
                           style={ativa
                             ? { backgroundColor: tag.color + '20', color: tag.color, borderColor: tag.color }
                             : { backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
@@ -2511,6 +2512,18 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                       <div className="bg-gray-50 dark:bg-white/[0.04] rounded-xl px-3 py-2.5">
                         <p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide mb-1">Collaborators</p>
                         <p className="text-xs text-blue-600 font-medium">{d.collaborators}</p>
+                      </div>
+                    )}
+
+                    {/* Upload publicável para Designer (fora do editMode) */}
+                    {isDesigner && (
+                      <div>
+                        <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block" style={{color:'#16a34a'}}>📤 Upload Publicável</label>
+                        <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-green-300 text-xs text-green-600 hover:border-green-500 hover:bg-green-50/50 transition cursor-pointer">
+                          <input type="file" accept="image/*,video/*,.pdf" multiple className="hidden"
+                            onChange={e => { Array.from(e.target.files).forEach(file => uploadArquivo(d._tipo, d.id, file)); e.target.value='' }} />
+                          <Paperclip size={13} /> Clique para anexar arquivo publicável
+                        </label>
                       </div>
                     )}
                   </div>
