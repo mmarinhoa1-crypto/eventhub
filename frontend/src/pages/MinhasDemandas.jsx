@@ -53,6 +53,7 @@ const ETIQUETAS_PADRAO = [
 
 const TAGS_STATUS = [
   { key: 'atrasado',      label: 'Atrasado',      color: '#BE0000' },
+  { key: 'nao_entregue',  label: 'Não Entregue',  color: '#7f1d1d' },
   { key: 'pendente',      label: 'Pendente',      color: '#FFA447' },
   { key: 'em_andamento',  label: 'Em Andamento',  color: '#FFDE42' },
   { key: 'recebido',      label: 'Recebido',      color: '#5459AC' },
@@ -83,6 +84,7 @@ export default function MinhasDemandas() {
   const isDiretor = funcao === 'diretor'
   const isGestorTrafego = funcao === 'gestor_trafego'
   const isReadOnly = isGestorTrafego
+  const isDateReadOnly = isGestorTrafego || isDesigner
   const isGestor = isAdmin || isDiretor || isGestorTrafego
 
   const [data, setData] = useState({ briefings: [], posts: [], eventos: [] })
@@ -142,9 +144,25 @@ export default function MinhasDemandas() {
   const [expandedMembros, setExpandedMembros] = useState({})
   const [materiaisArquivos, setMateriaisArquivos] = useState({})
   const [loadingMateriais, setLoadingMateriais] = useState(false)
+  const [alertTick, setAlertTick] = useState(0)
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const categoriasMateriaisOptions = ['Presskit', 'Vídeos YouTube', 'Logo Realização', 'Fotos e Vídeos Artistas', 'Artes Referência', 'Logo Patrocinadores', 'Outros']
+
+  // Timer para atualizar alerta visual de horário próximo (a cada 30s)
+  useEffect(() => {
+    const t = setInterval(() => setAlertTick(v => v + 1), 30000)
+    return () => clearInterval(t)
+  }, [])
+
+  // Verifica se o horário de postagem está a 30min ou menos
+  function isAlertaHorario(dateStr, timeStr, tagKey) {
+    if (!dateStr || !timeStr || tagKey === 'publicado') return false
+    const target = new Date(dateStr.slice(0,10) + 'T' + timeStr)
+    if (isNaN(target)) return false
+    const diff = target.getTime() - Date.now()
+    return diff >= -5 * 60 * 1000 && diff <= 30 * 60 * 1000
+  }
 
   useEffect(() => {
     carregar()
@@ -532,6 +550,11 @@ export default function MinhasDemandas() {
       toast.error('Preencha o titulo e selecione um evento')
       return
     }
+    // Social Media: horário obrigatório (exceto se etiqueta "Impresso" estiver no formato)
+    if (isSocialMedia && !novoPostForm.hora_publicacao?.trim()) {
+      toast.error('Preencha o horário de publicação')
+      return
+    }
     setCriandoPost(true)
     try {
       const { id_evento, ...dados } = novoPostForm
@@ -632,7 +655,7 @@ export default function MinhasDemandas() {
         const diff = (dt - now) / (1000 * 60 * 60 * 24)
         return diff >= -1 && diff <= 7
       }
-      if (filtro === 'atrasadas') return te ? te === 'atrasado' : (dataISO < hoje && !['concluido','aprovado','publicado','cancelado'].includes(item.status))
+      if (filtro === 'atrasadas') return te ? (te === 'atrasado' || te === 'nao_entregue') : (dataISO < hoje && !['concluido','aprovado','publicado','cancelado'].includes(item.status))
       if (filtro === 'pendentes') return te ? (te === 'pendente' || te === 'em_andamento') : ['pendente','em_andamento'].includes(item.status)
       if (filtro === 'aprovados') return te ? (te === 'aprovado' || te === 'publicado') : ['aprovado','publicado','concluido'].includes(item.status)
       return true
@@ -664,7 +687,7 @@ export default function MinhasDemandas() {
   }
 
   const pendentesDemandas = todasDemandas.filter(d => { const t = tagEfetiva(d); return t === 'pendente' || t === 'em_andamento' }).length
-  const atrasadosDemandas = todasDemandas.filter(d => tagEfetiva(d) === 'atrasado').length
+  const atrasadosDemandas = todasDemandas.filter(d => { const t = tagEfetiva(d); return t === 'atrasado' || t === 'nao_entregue' }).length
 
   if (loading) return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
 
@@ -711,7 +734,7 @@ export default function MinhasDemandas() {
             total: items.length,
             pendente: items.filter(x => { const t = tagEfetiva(x); return t === 'pendente' || t === 'em_andamento' }).length,
             producao: items.filter(x => { const t = tagEfetiva(x); return t === 'recebido' }).length,
-            atrasado: items.filter(x => tagEfetiva(x) === 'atrasado').length,
+            atrasado: items.filter(x => { const t = tagEfetiva(x); return t === 'atrasado' || t === 'nao_entregue' }).length,
           }
         }
 
@@ -935,6 +958,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                               const activeTagKey = cardTag || autoTagKey
                               const tagConf = activeTagKey ? TAGS_STATUS.find(t => t.key === activeTagKey) : null
                               const borderColor = tagConf ? tagConf.color : accentColor
+                              const alertaHora = isAlertaHorario(d._data, d.hora_publicacao, activeTagKey)
 
                               return (
                                 <div
@@ -948,8 +972,9 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                   className={'rounded-xl bg-white dark:bg-white/[0.06] border cursor-grab select-none transition-all duration-150 hover:shadow-md '
                                     + (isDraggingThis ? 'opacity-40 scale-95 ' : '')
                                     + (dragOverCard === d._tipo+'-'+d.id && !isDraggingThis ? 'ring-2 ring-inset ring-blue-400 ' : '')
+                                    + (alertaHora ? 'animate-pulse ring-2 ring-red-500 ' : '')
                                     + (isSelected ? 'ring-2 ring-blue-500 shadow-md border-blue-200 ' : 'border-gray-100 dark:border-white/[0.08] shadow-sm ')}
-                                  style={{ borderLeft: `4px solid ${borderColor}` }}
+                                  style={{ borderLeft: `4px solid ${alertaHora ? '#ef4444' : borderColor}` }}
                                 >
                                   <div className="px-3 py-2.5 space-y-2">
                                     {/* Etiquetas + Status */}
@@ -979,7 +1004,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                         {d.formato && d.formato.split(',').filter(Boolean).map(f => (
                                           <span key={f} className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md">{f.trim()}</span>
                                         ))}
-                                        {d.tipo_conteudo && d.tipo_conteudo.split(',').filter(Boolean).slice(0,1).map(t => (
+                                        {d.tipo_conteudo && d.tipo_conteudo.split(',').filter(Boolean).map(t => (
                                           <span key={t} className="text-[10px] font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md">{t.trim()}</span>
                                         ))}
                                       </div>
@@ -1616,17 +1641,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                         <div
                           key={dayStr}
                           data-day={dayStr}
-                          onDragOver={e => { e.preventDefault(); setDragOverDay(dayStr) }}
-                          onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverDay(null) }}
-                          onDrop={e => {
-                            e.preventDefault()
-                            if (draggedItem && draggedItem._data?.slice(0,10) !== dayStr) {
-                              atualizarData(draggedItem._tipo, draggedItem.id, dayStr)
-                            }
-                            setDraggedItem(null)
-                            setDragOverDay(null)
-                          }}
-                          className={'flex-shrink-0 flex flex-col rounded-2xl border shadow-sm overflow-hidden transition-colors duration-150 ' + (isToday ? 'bg-blue-50/40 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/30' : 'bg-white dark:bg-white/[0.04] border-gray-100 dark:border-white/[0.08]') + (dragOverDay === dayStr && draggedItem ? ' ring-2 ring-inset ring-blue-400' : '')}
+                          className={'flex-shrink-0 flex flex-col rounded-2xl border shadow-sm overflow-hidden transition-colors duration-150 ' + (isToday ? 'bg-blue-50/40 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/30' : 'bg-white dark:bg-white/[0.04] border-gray-100 dark:border-white/[0.08]')}
                           style={{ minWidth: 285, height: 520, scrollSnapAlign: 'start' }}
                         >
                           <div className={'flex items-center gap-2 px-4 py-3 border-b ' + (isToday ? 'bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30' : 'border-gray-100 dark:border-white/[0.08] bg-white dark:bg-white/[0.03]')}>
@@ -1649,18 +1664,14 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                 const activeTagKey = cardTag || autoTagKey
                                 const tagConf = activeTagKey ? TAGS_STATUS.find(t => t.key === activeTagKey) : null
                                 const borderColor = tagConf ? tagConf.color : '#8b5cf6'
+                                const alertaHora = isAlertaHorario(d._data, d.hora_publicacao, activeTagKey)
                                 return (
                                   <div
                                     key={'briefing-'+d.id}
-                                    draggable
-                                    onDragStart={e => { e.stopPropagation(); setDraggedItem({...d}) }}
-                                    onDragEnd={() => { setDraggedItem(null); setDragOverCard(null) }}
-                                    onDragOver={e => handleCardDragOver(e, d._tipo+'-'+d.id)}
-                                    onDrop={e => handleCardDrop(e, d, dayStr, dayItems)}
                                     onClick={() => { setDetalhe({...d}); carregarArquivosDetalhe(d._tipo, d.id); setEditMode(false); setEditForm({}); carregarComentarios(d._tipo, d.id, false) }}
-                                    className={'rounded-xl bg-white dark:bg-white/[0.06] border border-gray-100 dark:border-white/[0.08] cursor-grab select-none transition-all duration-150 hover:shadow-md shadow-sm '
-                                      + (dragOverCard === d._tipo+'-'+d.id ? 'ring-2 ring-inset ring-blue-400 ' : '')}
-                                    style={{ borderLeft: `4px solid ${borderColor}` }}
+                                    className={'rounded-xl bg-white dark:bg-white/[0.06] border border-gray-100 dark:border-white/[0.08] cursor-pointer select-none transition-all duration-150 hover:shadow-md shadow-sm '
+                                      + (alertaHora ? 'animate-pulse ring-2 ring-red-500 ' : '')}
+                                    style={{ borderLeft: `4px solid ${alertaHora ? '#ef4444' : borderColor}` }}
                                   >
                                     <div className="px-3 py-2.5 space-y-2">
                                       <div className="flex items-start justify-between gap-1">
@@ -1683,7 +1694,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                           {d.formato && d.formato.split(',').filter(Boolean).map(f => (
                                             <span key={f} className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md">{f.trim()}</span>
                                           ))}
-                                          {d.tipo_conteudo && d.tipo_conteudo.split(',').filter(Boolean).slice(0,1).map(t => (
+                                          {d.tipo_conteudo && d.tipo_conteudo.split(',').filter(Boolean).map(t => (
                                             <span key={t} className="text-[10px] font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md">{t.trim()}</span>
                                           ))}
                                         </div>
@@ -1959,6 +1970,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                             const activeTagKey = cardTag || autoTagKey
                             const tagConf = activeTagKey ? TAGS_STATUS.find(t => t.key === activeTagKey) : null
                             const borderColor = tagConf ? tagConf.color : accentColor
+                            const alertaHora = isAlertaHorario(d._data, d.hora_publicacao, activeTagKey)
                             return (
                               <div
                                 key={d._tipo+'-'+d.id}
@@ -1970,8 +1982,9 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                 onClick={() => { setDetalhe({...d}); carregarArquivosDetalhe(d._tipo, d.id); setEditMode(false); setEditForm({}); carregarComentarios(d._tipo, d.id, false) }}
                                 className={'rounded-xl bg-white dark:bg-white/[0.06] border cursor-grab select-none transition-all duration-150 hover:shadow-md border-gray-100 dark:border-white/[0.08] shadow-sm '
                                   + (isDraggingThis ? 'opacity-40 scale-95 ' : '')
-                                  + (dragOverCard === d._tipo+'-'+d.id && !isDraggingThis ? 'ring-2 ring-inset ring-blue-400 ' : '')}
-                                style={{ borderLeft: `4px solid ${borderColor}` }}
+                                  + (dragOverCard === d._tipo+'-'+d.id && !isDraggingThis ? 'ring-2 ring-inset ring-blue-400 ' : '')
+                                  + (alertaHora ? 'animate-pulse ring-2 ring-red-500 ' : '')}
+                                style={{ borderLeft: `4px solid ${alertaHora ? '#ef4444' : borderColor}` }}
                               >
                                 <div className="px-3 py-2.5 space-y-2">
                                   <div className="flex items-start justify-between gap-1">
@@ -1994,7 +2007,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                       {d.formato && d.formato.split(',').filter(Boolean).map(f => (
                                         <span key={f} className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md">{f.trim()}</span>
                                       ))}
-                                      {d.tipo_conteudo && d.tipo_conteudo.split(',').filter(Boolean).slice(0,1).map(t => (
+                                      {d.tipo_conteudo && d.tipo_conteudo.split(',').filter(Boolean).map(t => (
                                         <span key={t} className="text-[10px] font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md">{t.trim()}</span>
                                       ))}
                                     </div>
@@ -2078,9 +2091,9 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                     className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                 </div>
                 <div>
-                  <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Hora</label>
+                  <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Hora {isSocialMedia && <span className="text-red-500">*</span>}</label>
                   <input type="time" value={novoPostForm.hora_publicacao} onChange={e => setNovoPostForm({...novoPostForm, hora_publicacao: e.target.value})}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+                    className={'w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent ' + (isSocialMedia && !novoPostForm.hora_publicacao ? 'border-red-300' : 'border-gray-200')} />
                 </div>
               </div>
               {/* Tipo de Conteudo */}
@@ -2221,7 +2234,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                   <p className="text-xs text-blue-500 font-medium">{d.evento_nome}</p>
                 </div>
                 <div className="flex items-center gap-2 ml-3 flex-shrink-0">
-                  {!isReadOnly && <button
+                  {!isReadOnly && !isDesigner && <button
                     onClick={() => {
                       if (editMode) { setEditMode(false); setEditForm({}) }
                       else {
@@ -2275,9 +2288,12 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                   <div className="flex flex-wrap gap-1.5">
                     {TAGS_STATUS.map(tag => {
                       const ativa = getTag(d._tipo, d.id) === tag.key
+                      const designerBloqueado = isDesigner && tag.key !== 'em_andamento' && tag.key !== 'recebido'
+                      const naoEntregueApenas = tag.key === 'nao_entregue' && isDesigner
+                      const bloqueado = designerBloqueado || naoEntregueApenas
                       return (
-                        <button key={tag.key} onClick={() => !isReadOnly && setTagStatus(d._tipo, d.id, tag.key)} disabled={isReadOnly}
-                          className="text-xs font-semibold px-2.5 py-1 rounded-full border-2 transition-all disabled:cursor-not-allowed"
+                        <button key={tag.key} onClick={() => !isReadOnly && !bloqueado && setTagStatus(d._tipo, d.id, tag.key)} disabled={isReadOnly || bloqueado}
+                          className="text-xs font-semibold px-2.5 py-1 rounded-full border-2 transition-all disabled:cursor-not-allowed disabled:opacity-40"
                           style={ativa
                             ? { backgroundColor: tag.color + '20', color: tag.color, borderColor: tag.color }
                             : { backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
@@ -2330,13 +2346,15 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                         </div>
                         <div>
                           <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Data de Publicação</label>
-                          <input type="date" value={editForm.data_publicacao?.slice(0,10)||''} onChange={e => setEditForm({...editForm, data_publicacao: e.target.value})}
-                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+                          <input type="date" value={editForm.data_publicacao?.slice(0,10)||''} onChange={e => !isDateReadOnly && setEditForm({...editForm, data_publicacao: e.target.value})}
+                            disabled={isDateReadOnly}
+                            className={'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent ' + (isDateReadOnly ? 'opacity-50 cursor-not-allowed' : '')} />
                         </div>
                         <div>
                           <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Hora</label>
-                          <input type="time" value={editForm.hora_publicacao||''} onChange={e => setEditForm({...editForm, hora_publicacao: e.target.value})}
-                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+                          <input type="time" value={editForm.hora_publicacao||''} onChange={e => !isDateReadOnly && setEditForm({...editForm, hora_publicacao: e.target.value})}
+                            disabled={isDateReadOnly}
+                            className={'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent ' + (isDateReadOnly ? 'opacity-50 cursor-not-allowed' : '')} />
                         </div>
                         <div>
                           <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Collaborators</label>
@@ -2497,6 +2515,18 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                       <div className="bg-gray-50 dark:bg-white/[0.04] rounded-xl px-3 py-2.5">
                         <p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide mb-1">Collaborators</p>
                         <p className="text-xs text-blue-600 font-medium">{d.collaborators}</p>
+                      </div>
+                    )}
+
+                    {/* Upload publicável para Designer (fora do editMode) */}
+                    {isDesigner && (
+                      <div>
+                        <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block" style={{color:'#16a34a'}}>📤 Upload Publicável</label>
+                        <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-green-300 text-xs text-green-600 hover:border-green-500 hover:bg-green-50/50 transition cursor-pointer">
+                          <input type="file" accept="image/*,video/*,.pdf" multiple className="hidden"
+                            onChange={e => { Array.from(e.target.files).forEach(file => uploadArquivo(d._tipo, d.id, file)); e.target.value='' }} />
+                          <Paperclip size={13} /> Clique para anexar arquivo publicável
+                        </label>
                       </div>
                     )}
                   </div>
