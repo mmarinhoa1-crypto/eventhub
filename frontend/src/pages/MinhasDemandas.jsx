@@ -53,6 +53,7 @@ const ETIQUETAS_PADRAO = [
 
 const TAGS_STATUS = [
   { key: 'atrasado',      label: 'Atrasado',      color: '#BE0000' },
+  { key: 'nao_entregue',  label: 'Não Entregue',  color: '#7f1d1d' },
   { key: 'pendente',      label: 'Pendente',      color: '#FFA447' },
   { key: 'em_andamento',  label: 'Em Andamento',  color: '#FFDE42' },
   { key: 'recebido',      label: 'Recebido',      color: '#5459AC' },
@@ -654,7 +655,7 @@ export default function MinhasDemandas() {
         const diff = (dt - now) / (1000 * 60 * 60 * 24)
         return diff >= -1 && diff <= 7
       }
-      if (filtro === 'atrasadas') return te ? te === 'atrasado' : (dataISO < hoje && !['concluido','aprovado','publicado','cancelado'].includes(item.status))
+      if (filtro === 'atrasadas') return te ? (te === 'atrasado' || te === 'nao_entregue') : (dataISO < hoje && !['concluido','aprovado','publicado','cancelado'].includes(item.status))
       if (filtro === 'pendentes') return te ? (te === 'pendente' || te === 'em_andamento') : ['pendente','em_andamento'].includes(item.status)
       if (filtro === 'aprovados') return te ? (te === 'aprovado' || te === 'publicado') : ['aprovado','publicado','concluido'].includes(item.status)
       return true
@@ -686,7 +687,7 @@ export default function MinhasDemandas() {
   }
 
   const pendentesDemandas = todasDemandas.filter(d => { const t = tagEfetiva(d); return t === 'pendente' || t === 'em_andamento' }).length
-  const atrasadosDemandas = todasDemandas.filter(d => tagEfetiva(d) === 'atrasado').length
+  const atrasadosDemandas = todasDemandas.filter(d => { const t = tagEfetiva(d); return t === 'atrasado' || t === 'nao_entregue' }).length
 
   if (loading) return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
 
@@ -733,7 +734,7 @@ export default function MinhasDemandas() {
             total: items.length,
             pendente: items.filter(x => { const t = tagEfetiva(x); return t === 'pendente' || t === 'em_andamento' }).length,
             producao: items.filter(x => { const t = tagEfetiva(x); return t === 'recebido' }).length,
-            atrasado: items.filter(x => tagEfetiva(x) === 'atrasado').length,
+            atrasado: items.filter(x => { const t = tagEfetiva(x); return t === 'atrasado' || t === 'nao_entregue' }).length,
           }
         }
 
@@ -2288,8 +2289,10 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                     {TAGS_STATUS.map(tag => {
                       const ativa = getTag(d._tipo, d.id) === tag.key
                       const designerBloqueado = isDesigner && tag.key !== 'em_andamento' && tag.key !== 'recebido'
+                      const naoEntregueApenas = tag.key === 'nao_entregue' && isDesigner
+                      const bloqueado = designerBloqueado || naoEntregueApenas
                       return (
-                        <button key={tag.key} onClick={() => !isReadOnly && !designerBloqueado && setTagStatus(d._tipo, d.id, tag.key)} disabled={isReadOnly || designerBloqueado}
+                        <button key={tag.key} onClick={() => !isReadOnly && !bloqueado && setTagStatus(d._tipo, d.id, tag.key)} disabled={isReadOnly || bloqueado}
                           className="text-xs font-semibold px-2.5 py-1 rounded-full border-2 transition-all disabled:cursor-not-allowed disabled:opacity-40"
                           style={ativa
                             ? { backgroundColor: tag.color + '20', color: tag.color, borderColor: tag.color }
