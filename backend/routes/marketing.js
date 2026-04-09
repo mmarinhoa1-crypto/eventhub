@@ -1486,14 +1486,34 @@ router.post('/api/demandas/:tipo/:id/comentarios', auth, async (req, res) => {
       }
     } catch {}
 
-    // Notificar todos os usuários da org (exceto quem comentou)
+    // Notificar apenas envolvidos: responsáveis (designer + social_media) do evento + admin/diretor
     try {
-      const usuarios = await pool.query('SELECT id FROM usuarios WHERE org_id=$1 AND id!=$2', [req.user.org_id, req.user.id]);
+      // Buscar id_evento da demanda
+      let idEvento = null;
+      if (tipo === 'briefing') {
+        const b = await pool.query('SELECT id_evento FROM briefings WHERE id=$1', [refId]);
+        idEvento = b.rows[0]?.id_evento;
+      } else {
+        const p = await pool.query('SELECT id_evento FROM cronograma_marketing WHERE id=$1', [refId]);
+        idEvento = p.rows[0]?.id_evento;
+      }
+      // Coletar destinatários: responsáveis do evento + todos admin/diretor
+      const destinatarios = new Set();
+      if (idEvento) {
+        const ev = await pool.query('SELECT designer_id, social_media_id FROM eventos WHERE id=$1', [idEvento]);
+        if (ev.rows[0]?.designer_id) destinatarios.add(ev.rows[0].designer_id);
+        if (ev.rows[0]?.social_media_id) destinatarios.add(ev.rows[0].social_media_id);
+      }
+      const gestores = await pool.query("SELECT id FROM usuarios WHERE org_id=$1 AND funcao IN ('admin','diretor')", [req.user.org_id]);
+      gestores.rows.forEach(g => destinatarios.add(g.id));
+      // Remover quem comentou
+      destinatarios.delete(req.user.id);
+
       const tipoParam = tipo === 'briefing' ? 'briefing' : 'post';
-      for (const u of usuarios.rows) {
+      for (const uid of destinatarios) {
         await pool.query(
           'INSERT INTO notificacoes(org_id,usuario_id,tipo,titulo,mensagem,link,referencia_tipo,referencia_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8)',
-          [req.user.org_id, u.id, 'comentario_demanda', 'Novo comentário',
+          [req.user.org_id, uid, 'comentario_demanda', 'Novo comentário',
            (req.user.nome || 'Usuário') + ' comentou em "' + titulo + '"',
            '/demandas?tipo=' + tipoParam + '&id=' + refId, tipo, refId]
         );
@@ -1548,6 +1568,28 @@ router.put('/api/tags-demandas/:tipo/:id', auth, async (req, res) => {
         [req.user.org_id, tipo, refId, tag_key]
       );
     }
+    // Notificar social_media responsavel quando tag for "recebido"
+    if (tag_key === 'recebido') {
+      try {
+        let dem = null;
+        if (tipo === 'briefing') {
+          const r = await pool.query('SELECT b.id_evento, b.titulo, e.social_media_id FROM briefings b JOIN eventos e ON b.id_evento=e.id WHERE b.id=$1', [refId]);
+          dem = r.rows[0];
+        } else {
+          const r = await pool.query('SELECT c.id_evento, c.titulo, e.social_media_id FROM cronograma_marketing c JOIN eventos e ON c.id_evento=e.id WHERE c.id=$1', [refId]);
+          dem = r.rows[0];
+        }
+        if (dem && dem.social_media_id && dem.social_media_id !== req.user.id) {
+          const tipoParam = tipo === 'briefing' ? 'briefing' : 'post';
+          await pool.query(
+            'INSERT INTO notificacoes(org_id,usuario_id,tipo,titulo,mensagem,link,referencia_tipo,referencia_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8)',
+            [req.user.org_id, dem.social_media_id, 'demanda_recebida', 'Demanda recebida',
+             'A demanda "' + dem.titulo + '" foi marcada como recebida',
+             '/demandas?tipo=' + tipoParam + '&id=' + refId, tipo, refId]
+          );
+        }
+      } catch (e2) { console.error('Erro ao notificar recebido:', e2.message); }
+    }
     res.json({ sucesso: true });
   } catch (e) { res.status(500).json({ erro: e.message }); }
 });
@@ -1584,6 +1626,48 @@ router.put('/api/ordem-cards/:dia', auth, async (req, res) => {
     res.json({ sucesso: true });
   } catch (e) { res.status(500).json({ erro: e.message }); }
 });
+
+// CRON: Verificar demandas atrasadas a cada hora e notificar responsaveis (1x por demanda)
+setInterval(async () => {
+  try {
+    const hoje = new Date().toISOString().split('T')[0];
+    // Buscar demandas atrasadas (data passou + status nao publicado/aprovado/cancelado)
+    const atrasadas = await pool.query(`
+      SELECT c.id, c.titulo, c.org_id, e.designer_id, e.social_media_id
+      FROM cronograma_marketing c
+      JOIN eventos e ON c.id_evento = e.id
+      WHERE c.data_publicacao IS NOT NULL
+        AND c.data_publicacao != ''
+        AND c.data_publicacao::date < $1::date
+        AND c.status NOT IN ('publicado','aprovado','concluido','cancelado')
+        AND NOT EXISTS (
+          SELECT 1 FROM tags_demandas t
+          WHERE t.tipo='post' AND t.referencia_id=c.id AND t.tag_key IN ('publicado','aprovado')
+        )
+        AND NOT EXISTS (
+          SELECT 1 FROM notificacoes n
+          WHERE n.tipo='demanda_atrasada' AND n.referencia_id=c.id AND n.referencia_tipo='post'
+        )
+    `, [hoje]);
+    for (const d of atrasadas.rows) {
+      const destinatarios = new Set();
+      if (d.designer_id) destinatarios.add(d.designer_id);
+      if (d.social_media_id) destinatarios.add(d.social_media_id);
+      // Tambem admin/diretor
+      const gestores = await pool.query("SELECT id FROM usuarios WHERE org_id=$1 AND funcao IN ('admin','diretor')", [d.org_id]);
+      gestores.rows.forEach(g => destinatarios.add(g.id));
+      for (const uid of destinatarios) {
+        await pool.query(
+          'INSERT INTO notificacoes(org_id,usuario_id,tipo,titulo,mensagem,link,referencia_tipo,referencia_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8)',
+          [d.org_id, uid, 'demanda_atrasada', 'Demanda em atraso',
+           'A demanda "' + d.titulo + '" esta em atraso',
+           '/demandas?tipo=post&id=' + d.id, 'post', d.id]
+        );
+      }
+    }
+    if (atrasadas.rows.length > 0) console.log('CRON ATRASADAS: ' + atrasadas.rows.length + ' demandas notificadas');
+  } catch (e) { console.error('Erro CRON atrasadas:', e.message); }
+}, 60 * 60 * 1000); // a cada 1 hora
 
 // === ALIASES ENGLISH ROUTES ===
 

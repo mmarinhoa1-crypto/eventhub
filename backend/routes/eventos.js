@@ -87,7 +87,7 @@ if(req.user.funcao==='designer'||req.user.funcao==='social_media'||req.user.func
 const{nome,id_grupo,orcamento,data_evento,hora_evento,hora_abertura,local_evento,cidade,descricao,publico_alvo,capacidade,atracoes,tipo_evento,info_lotes,observacoes,data_abertura_vendas,hora_abertura_vendas,promo_abertura,pontos_venda,classificacao,instagram,designer,social_media,diretor,designer_id,social_media_id,diretor_id}=req.body;
 const r=await pool.query('INSERT INTO eventos(org_id,nome,id_grupo,orcamento,data_evento,hora_evento,hora_abertura,local_evento,cidade,descricao,publico_alvo,capacidade,atracoes,tipo_evento,info_lotes,observacoes,data_abertura_vendas,hora_abertura_vendas,promo_abertura,pontos_venda,classificacao,instagram,designer,social_media,diretor,designer_id,social_media_id,diretor_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28) RETURNING *',[req.user.org_id,nome,id_grupo||'',parseFloat(orcamento)||0,data_evento||'',hora_evento||'',hora_abertura||'',local_evento||'',cidade||'',descricao||'',publico_alvo||'',parseInt(capacidade)||0,atracoes||'',tipo_evento||'',info_lotes||'',observacoes||'',data_abertura_vendas||'',hora_abertura_vendas||'',promo_abertura||'',pontos_venda||'',classificacao||'',instagram||'',designer||'',social_media||'',diretor||'',designer_id?parseInt(designer_id):null,social_media_id?parseInt(social_media_id):null,diretor_id?parseInt(diretor_id):null]);
 const evento=r.rows[0];
-// Notificar todos os usuarios da org sobre o novo evento
+// Notificar todos os usuarios da org sobre o novo evento (geral)
 try{
   const usuarios=await pool.query('SELECT id FROM usuarios WHERE org_id=$1 AND id!=$2',[req.user.org_id,req.user.id]);
   const dataStr=data_evento?new Date(data_evento).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'}):'';
@@ -95,6 +95,17 @@ try{
     await pool.query('INSERT INTO notificacoes(org_id,usuario_id,tipo,titulo,mensagem,link,referencia_tipo,referencia_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8)',
       [req.user.org_id,u.id,'novo_evento','Novo evento criado',
        (req.user.nome||'Admin')+' criou o evento "'+nome+'"'+(dataStr?' para '+dataStr:''),
+       '/demandas','evento',evento.id]);
+  }
+  // Notificacao extra para responsaveis (designer e social_media)
+  const responsaveis=new Set();
+  if(designer_id) responsaveis.add(parseInt(designer_id));
+  if(social_media_id) responsaveis.add(parseInt(social_media_id));
+  responsaveis.delete(req.user.id);
+  for(const uid of responsaveis){
+    await pool.query('INSERT INTO notificacoes(org_id,usuario_id,tipo,titulo,mensagem,link,referencia_tipo,referencia_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8)',
+      [req.user.org_id,uid,'evento_atribuido','Novo evento atribuido a voce',
+       'O evento "'+nome+'" foi atribuido a sua responsabilidade',
        '/demandas','evento',evento.id]);
   }
 }catch(e2){console.error('Erro ao criar notificacoes de evento:',e2.message)}

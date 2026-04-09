@@ -17,7 +17,11 @@ function tempoAtras(dataStr) {
 
 const TIPO_CONFIG = {
   novo_evento: { icon: Calendar, bg: 'bg-blue-100 dark:bg-blue-500/20', color: 'text-blue-600 dark:text-blue-400', label: 'Novo evento' },
+  evento_atribuido: { icon: Calendar, bg: 'bg-pink-100 dark:bg-pink-500/20', color: 'text-pink-600 dark:text-pink-400', label: 'Evento atribuído' },
   demanda_aprovacao: { icon: FileText, bg: 'bg-amber-100 dark:bg-amber-500/20', color: 'text-amber-600 dark:text-amber-400', label: 'Aprovação' },
+  demanda_recebida: { icon: FileText, bg: 'bg-green-100 dark:bg-green-500/20', color: 'text-green-600 dark:text-green-400', label: 'Demanda recebida' },
+  demanda_atrasada: { icon: FileText, bg: 'bg-red-100 dark:bg-red-500/20', color: 'text-red-600 dark:text-red-400', label: 'Atrasada' },
+  comentario_demanda: { icon: FileText, bg: 'bg-violet-100 dark:bg-violet-500/20', color: 'text-violet-600 dark:text-violet-400', label: 'Comentário' },
 }
 
 // Swipeable notification item
