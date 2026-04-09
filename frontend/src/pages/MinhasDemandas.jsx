@@ -2226,431 +2226,532 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
           setEditForm({...editForm, [field]: arr.join(',')})
         }
 
-        return (
-          <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4" onClick={() => setDetalhe(null)}>
-            <div className="bg-white dark:bg-[#1c1c24] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-auto shadow-2xl" onClick={e => e.stopPropagation()}>
+        /* -- shared input classes -- */
+        const inputCls = 'w-full bg-white dark:bg-white/[0.06] border border-gray-200 dark:border-white/[0.10] rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-white/90 placeholder-gray-400 dark:placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-accent/40 transition'
+        const selectCls = inputCls
+        const textareaCls = inputCls + ' resize-none'
+        const sectionHdr = 'text-xs font-bold text-gray-500 dark:text-white/60 uppercase tracking-wider mb-3'
+        const dateDisabledCls = isDateReadOnly ? ' opacity-60 cursor-not-allowed' : ''
 
-              {/* Header */}
-              <div className="sticky top-0 bg-white dark:bg-[#1c1c24] border-b border-gray-100 dark:border-white/[0.08] px-5 py-4 flex items-center justify-between rounded-t-2xl z-10">
+        return (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4" onClick={() => { setDetalhe(null); setEditMode(false); setEditForm({}) }}>
+            <div className="bg-white dark:bg-[#1a1a23] rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-gray-200/60 dark:border-white/[0.06]" onClick={e => e.stopPropagation()}>
+
+              {/* ── Header ── */}
+              <div className="sticky top-0 bg-white dark:bg-[#1a1a23] border-b border-gray-100 dark:border-white/[0.08] px-6 py-4 flex items-center justify-between rounded-t-2xl z-10 flex-shrink-0">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {(() => {
-                      const tag = getTag(d._tipo, d.id)
-                      const tagObj = tag && TAGS_STATUS.find(t => t.key === tag)
-                      if (tagObj) {
-                        return <span className="text-[11px] font-bold px-2.5 py-1 rounded-full border" style={{ backgroundColor: tagObj.color + '20', color: tagObj.color, borderColor: tagObj.color + '40' }}>{tagObj.label}</span>
-                      }
-                      return <span className={'text-[11px] font-bold px-2.5 py-1 rounded-full border ' + (statusColors[d.status] || 'bg-gray-100 text-gray-600 border-gray-200')}>{statusLabels[d.status] || d.status}</span>
-                    })()}
-                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400">
-                      📲 Demanda
-                    </span>
-                    {d.plataforma && d._tipo === 'post' && <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-accent/10 text-accent">{d.plataforma}</span>}
-                  </div>
-                  <h3 className="font-extrabold text-gray-900 dark:text-white/90 text-base mt-1.5 truncate">{d.titulo || 'Sem título'}</h3>
-                  <p className="text-xs text-blue-500 font-medium">{d.evento_nome}</p>
+                  {editMode ? (
+                    <h3 className="font-extrabold text-gray-900 dark:text-white/95 text-lg">Editar Demanda</h3>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        {(() => {
+                          const tag = getTag(d._tipo, d.id)
+                          const tagObj = tag && TAGS_STATUS.find(t => t.key === tag)
+                          if (tagObj) {
+                            return <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full border" style={{ backgroundColor: tagObj.color + '18', color: tagObj.color, borderColor: tagObj.color + '35' }}>{tagObj.label}</span>
+                          }
+                          return <span className={'text-[11px] font-bold px-2.5 py-0.5 rounded-full border ' + (statusColors[d.status] || 'bg-gray-100 text-gray-600 border-gray-200')}>{statusLabels[d.status] || d.status}</span>
+                        })()}
+                        {d.plataforma && d._tipo === 'post' && <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-pink-50 dark:bg-pink-500/15 text-pink-600 dark:text-pink-400 border border-pink-200 dark:border-pink-500/25">{d.plataforma}</span>}
+                      </div>
+                      <h3 className="font-extrabold text-gray-900 dark:text-white/95 text-lg leading-tight truncate">{d.titulo || 'Sem titulo'}</h3>
+                    </>
+                  )}
+                  <p className="text-xs font-semibold text-pink-500 dark:text-pink-400 mt-0.5">{d.evento_nome}</p>
                 </div>
-                <div className="flex items-center gap-2 ml-3 flex-shrink-0">
-                  {!isReadOnly && !isDesigner && <button
-                    onClick={() => {
-                      if (editMode) { setEditMode(false); setEditForm({}) }
-                      else {
-                        setEditMode(true)
-                        setEditForm({
-                          titulo: d.titulo||'', descricao: d.descricao||'', conteudo: d.conteudo||'',
-                          referencia: d.referencia||'', musica: d.musica||'',
-                          data_vencimento: d.data_vencimento||'', data_publicacao: d.data_publicacao||'',
-                          hora_publicacao: d.hora_publicacao||'', collaborators: d.collaborators||'',
-                          tipo_conteudo: d.tipo_conteudo||'', formato: d.formato||'',
-                          plataforma: d.plataforma||'Instagram', status: d.status||'pendente',
-                          id_evento: d.id_evento||'',
-                          aparecer_designer: !!d.aparecer_designer
-                            ? true
-                            : !!d.aparecer_designer,
-                        })
-                      }
-                    }}
-                    className={'text-xs px-3 py-1.5 rounded-lg font-bold transition ' + (editMode ? 'bg-gray-100 dark:bg-white/[0.08] text-gray-600 dark:text-white/60 hover:bg-gray-200 dark:hover:bg-white/[0.12]' : 'bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/25')}
-                  >
-                    {editMode ? 'Cancelar' : '✏️ Editar'}
-                  </button>}
-                  <button onClick={() => setDetalhe(null)}
-                    className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-white/[0.08] flex items-center justify-center text-gray-400 dark:text-white/50 hover:text-gray-600 dark:hover:text-white/80 hover:bg-gray-200 dark:hover:bg-white/[0.12] transition font-bold">✕</button>
+                <div className="flex items-center gap-2 ml-4 flex-shrink-0">
+                  {editMode ? (
+                    <>
+                      <button onClick={() => { setEditMode(false); setEditForm({}) }}
+                        className="text-xs px-3.5 py-1.5 rounded-lg font-semibold bg-gray-100 dark:bg-white/[0.08] text-gray-600 dark:text-white/60 hover:bg-gray-200 dark:hover:bg-white/[0.12] transition">
+                        Cancelar
+                      </button>
+                      <button onClick={salvarEdicao}
+                        className="text-xs px-4 py-1.5 rounded-lg font-bold bg-accent text-white hover:opacity-90 transition shadow-sm">
+                        Salvar
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      {!isReadOnly && !isDesigner && <button
+                        onClick={() => {
+                          setEditMode(true)
+                          setEditForm({
+                            titulo: d.titulo||'', descricao: d.descricao||'', conteudo: d.conteudo||'',
+                            referencia: d.referencia||'', musica: d.musica||'',
+                            data_vencimento: d.data_vencimento||'', data_publicacao: d.data_publicacao||'',
+                            hora_publicacao: d.hora_publicacao||'', collaborators: d.collaborators||'',
+                            tipo_conteudo: d.tipo_conteudo||'', formato: d.formato||'',
+                            plataforma: d.plataforma||'Instagram', status: d.status||'pendente',
+                            id_evento: d.id_evento||'',
+                            aparecer_designer: !!d.aparecer_designer,
+                          })
+                        }}
+                        className="text-xs px-3.5 py-1.5 rounded-lg font-semibold bg-accent/10 text-accent hover:bg-accent/20 transition">
+                        Editar
+                      </button>}
+                      <button onClick={() => { setDetalhe(null); setEditMode(false); setEditForm({}) }}
+                        className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-white/[0.08] flex items-center justify-center text-gray-400 dark:text-white/50 hover:text-gray-600 dark:hover:text-white/80 hover:bg-gray-200 dark:hover:bg-white/[0.12] transition">
+                        <XIcon size={15} />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
 
-              <div className="p-5 space-y-5">
-                {/* Etiquetas */}
-                <div className="space-y-2">
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">Etiquetas</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {ETIQUETAS_PADRAO.map(et => {
-                      const ativa = etqs.includes(et.key)
-                      return (
-                        <button key={et.key} onClick={() => toggleEtiqueta(d._tipo, d.id, et.key)}
-                          className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border-2 transition-all"
-                          style={ativa
-                            ? { backgroundColor: isDark ? et.darkBg : et.bg, color: isDark ? et.darkColor : et.color, borderColor: isDark ? et.darkBorder : et.border }
-                            : { backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
-                          {et.label}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                {/* Tags de Status */}
-                <div className="space-y-2">
-                  <p className="text-[11px] font-bold text-gray-400 dark:text-white/40 uppercase tracking-wide">Tags</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {TAGS_STATUS.map(tag => {
-                      const ativa = getTag(d._tipo, d.id) === tag.key
-                      const designerBloqueado = isDesigner && tag.key !== 'em_andamento' && tag.key !== 'recebido'
-                      const naoEntregueApenas = tag.key === 'nao_entregue' && isDesigner
-                      const bloqueado = designerBloqueado || naoEntregueApenas
-                      return (
-                        <button key={tag.key} onClick={() => !isReadOnly && !bloqueado && setTagStatus(d._tipo, d.id, tag.key)} disabled={isReadOnly || bloqueado}
-                          className="text-xs font-semibold px-2.5 py-1 rounded-full border-2 transition-all disabled:cursor-not-allowed disabled:opacity-40"
-                          style={ativa
-                            ? { backgroundColor: tag.color + '20', color: tag.color, borderColor: tag.color }
-                            : { backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
-                          {tag.label}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
+              {/* ── Scrollable body ── */}
+              <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
 
                 {editMode ? (
-                  <div className="space-y-4 border-t border-gray-100 pt-4">
-                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">Editar Card</p>
-
+                  /* ═══════════ EDIT MODE ═══════════ */
+                  <>
+                    {/* Informacoes principais */}
                     <div>
-                      <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Título</label>
-                      <input value={editForm.titulo||''} onChange={e => setEditForm({...editForm, titulo: e.target.value})}
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Evento</label>
-                      <select value={editForm.id_evento||''} onChange={e => setEditForm({...editForm, id_evento: e.target.value})}
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
-                        {eventosAtivos.map(ev => <option key={ev.id} value={ev.id}>{ev.nome}</option>)}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Status</label>
-                      <select value={editForm.status||''} onChange={e => setEditForm({...editForm, status: e.target.value})}
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
-                        <option value="pendente">Pendente</option>
-                        <option value="em_andamento">Em Produção</option>
-                        <option value="em_revisao">Em Revisão</option>
-                        <option value="aprovado">Aprovado</option>
-                        <option value="publicado">Publicado</option>
-                      </select>
-                    </div>
-
-
-                    {d._tipo === 'post' && (
-                      <div className="grid grid-cols-2 gap-3">
+                      <p className={sectionHdr}>Informacoes principais</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Plataforma</label>
-                          <select value={editForm.plataforma||'Instagram'} onChange={e => setEditForm({...editForm, plataforma: e.target.value})}
-                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
-                            {['Instagram','Facebook','TikTok','YouTube','Twitter','LinkedIn','WhatsApp'].map(p => <option key={p}>{p}</option>)}
+                          <label className="text-[11px] font-semibold text-gray-500 dark:text-white/50 mb-1.5 block">Titulo</label>
+                          <input value={editForm.titulo||''} onChange={e => setEditForm({...editForm, titulo: e.target.value})}
+                            className={inputCls} placeholder="Nome da demanda" />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-semibold text-gray-500 dark:text-white/50 mb-1.5 block">Evento</label>
+                          <select value={editForm.id_evento||''} onChange={e => setEditForm({...editForm, id_evento: e.target.value})}
+                            className={selectCls}>
+                            {eventosAtivos.map(ev => <option key={ev.id} value={ev.id}>{ev.nome}</option>)}
                           </select>
                         </div>
                         <div>
-                          <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Data de Publicação</label>
-                          <input type="date" value={editForm.data_publicacao?.slice(0,10)||''} onChange={e => !isDateReadOnly && setEditForm({...editForm, data_publicacao: e.target.value})}
-                            disabled={isDateReadOnly}
-                            className={'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent ' + (isDateReadOnly ? 'opacity-50 cursor-not-allowed' : '')} />
+                          <label className="text-[11px] font-semibold text-gray-500 dark:text-white/50 mb-1.5 block">Status</label>
+                          <select value={editForm.status||''} onChange={e => setEditForm({...editForm, status: e.target.value})}
+                            className={selectCls}>
+                            <option value="pendente">Pendente</option>
+                            <option value="em_andamento">Em Producao</option>
+                            <option value="em_revisao">Em Revisao</option>
+                            <option value="aprovado">Aprovado</option>
+                            <option value="publicado">Publicado</option>
+                          </select>
                         </div>
-                        <div>
-                          <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Hora</label>
-                          <input type="time" value={editForm.hora_publicacao||''} onChange={e => !isDateReadOnly && setEditForm({...editForm, hora_publicacao: e.target.value})}
-                            disabled={isDateReadOnly}
-                            className={'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent ' + (isDateReadOnly ? 'opacity-50 cursor-not-allowed' : '')} />
-                        </div>
-                        <div>
-                          <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Collaborators</label>
-                          <input value={editForm.collaborators||''} onChange={e => setEditForm({...editForm, collaborators: e.target.value})}
-                            placeholder="@usuario1, @usuario2"
-                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Tipo de Conteúdo */}
-                    <div>
-                      <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2 block">Tipo de Conteúdo</label>
-                      <div className="flex gap-2 flex-wrap">
-                        {['GIF','VIDEO','ESTATICA','FOTO ORGÂNICA','VÍDEO ORGÂNICO','INTERAÇÃO'].map(tc => {
-                          const ativo = (editForm.tipo_conteudo||'').split(',').includes(tc)
-                          return (
-                            <button key={tc} type="button" onClick={() => toggleMultiEdit('tipo_conteudo', tc)}
-                              className={'px-2.5 py-1 rounded-lg text-xs font-bold border-2 transition ' + (ativo ? 'border-amber-500 bg-amber-500 text-white' : 'border-gray-200 text-gray-500 hover:border-amber-300')}>
-                              {tc}
-                            </button>
-                          )
-                        })}
+                        {d._tipo === 'post' && (
+                          <div>
+                            <label className="text-[11px] font-semibold text-gray-500 dark:text-white/50 mb-1.5 block">Plataforma</label>
+                            <select value={editForm.plataforma||'Instagram'} onChange={e => setEditForm({...editForm, plataforma: e.target.value})}
+                              className={selectCls}>
+                              {['Instagram','Facebook','TikTok','YouTube','Twitter','LinkedIn','WhatsApp'].map(p => <option key={p}>{p}</option>)}
+                            </select>
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    {/* Formato */}
-                    <div>
-                      <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2 block">Formato</label>
-                      <div className="flex gap-2 flex-wrap">
-                        {['FEED','STORIES','CARROSSEL','REELS'].map(fm => {
-                          const ativo = (editForm.formato||'').split(',').includes(fm)
-                          return (
-                            <button key={fm} type="button" onClick={() => toggleMultiEdit('formato', fm)}
-                              className={'px-2.5 py-1 rounded-lg text-xs font-bold border-2 transition ' + (ativo ? 'border-blue-500 bg-blue-500 text-white' : 'border-gray-200 text-gray-500 hover:border-blue-300')}>
-                              {fm === 'FEED' ? '📱' : fm === 'STORIES' ? '📲' : fm === 'CARROSSEL' ? '🔄' : '🎥'} {fm}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Briefing / Descrição */}
-                    <div>
-                      <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">
-                        Briefing para o Designer
-                      </label>
-                      <textarea value={editForm.descricao||''} onChange={e => setEditForm({...editForm, descricao: e.target.value})}
-                        rows={3} placeholder="Descreva o que precisa ser criado..."
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
-                    </div>
-
+                    {/* Publicacao */}
                     {d._tipo === 'post' && (
                       <div>
-                        <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Legenda / Conteúdo</label>
-                        <textarea value={editForm.conteudo||''} onChange={e => setEditForm({...editForm, conteudo: e.target.value})}
-                          rows={3} placeholder="Legenda do post..."
-                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+                        <p className={sectionHdr}>Publicacao</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-[11px] font-semibold text-gray-500 dark:text-white/50 mb-1.5 flex items-center gap-1.5">
+                              <Calendar size={12} /> Data de Publicacao
+                            </label>
+                            <input type="date" value={editForm.data_publicacao?.slice(0,10)||''} onChange={e => !isDateReadOnly && setEditForm({...editForm, data_publicacao: e.target.value})}
+                              disabled={isDateReadOnly}
+                              className={inputCls + dateDisabledCls} />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-semibold text-gray-500 dark:text-white/50 mb-1.5 flex items-center gap-1.5">
+                              <Clock size={12} /> Hora
+                            </label>
+                            <input type="time" value={editForm.hora_publicacao||''} onChange={e => !isDateReadOnly && setEditForm({...editForm, hora_publicacao: e.target.value})}
+                              disabled={isDateReadOnly}
+                              className={inputCls + dateDisabledCls} />
+                          </div>
+                        </div>
+                        <div className="mt-3">
+                          <label className="text-[11px] font-semibold text-gray-500 dark:text-white/50 mb-1.5 block">Collaborators</label>
+                          <input value={editForm.collaborators||''} onChange={e => setEditForm({...editForm, collaborators: e.target.value})}
+                            placeholder="@usuario1, @usuario2"
+                            className={inputCls} />
+                        </div>
                       </div>
                     )}
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Referência (link)</label>
-                        <input value={editForm.referencia||''} onChange={e => setEditForm({...editForm, referencia: e.target.value})}
-                          placeholder="Link ou descrição"
-                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
-                      </div>
-                      <div>
-                        <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Música</label>
-                        <input value={editForm.musica||''} onChange={e => setEditForm({...editForm, musica: e.target.value})}
-                          placeholder="Nome ou link"
-                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
-                      </div>
-                    </div>
-
-                    {/* Upload publicável */}
+                    {/* Configuracao de conteudo */}
                     <div>
-                      <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block" style={{color:'#16a34a'}}>📤 Upload Publicável <span className="text-[9px] font-normal normal-case text-gray-400">(pode ser publicado no Instagram)</span></label>
-                      <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-green-300 text-xs text-green-600 hover:border-green-500 hover:bg-green-50/50 transition cursor-pointer">
-                        <input type="file" accept="image/*,video/*,.pdf" multiple className="hidden"
-                          onChange={e => { Array.from(e.target.files).forEach(file => uploadArquivo(d._tipo, d.id, file)); e.target.value='' }} />
-                        <Paperclip size={13} /> Clique para anexar arquivo publicável
-                      </label>
-                    </div>
-
-                    {/* Upload de referência */}
-                    <div>
-                      <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block" style={{color:'#d97706'}}>📎 Upload de Referência <span className="text-[9px] font-normal normal-case text-gray-400">(uso interno — NÃO publica no Instagram)</span></label>
-                      <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-amber-300 text-xs text-amber-600 hover:border-amber-500 hover:bg-amber-50/50 transition cursor-pointer">
-                        <input type="file" accept="image/*,video/*,.pdf,.psd,.ai,.zip" multiple className="hidden"
-                          onChange={e => { Array.from(e.target.files).forEach(file => uploadRefArquivo(d._tipo, d.id, file)); e.target.value='' }} />
-                        <Paperclip size={13} /> Clique para anexar referência
-                      </label>
-                    </div>
-
-                    {/* Toggle: Aparecer para o Designer (não aparece para designers) */}
-                    {!isDesigner && <div className="flex items-center justify-between p-3 rounded-xl border border-gray-200 dark:border-white/[0.10] bg-gray-50 dark:bg-white/[0.04]">
-                      <div>
-                        <p className="text-sm font-semibold text-gray-800 dark:text-white/80">🎨 Aparecer para o Designer?</p>
-                        <p className="text-[10px] text-gray-400 dark:text-white/40 mt-0.5">O designer do evento também visualiza essa demanda</p>
+                      <p className={sectionHdr}>Configuracao de conteudo</p>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-[11px] font-semibold text-gray-500 dark:text-white/50 mb-2 block">Tipo de Conteudo</label>
+                          <div className="flex gap-2 flex-wrap">
+                            {[
+                              {val:'GIF', icon:'GIF'},
+                              {val:'VIDEO', icon:'VID'},
+                              {val:'ESTATICA', icon:'IMG'},
+                              {val:'FOTO ORGANICA', icon:'ORG'},
+                              {val:'VIDEO ORGANICO', icon:'REC'},
+                              {val:'INTERACAO', icon:'INT'},
+                            ].map(tc => {
+                              const ativo = (editForm.tipo_conteudo||'').split(',').includes(tc.val)
+                              return (
+                                <button key={tc.val} type="button" onClick={() => toggleMultiEdit('tipo_conteudo', tc.val)}
+                                  className={'px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ' + (ativo
+                                    ? 'border-amber-400 bg-amber-500 text-white shadow-sm shadow-amber-500/25'
+                                    : 'border-gray-200 dark:border-white/[0.10] text-gray-500 dark:text-white/50 hover:border-amber-300 dark:hover:border-amber-500/40 bg-white dark:bg-white/[0.04]')}>
+                                  <span className="opacity-60 mr-1 text-[10px]">{tc.icon}</span> {tc.val}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-semibold text-gray-500 dark:text-white/50 mb-2 block">Formato</label>
+                          <div className="flex gap-2 flex-wrap">
+                            {[
+                              {val:'FEED', icon:'FEED'},
+                              {val:'STORIES', icon:'STO'},
+                              {val:'CARROSSEL', icon:'CAR'},
+                              {val:'REELS', icon:'REEL'},
+                            ].map(fm => {
+                              const ativo = (editForm.formato||'').split(',').includes(fm.val)
+                              return (
+                                <button key={fm.val} type="button" onClick={() => toggleMultiEdit('formato', fm.val)}
+                                  className={'px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ' + (ativo
+                                    ? 'border-blue-400 bg-blue-500 text-white shadow-sm shadow-blue-500/25'
+                                    : 'border-gray-200 dark:border-white/[0.10] text-gray-500 dark:text-white/50 hover:border-blue-300 dark:hover:border-blue-500/40 bg-white dark:bg-white/[0.04]')}>
+                                  <span className="opacity-60 mr-1 text-[10px]">{fm.icon}</span> {fm.val}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setEditForm(f => ({...f, aparecer_designer: !f.aparecer_designer}))}
-                        className={'relative w-11 h-6 rounded-full overflow-hidden transition-colors flex-shrink-0 ' + (editForm.aparecer_designer ? 'bg-blue-600' : 'bg-gray-300')}
-                      >
-                        <span className={'absolute left-0.5 top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ' + (editForm.aparecer_designer ? 'translate-x-5' : 'translate-x-0')} />
-                      </button>
-                    </div>}
+                    </div>
 
-                    <button onClick={salvarEdicao}
-                      className="w-full px-4 py-2.5 bg-green-500 text-white rounded-xl text-sm font-bold hover:bg-green-600 transition">
-                      Salvar Alterações
-                    </button>
-                    {(isSocialMedia || isAdmin || isDiretor) && (
-                      <button onClick={() => excluirDemanda(d.id, () => setDetalhe(null))}
-                        className="w-full px-4 py-2 bg-red-50 text-red-600 rounded-xl text-xs font-bold hover:bg-red-100 transition border border-red-200">
-                        Excluir Demanda
-                      </button>
+                    {/* Conteudo */}
+                    <div>
+                      <p className={sectionHdr}>Conteudo</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-[11px] font-semibold text-gray-500 dark:text-white/50 mb-1.5 block">Briefing para o Designer</label>
+                          <textarea value={editForm.descricao||''} onChange={e => setEditForm({...editForm, descricao: e.target.value})}
+                            rows={4} placeholder="Descreva o que precisa ser criado..."
+                            className={textareaCls} />
+                        </div>
+                        {d._tipo === 'post' && (
+                          <div>
+                            <label className="text-[11px] font-semibold text-gray-500 dark:text-white/50 mb-1.5 block">Legenda / Conteudo</label>
+                            <textarea value={editForm.conteudo||''} onChange={e => setEditForm({...editForm, conteudo: e.target.value})}
+                              rows={4} placeholder="Legenda do post..."
+                              className={textareaCls} />
+                          </div>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                        <div>
+                          <label className="text-[11px] font-semibold text-gray-500 dark:text-white/50 mb-1.5 block">Referencia (link)</label>
+                          <input value={editForm.referencia||''} onChange={e => setEditForm({...editForm, referencia: e.target.value})}
+                            placeholder="Link ou descricao"
+                            className={inputCls} />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-semibold text-gray-500 dark:text-white/50 mb-1.5 block">Musica</label>
+                          <input value={editForm.musica||''} onChange={e => setEditForm({...editForm, musica: e.target.value})}
+                            placeholder="Nome ou link"
+                            className={inputCls} />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Uploads */}
+                    <div>
+                      <p className={sectionHdr}>Uploads</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="rounded-xl border-2 border-dashed border-green-300 dark:border-green-500/30 bg-green-50/40 dark:bg-green-500/[0.04] p-4">
+                          <p className="text-xs font-bold text-green-600 dark:text-green-400 mb-1">Upload Publicavel</p>
+                          <p className="text-[10px] text-gray-400 dark:text-white/30 mb-3">Pode ser publicado no Instagram</p>
+                          <label className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-green-500/10 dark:bg-green-500/15 text-green-600 dark:text-green-400 text-xs font-semibold hover:bg-green-500/20 transition cursor-pointer">
+                            <input type="file" accept="image/*,video/*,.pdf" multiple className="hidden"
+                              onChange={e => { Array.from(e.target.files).forEach(file => uploadArquivo(d._tipo, d.id, file)); e.target.value='' }} />
+                            <Plus size={14} /> Anexar arquivo
+                          </label>
+                        </div>
+                        <div className="rounded-xl border-2 border-dashed border-amber-300 dark:border-amber-500/30 bg-amber-50/40 dark:bg-amber-500/[0.04] p-4">
+                          <p className="text-xs font-bold text-amber-600 dark:text-amber-400 mb-1">Upload de Referencia</p>
+                          <p className="text-[10px] text-gray-400 dark:text-white/30 mb-3">Uso interno - NAO publica no Instagram</p>
+                          <label className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-amber-500/10 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 text-xs font-semibold hover:bg-amber-500/20 transition cursor-pointer">
+                            <input type="file" accept="image/*,video/*,.pdf,.psd,.ai,.zip" multiple className="hidden"
+                              onChange={e => { Array.from(e.target.files).forEach(file => uploadRefArquivo(d._tipo, d.id, file)); e.target.value='' }} />
+                            <Plus size={14} /> Anexar referencia
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Visibilidade */}
+                    {!isDesigner && (
+                      <div>
+                        <p className={sectionHdr}>Visibilidade</p>
+                        <div className="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-white/[0.10] bg-gray-50/80 dark:bg-white/[0.03]">
+                          <div>
+                            <p className="text-sm font-semibold text-gray-800 dark:text-white/80">Aparecer para o Designer</p>
+                            <p className="text-[10px] text-gray-400 dark:text-white/40 mt-0.5">O designer do evento tambem visualiza essa demanda</p>
+                          </div>
+                          <button type="button"
+                            onClick={() => setEditForm(f => ({...f, aparecer_designer: !f.aparecer_designer}))}
+                            className={'relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ' + (editForm.aparecer_designer ? 'bg-accent' : 'bg-gray-300 dark:bg-white/20')}>
+                            <span className={'absolute left-0.5 top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ' + (editForm.aparecer_designer ? 'translate-x-5' : 'translate-x-0')} />
+                          </button>
+                        </div>
+                      </div>
                     )}
-                  </div>
+
+                    {/* Edit mode footer */}
+                    <div className="flex items-center justify-between gap-3 pt-2 border-t border-gray-100 dark:border-white/[0.08]">
+                      {(isSocialMedia || isAdmin || isDiretor) ? (
+                        <button onClick={() => excluirDemanda(d.id, () => setDetalhe(null))}
+                          className="px-4 py-2 rounded-xl text-xs font-bold text-red-500 dark:text-red-400 border border-red-200 dark:border-red-500/25 hover:bg-red-50 dark:hover:bg-red-500/10 transition">
+                          Excluir Demanda
+                        </button>
+                      ) : <div />}
+                      <div className="flex items-center gap-2">
+                        {d._tipo === 'post' && d.status !== 'publicado' && (
+                          <button onClick={() => publicarInstagram(d.id)}
+                            className="px-4 py-2 rounded-xl text-xs font-bold text-gray-700 dark:text-white/70 bg-gray-100 dark:bg-white/[0.08] hover:bg-gray-200 dark:hover:bg-white/[0.12] transition">
+                            Publicar agora
+                          </button>
+                        )}
+                        <button onClick={salvarEdicao}
+                          className="px-5 py-2 rounded-xl text-xs font-bold bg-accent text-white hover:opacity-90 transition shadow-sm">
+                          Salvar Alteracoes
+                        </button>
+                      </div>
+                    </div>
+                  </>
                 ) : (
-                  <div className="space-y-3 border-t border-gray-100 pt-4">
-                    {/* Badges de tipo/formato */}
-                    {(d.tipo_conteudo || d.formato || d.plataforma) && (
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {d.plataforma && d._tipo === 'post' && <span className="text-xs font-bold px-3 py-1 rounded-full bg-pink-50 text-pink-700 border border-pink-200">📲 {d.plataforma}</span>}
-                        {(d.tipo_conteudo||'').split(',').filter(Boolean).map(tc => <span key={tc} className="text-xs font-bold px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">{tc}</span>)}
-                        {(d.formato||'').split(',').filter(Boolean).map(fm => <span key={fm} className="text-xs font-bold px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">{fm}</span>)}
+                  /* ═══════════ VIEW MODE ═══════════ */
+                  <>
+                    {/* Etiquetas */}
+                    <div>
+                      <p className={sectionHdr}>Etiquetas</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {ETIQUETAS_PADRAO.map(et => {
+                          const ativa = etqs.includes(et.key)
+                          return (
+                            <button key={et.key} onClick={() => toggleEtiqueta(d._tipo, d.id, et.key)}
+                              className="flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full border-2 transition-all"
+                              style={ativa
+                                ? { backgroundColor: isDark ? et.darkBg : et.bg, color: isDark ? et.darkColor : et.color, borderColor: isDark ? et.darkBorder : et.border }
+                                : { backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
+                              {et.label}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Tags de Status */}
+                    <div>
+                      <p className={sectionHdr}>Tags</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {TAGS_STATUS.map(tag => {
+                          const ativa = getTag(d._tipo, d.id) === tag.key
+                          const designerBloqueado = isDesigner && tag.key !== 'em_andamento' && tag.key !== 'recebido'
+                          const naoEntregueApenas = tag.key === 'nao_entregue' && isDesigner
+                          const bloqueado = designerBloqueado || naoEntregueApenas
+                          return (
+                            <button key={tag.key} onClick={() => !isReadOnly && !bloqueado && setTagStatus(d._tipo, d.id, tag.key)} disabled={isReadOnly || bloqueado}
+                              className="text-xs font-semibold px-3 py-1 rounded-full border-2 transition-all disabled:cursor-not-allowed disabled:opacity-30"
+                              style={ativa
+                                ? { backgroundColor: tag.color + '18', color: tag.color, borderColor: tag.color }
+                                : { backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
+                              {tag.label}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Metadata badges */}
+                    {(d.tipo_conteudo || d.formato || d.plataforma || d.data_vencimento || d.data_publicacao) && (
+                      <div className="space-y-3">
+                        <p className={sectionHdr}>Detalhes</p>
+                        {(d.tipo_conteudo || d.formato || d.plataforma) && (
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {d.plataforma && d._tipo === 'post' && <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-pink-50 dark:bg-pink-500/15 text-pink-600 dark:text-pink-400 border border-pink-200 dark:border-pink-500/25">{d.plataforma}</span>}
+                            {(d.tipo_conteudo||'').split(',').filter(Boolean).map(tc => <span key={tc} className="text-[11px] font-bold px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/25">{tc}</span>)}
+                            {(d.formato||'').split(',').filter(Boolean).map(fm => <span key={fm} className="text-[11px] font-bold px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/25">{fm}</span>)}
+                          </div>
+                        )}
+                        {(d.data_vencimento || d.data_publicacao) && (
+                          <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-white/50">
+                            <span className="flex items-center gap-1.5">
+                              <Calendar size={13} className="text-gray-400 dark:text-white/40" />
+                              {fmtData(d.data_vencimento || d.data_publicacao)}
+                            </span>
+                            {d.hora_publicacao && (
+                              <span className="flex items-center gap-1.5">
+                                <Clock size={13} className="text-gray-400 dark:text-white/40" />
+                                {d.hora_publicacao.slice(0,5)}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
 
-                    {/* Data */}
-                    {(d.data_vencimento || d.data_publicacao) && (
-                      <div className="flex items-center gap-3 text-xs text-gray-500">
-                        <span className="flex items-center gap-1.5">
-                          <Calendar size={12} />
-                          {fmtData(d.data_vencimento || d.data_publicacao)}
-                          {d.hora_publicacao && <span className="flex items-center gap-1 ml-1"><Clock size={11} />{d.hora_publicacao.slice(0,5)}</span>}
-                        </span>
+                    {/* Content blocks */}
+                    {(d.descricao || d.conteudo || d.referencia || d.musica || d.collaborators) && (
+                      <div className="space-y-3">
+                        <p className={sectionHdr}>Conteudo</p>
+                        {d.descricao && (
+                          <div className="bg-gray-50 dark:bg-white/[0.03] rounded-xl px-4 py-3 border border-gray-100 dark:border-white/[0.06]">
+                            <p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wider mb-1.5">Briefing</p>
+                            <p className="text-sm text-gray-700 dark:text-white/70 whitespace-pre-wrap leading-relaxed">{d.descricao}</p>
+                          </div>
+                        )}
+                        {d.conteudo && (
+                          <div className="bg-gray-50 dark:bg-white/[0.03] rounded-xl px-4 py-3 border border-gray-100 dark:border-white/[0.06]">
+                            <p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wider mb-1.5">Legenda / Conteudo</p>
+                            <p className="text-sm text-gray-700 dark:text-white/70 whitespace-pre-wrap leading-relaxed">{d.conteudo}</p>
+                          </div>
+                        )}
+                        {(d.referencia || d.musica) && (
+                          <div className="grid grid-cols-2 gap-3">
+                            {d.referencia && (
+                              <div className="bg-gray-50 dark:bg-white/[0.03] rounded-xl px-4 py-3 border border-gray-100 dark:border-white/[0.06]">
+                                <p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wider mb-1">Referencia</p>
+                                <p className="text-xs text-gray-700 dark:text-white/70 break-all">{d.referencia}</p>
+                              </div>
+                            )}
+                            {d.musica && (
+                              <div className="bg-gray-50 dark:bg-white/[0.03] rounded-xl px-4 py-3 border border-gray-100 dark:border-white/[0.06]">
+                                <p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wider mb-1">Musica</p>
+                                <p className="text-xs text-gray-700 dark:text-white/70">{d.musica}</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {d.collaborators && (
+                          <div className="bg-gray-50 dark:bg-white/[0.03] rounded-xl px-4 py-3 border border-gray-100 dark:border-white/[0.06]">
+                            <p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wider mb-1">Collaborators</p>
+                            <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">{d.collaborators}</p>
+                          </div>
+                        )}
                       </div>
                     )}
 
-                    {d.descricao && (
-                      <div className="bg-gray-50 dark:bg-white/[0.04] rounded-xl px-4 py-3">
-                        <p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide mb-1.5">Briefing</p>
-                        <p className="text-sm text-gray-700 dark:text-white/70 whitespace-pre-wrap leading-relaxed">{d.descricao}</p>
-                      </div>
-                    )}
-                    {d.conteudo && (
-                      <div className="bg-gray-50 dark:bg-white/[0.04] rounded-xl px-4 py-3">
-                        <p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide mb-1.5">Legenda / Conteúdo</p>
-                        <p className="text-sm text-gray-700 dark:text-white/70 whitespace-pre-wrap leading-relaxed">{d.conteudo}</p>
-                      </div>
-                    )}
-                    {(d.referencia || d.musica) && (
-                      <div className="grid grid-cols-2 gap-3">
-                        {d.referencia && <div className="bg-gray-50 dark:bg-white/[0.04] rounded-xl px-3 py-2.5"><p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide mb-1">Referência (link)</p><p className="text-xs text-gray-700 dark:text-white/70 break-all">{d.referencia}</p></div>}
-                        {d.musica && <div className="bg-gray-50 dark:bg-white/[0.04] rounded-xl px-3 py-2.5"><p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide mb-1">Música</p><p className="text-xs text-gray-700 dark:text-white/70">{d.musica}</p></div>}
-                      </div>
-                    )}
-                    {d.collaborators && (
-                      <div className="bg-gray-50 dark:bg-white/[0.04] rounded-xl px-3 py-2.5">
-                        <p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide mb-1">Collaborators</p>
-                        <p className="text-xs text-blue-600 font-medium">{d.collaborators}</p>
-                      </div>
-                    )}
-
-                    {/* Upload publicável para Designer (fora do editMode) */}
+                    {/* Designer upload publicavel (view mode) */}
                     {isDesigner && (
                       <div>
-                        <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block" style={{color:'#16a34a'}}>📤 Upload Publicável</label>
-                        <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-green-300 text-xs text-green-600 hover:border-green-500 hover:bg-green-50/50 transition cursor-pointer">
+                        <p className={sectionHdr}>Upload Publicavel</p>
+                        <label className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-green-300 dark:border-green-500/30 text-xs font-semibold text-green-600 dark:text-green-400 hover:border-green-400 hover:bg-green-50/50 dark:hover:bg-green-500/[0.06] transition cursor-pointer">
                           <input type="file" accept="image/*,video/*,.pdf" multiple className="hidden"
                             onChange={e => { Array.from(e.target.files).forEach(file => uploadArquivo(d._tipo, d.id, file)); e.target.value='' }} />
-                          <Paperclip size={13} /> Clique para anexar arquivo publicável
+                          <Plus size={14} /> Anexar arquivo publicavel
                         </label>
                       </div>
                     )}
-                  </div>
+
+                    {/* Instagram actions */}
+                    {d._tipo === 'post' && (() => {
+                      const igPostId = d.id
+                      const igStatus = d.status
+                      const igAutoPublish = d.auto_publish || false
+                      const igHora = d.hora_publicacao
+                      const igBoostStatus = d.boost_status || null
+                      return (
+                        <div className="space-y-3">
+                          <p className={sectionHdr}>Instagram</p>
+                          {igStatus !== 'publicado' && (
+                            <>
+                              <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-white/[0.03] border border-gray-200 dark:border-white/[0.08]">
+                                <span className={'text-xs font-semibold ' + (igAutoPublish ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-white/40')}>
+                                  {igAutoPublish ? ('Agendado ' + (igHora ? igHora.slice(0,5) : '')) : 'Agendar publicacao'}
+                                </span>
+                                <button onClick={e => { e.stopPropagation(); toggleAutoPublish(igPostId, igAutoPublish) }}
+                                  className={'relative w-10 h-5 rounded-full transition-colors ' + (igAutoPublish ? 'bg-green-500' : 'bg-gray-300 dark:bg-white/20')}>
+                                  <span className={'absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ' + (igAutoPublish ? 'translate-x-5' : 'translate-x-0.5')} />
+                                </button>
+                              </div>
+                              <button onClick={e => { e.stopPropagation(); publicarInstagram(igPostId) }}
+                                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 hover:from-purple-600 hover:via-pink-600 hover:to-orange-500 transition text-white text-xs font-bold shadow-sm">
+                                Publicar no Instagram
+                              </button>
+                            </>
+                          )}
+                          {igStatus === 'publicado' && (
+                            <>
+                              <div className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20">
+                                <CheckCircle size={14} className="text-green-600 dark:text-green-400" />
+                                <span className="text-xs font-bold text-green-600 dark:text-green-400">Publicado</span>
+                              </div>
+                              {showBoostConfig === igPostId ? (
+                                <div className="space-y-3 p-4 rounded-xl border border-orange-200 dark:border-orange-500/20 bg-orange-50/50 dark:bg-orange-500/[0.04]">
+                                  <p className="text-[11px] font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider">Configurar Impulsionamento</p>
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                      <label className="text-[10px] text-gray-500 dark:text-white/50 font-semibold mb-1 block">Orcamento (centavos)</label>
+                                      <input type="number" value={boostForm.budget} onChange={e => setBoostForm({...boostForm, budget: Number(e.target.value)})}
+                                        className={inputCls} />
+                                    </div>
+                                    <div>
+                                      <label className="text-[10px] text-gray-500 dark:text-white/50 font-semibold mb-1 block">Duracao (dias)</label>
+                                      <input type="number" value={boostForm.duration} onChange={e => setBoostForm({...boostForm, duration: Number(e.target.value)})}
+                                        className={inputCls} />
+                                    </div>
+                                    <div>
+                                      <label className="text-[10px] text-gray-500 dark:text-white/50 font-semibold mb-1 block">Idade min.</label>
+                                      <input type="number" value={boostForm.age_min} onChange={e => setBoostForm({...boostForm, age_min: Number(e.target.value)})}
+                                        className={inputCls} />
+                                    </div>
+                                    <div>
+                                      <label className="text-[10px] text-gray-500 dark:text-white/50 font-semibold mb-1 block">Idade max.</label>
+                                      <input type="number" value={boostForm.age_max} onChange={e => setBoostForm({...boostForm, age_max: Number(e.target.value)})}
+                                        className={inputCls} />
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] text-gray-500 dark:text-white/50 font-semibold mb-1 block">Cidades (separadas por virgula)</label>
+                                    <input value={boostForm.cities} onChange={e => setBoostForm({...boostForm, cities: e.target.value})} placeholder="Ex: Sao Paulo, Rio de Janeiro"
+                                      className={inputCls} />
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <button onClick={() => setShowBoostConfig(null)}
+                                      className="flex-1 py-2 rounded-xl text-xs font-bold bg-gray-100 dark:bg-white/[0.08] text-gray-600 dark:text-white/60 hover:bg-gray-200 dark:hover:bg-white/[0.12] transition">Cancelar</button>
+                                    <button onClick={() => impulsionarPost(igPostId)} disabled={boostingId === igPostId}
+                                      className={'flex-1 py-2 rounded-xl text-xs font-bold text-white transition ' + (boostingId === igPostId ? 'bg-gray-400 animate-pulse' : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600')}>
+                                      {boostingId === igPostId ? 'Criando...' : 'Confirmar'}
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <>
+                                  {igBoostStatus === 'active' ? (
+                                    <button onClick={e => { e.stopPropagation(); pararBoost(igPostId) }}
+                                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 text-xs font-bold hover:bg-red-100 dark:hover:bg-red-500/20 transition">
+                                      Pausar Impulsionamento
+                                    </button>
+                                  ) : (
+                                    <button onClick={e => { e.stopPropagation(); setShowBoostConfig(igPostId) }}
+                                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 transition text-white text-xs font-bold shadow-sm">
+                                      Impulsionar
+                                    </button>
+                                  )}
+                                </>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      )
+                    })()}
+                  </>
                 )}
 
-                {/* Ações Instagram (posts e briefings com cronograma vinculado) */}
-                {d._tipo === 'post' && (() => {
-                  const igPostId = d.id
-                  const igStatus = d.status
-                  const igAutoPublish = d.auto_publish || false
-                  const igHora = d.hora_publicacao
-                  const igBoostStatus = d.boost_status || null
-                  return (
-                  <div className="border-t border-gray-100 pt-4 space-y-2">
-                    {igStatus !== 'publicado' && (
-                      <>
-                        <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-gray-50 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.10]">
-                          <span className={'text-xs font-semibold ' + (igAutoPublish ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-white/40')}>
-                            {igAutoPublish ? `⏰ Agendado ${igHora ? igHora.slice(0,5) : ''}` : 'Agendar publicação'}
-                          </span>
-                          <button onClick={e => { e.stopPropagation(); toggleAutoPublish(igPostId, igAutoPublish) }}
-                            className={'relative w-10 h-5 rounded-full transition-colors ' + (igAutoPublish ? 'bg-green-500' : 'bg-gray-300')}>
-                            <span className={'absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ' + (igAutoPublish ? 'translate-x-5' : 'translate-x-0.5')} />
-                          </button>
-                        </div>
-                        <button onClick={e => { e.stopPropagation(); publicarInstagram(igPostId) }}
-                          className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 hover:opacity-90 transition text-white text-xs font-bold shadow-sm">
-                          📸 Publicar no Instagram
-                        </button>
-                      </>
-                    )}
-                    {igStatus === 'publicado' && (
-                      <>
-                        <div className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20">
-                          <span className="text-xs font-bold text-green-600 dark:text-green-400">✅ Publicado</span>
-                        </div>
-                        {showBoostConfig === igPostId ? (
-                          <div className="space-y-2 p-3 rounded-xl border border-orange-200 dark:border-orange-500/20 bg-orange-50/50 dark:bg-orange-500/5">
-                            <p className="text-[11px] font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wide">Configurar Impulsionamento</p>
-                            <div className="grid grid-cols-2 gap-2">
-                              <div>
-                                <label className="text-[10px] text-gray-500 font-semibold">Orçamento (centavos)</label>
-                                <input type="number" value={boostForm.budget} onChange={e => setBoostForm({...boostForm, budget: Number(e.target.value)})}
-                                  className="w-full border border-gray-200 dark:border-white/[0.12] rounded-lg px-2 py-1.5 text-xs bg-white dark:bg-white/[0.04] text-gray-800 dark:text-white/80" />
-                              </div>
-                              <div>
-                                <label className="text-[10px] text-gray-500 font-semibold">Duração (dias)</label>
-                                <input type="number" value={boostForm.duration} onChange={e => setBoostForm({...boostForm, duration: Number(e.target.value)})}
-                                  className="w-full border border-gray-200 dark:border-white/[0.12] rounded-lg px-2 py-1.5 text-xs bg-white dark:bg-white/[0.04] text-gray-800 dark:text-white/80" />
-                              </div>
-                              <div>
-                                <label className="text-[10px] text-gray-500 font-semibold">Idade mín.</label>
-                                <input type="number" value={boostForm.age_min} onChange={e => setBoostForm({...boostForm, age_min: Number(e.target.value)})}
-                                  className="w-full border border-gray-200 dark:border-white/[0.12] rounded-lg px-2 py-1.5 text-xs bg-white dark:bg-white/[0.04] text-gray-800 dark:text-white/80" />
-                              </div>
-                              <div>
-                                <label className="text-[10px] text-gray-500 font-semibold">Idade máx.</label>
-                                <input type="number" value={boostForm.age_max} onChange={e => setBoostForm({...boostForm, age_max: Number(e.target.value)})}
-                                  className="w-full border border-gray-200 dark:border-white/[0.12] rounded-lg px-2 py-1.5 text-xs bg-white dark:bg-white/[0.04] text-gray-800 dark:text-white/80" />
-                              </div>
-                            </div>
-                            <div>
-                              <label className="text-[10px] text-gray-500 font-semibold">Cidades (separadas por vírgula)</label>
-                              <input value={boostForm.cities} onChange={e => setBoostForm({...boostForm, cities: e.target.value})} placeholder="Ex: São Paulo, Rio de Janeiro"
-                                className="w-full border border-gray-200 dark:border-white/[0.12] rounded-lg px-2 py-1.5 text-xs bg-white dark:bg-white/[0.04] text-gray-800 dark:text-white/80" />
-                            </div>
-                            <div className="flex gap-2">
-                              <button onClick={() => setShowBoostConfig(null)}
-                                className="flex-1 py-1.5 rounded-lg text-xs font-bold bg-gray-100 dark:bg-white/[0.08] text-gray-600 dark:text-white/60 hover:bg-gray-200 dark:hover:bg-white/[0.12] transition">Cancelar</button>
-                              <button onClick={() => impulsionarPost(igPostId)} disabled={boostingId === igPostId}
-                                className={'flex-1 py-1.5 rounded-lg text-xs font-bold text-white transition ' + (boostingId === igPostId ? 'bg-gray-400 animate-pulse' : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600')}>
-                                {boostingId === igPostId ? 'Criando...' : '🚀 Confirmar'}
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <>
-                            {igBoostStatus === 'active' ? (
-                              <button onClick={e => { e.stopPropagation(); pararBoost(igPostId) }}
-                                className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 text-xs font-bold hover:bg-red-100 dark:hover:bg-red-500/20 transition">
-                                ⏸️ Pausar Impulsionamento
-                              </button>
-                            ) : (
-                              <button onClick={e => { e.stopPropagation(); setShowBoostConfig(igPostId) }}
-                                className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 transition text-white text-xs font-bold shadow-sm">
-                                🚀 Impulsionar
-                              </button>
-                            )}
-                          </>
-                        )}
-                      </>
-                    )}
-                  </div>
-                  )
-                })()}
-
-                {/* Arquivos Publicáveis */}
-                <div className="border-t border-gray-100 pt-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-[10px] font-bold uppercase tracking-wide" style={{color:'#16a34a'}}>📤 Publicáveis ({arquivos.length}) <span className="text-[9px] font-normal normal-case text-gray-400">(Instagram)</span></p>
-                    <label className={'px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition ' + (uploading ? 'bg-gray-100 text-gray-400' : 'bg-green-50 text-green-600 hover:bg-green-100')}>
+                {/* ── Publishable Files (always visible) ── */}
+                <div className="border-t border-gray-100 dark:border-white/[0.08] pt-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs font-bold text-green-600 dark:text-green-400 uppercase tracking-wider">Publicaveis ({arquivos.length})<span className="text-[10px] font-normal normal-case text-gray-400 dark:text-white/30 ml-1.5">(Instagram)</span></p>
+                    <label className={'px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition ' + (uploading ? 'bg-gray-100 dark:bg-white/[0.06] text-gray-400 dark:text-white/30' : 'bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-500/20')}>
                       {uploading ? 'Enviando...' : '+ Enviar'}
                       <input type="file" className="hidden" disabled={uploading} accept="image/*,video/*,.pdf,.psd,.ai,.zip" multiple
                         onChange={e => { Array.from(e.target.files).forEach(file => uploadArquivo(d._tipo, d.id, file)); e.target.value='' }} />
@@ -2662,17 +2763,19 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                         const isImg = a.tipo?.startsWith('image') || /\.(jpg|jpeg|png|gif|webp)$/i.test(a.nome_original || '')
                         const fileUrl = '/api' + a.url
                         return (
-                          <div key={a.id} className="group relative rounded-xl overflow-hidden border border-green-200 dark:border-green-500/20 bg-gray-50 dark:bg-white/[0.04] hover:shadow-sm transition">
+                          <div key={a.id} className="group relative rounded-xl overflow-hidden border border-green-200 dark:border-green-500/20 bg-gray-50 dark:bg-white/[0.03] hover:shadow-md transition">
                             {isImg
-                              ? <img src={fileUrl} alt={a.nome_original} className="w-full h-20 object-cover cursor-pointer hover:opacity-80" onClick={() => openPreviewWithNav(a, arquivos)} />
-                              : <a href={fileUrl} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center h-20 gap-1 text-gray-400 hover:text-blue-600"><FileText size={20} /><span className="text-[10px] font-medium px-2 truncate w-full text-center">{a.nome_original}</span></a>
+                              ? <img src={fileUrl} alt={a.nome_original} className="w-full h-20 object-cover cursor-pointer hover:opacity-80 transition" onClick={() => openPreviewWithNav(a, arquivos)} />
+                              : <a href={fileUrl} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center h-20 gap-1 text-gray-400 hover:text-blue-600 transition"><FileText size={20} /><span className="text-[10px] font-medium px-2 truncate w-full text-center">{a.nome_original}</span></a>
                             }
                             <a href={fileUrl} download={a.nome_original || 'arquivo'} onClick={e => e.stopPropagation()}
-                              className="absolute bottom-1 right-1 w-7 h-7 bg-blue-500 hover:bg-blue-600 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition z-10">
+                              className="absolute bottom-1.5 right-1.5 w-7 h-7 bg-blue-500 hover:bg-blue-600 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition z-10">
                               <Download size={13} className="text-white" />
                             </a>
                             <button onClick={e => { e.stopPropagation(); deletarArquivo(a.id, d._tipo, d.id) }}
-                              className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-xs font-bold">✕</button>
+                              className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-[10px] font-bold">
+                              <XIcon size={10} />
+                            </button>
                           </div>
                         )
                       })}
@@ -2680,12 +2783,12 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                   )}
                 </div>
 
-                {/* Arquivos de Referência */}
-                <div className="border-t border-gray-100 pt-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-[10px] font-bold uppercase tracking-wide" style={{color:'#d97706'}}>📎 Referências ({refArquivos.length}) <span className="text-[9px] font-normal normal-case text-gray-400">(uso interno)</span></p>
-                    <label className={'px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition ' + (uploading ? 'bg-gray-100 text-gray-400' : 'bg-amber-50 text-amber-600 hover:bg-amber-100')}>
-                      {uploading ? 'Enviando...' : '+ Referência'}
+                {/* ── Reference Files (always visible) ── */}
+                <div className="border-t border-gray-100 dark:border-white/[0.08] pt-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Referencias ({refArquivos.length})<span className="text-[10px] font-normal normal-case text-gray-400 dark:text-white/30 ml-1.5">(uso interno)</span></p>
+                    <label className={'px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition ' + (uploading ? 'bg-gray-100 dark:bg-white/[0.06] text-gray-400 dark:text-white/30' : 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-500/20')}>
+                      {uploading ? 'Enviando...' : '+ Referencia'}
                       <input type="file" className="hidden" disabled={uploading} accept="image/*,video/*,.pdf,.psd,.ai,.zip" multiple
                         onChange={e => { Array.from(e.target.files).forEach(file => uploadRefArquivo(d._tipo, d.id, file)); e.target.value='' }} />
                     </label>
@@ -2696,17 +2799,19 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                         const isImg = a.tipo?.startsWith('image') || /\.(jpg|jpeg|png|gif|webp)$/i.test(a.nome_original || '')
                         const fileUrl = '/api' + a.url
                         return (
-                          <div key={a.id} className="group relative rounded-xl overflow-hidden border border-amber-200 dark:border-amber-500/20 bg-gray-50 dark:bg-white/[0.04] hover:shadow-sm transition">
+                          <div key={a.id} className="group relative rounded-xl overflow-hidden border border-amber-200 dark:border-amber-500/20 bg-gray-50 dark:bg-white/[0.03] hover:shadow-md transition">
                             {isImg
-                              ? <img src={fileUrl} alt={a.nome_original} className="w-full h-20 object-cover cursor-pointer hover:opacity-80" onClick={() => openPreviewWithNav(a, refArquivos)} />
-                              : <a href={fileUrl} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center h-20 gap-1 text-gray-400 hover:text-amber-600"><FileText size={20} /><span className="text-[10px] font-medium px-2 truncate w-full text-center">{a.nome_original}</span></a>
+                              ? <img src={fileUrl} alt={a.nome_original} className="w-full h-20 object-cover cursor-pointer hover:opacity-80 transition" onClick={() => openPreviewWithNav(a, refArquivos)} />
+                              : <a href={fileUrl} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center h-20 gap-1 text-gray-400 hover:text-amber-600 transition"><FileText size={20} /><span className="text-[10px] font-medium px-2 truncate w-full text-center">{a.nome_original}</span></a>
                             }
                             <a href={fileUrl} download={a.nome_original || 'arquivo'} onClick={e => e.stopPropagation()}
-                              className="absolute bottom-1 right-1 w-7 h-7 bg-amber-500 hover:bg-amber-600 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition z-10">
+                              className="absolute bottom-1.5 right-1.5 w-7 h-7 bg-amber-500 hover:bg-amber-600 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition z-10">
                               <Download size={13} className="text-white" />
                             </a>
                             <button onClick={e => { e.stopPropagation(); deletarArquivo(a.id, d._tipo, d.id) }}
-                              className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-xs font-bold">✕</button>
+                              className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-[10px] font-bold">
+                              <XIcon size={10} />
+                            </button>
                           </div>
                         )
                       })}
@@ -2714,13 +2819,16 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                   )}
                 </div>
 
-                {/* Comentários */}
-                <div className="border-t border-gray-100 dark:border-white/[0.08] pt-4 space-y-3">
-                  <div className="flex items-center gap-2 flex-wrap"><p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide">Comentários ({comentarios.length})</p><span className="text-[10px] text-amber-500 dark:text-amber-400 font-medium">OBS: após realizar a alteração, altere a tag para "recebido"</span></div>
+                {/* ── Comments ── */}
+                <div className="border-t border-gray-100 dark:border-white/[0.08] pt-5 space-y-3">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <p className="text-xs font-bold text-gray-500 dark:text-white/60 uppercase tracking-wider">Comentarios ({comentarios.length})</p>
+                    <span className="text-[10px] text-amber-500 dark:text-amber-400 font-medium">OBS: apos realizar a alteracao, altere a tag para "recebido"</span>
+                  </div>
                   {comentarios.length > 0 && (
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       {comentarios.map(c => (
-                        <div key={c.id} className="bg-gray-50 dark:bg-white/[0.04] rounded-xl px-3 py-2">
+                        <div key={c.id} className="bg-gray-50 dark:bg-white/[0.03] rounded-xl px-4 py-2.5 border border-gray-100 dark:border-white/[0.06]">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-xs font-bold text-gray-700 dark:text-white/80">{c.usuario_nome}</span>
                             <span className="text-[10px] text-gray-400 dark:text-white/40">{new Date(c.criado_em).toLocaleDateString('pt-BR')} {new Date(c.criado_em).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span>
@@ -2732,11 +2840,11 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                   )}
                   <div className="flex gap-2">
                     <input value={novoComentario} onChange={e => setNovoComentario(e.target.value)}
-                      placeholder="Escreva um comentário..."
-                      className="flex-1 border border-gray-200 dark:border-white/[0.12] rounded-lg px-3 py-2 text-sm bg-white dark:bg-white/[0.04] text-gray-800 dark:text-white/80 focus:outline-none focus:ring-2 focus:ring-accent/40"
+                      placeholder="Escreva um comentario..."
+                      className={'flex-1 ' + inputCls}
                       onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarComentario(d._tipo, d.id, false) } }} />
                     <button onClick={() => enviarComentario(d._tipo, d.id, false)}
-                      className="px-4 py-2 bg-accent text-white rounded-lg text-xs font-bold hover:opacity-90 transition flex-shrink-0">Enviar</button>
+                      className="px-4 py-2.5 bg-accent text-white rounded-xl text-xs font-bold hover:opacity-90 transition flex-shrink-0 shadow-sm">Enviar</button>
                   </div>
                 </div>
 
