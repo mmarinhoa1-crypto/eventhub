@@ -984,7 +984,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                     + (dragOverCard === d._tipo+'-'+d.id && !isDraggingThis ? 'ring-2 ring-inset ring-blue-400 ' : '')
                                     + (alertaHora ? 'ring-2 ring-red-500 bg-red-50 dark:bg-red-500/10 ' : '')
                                     + (isSelected ? 'ring-2 ring-blue-500 shadow-md border-blue-200 ' : 'border-gray-100 dark:border-white/[0.08] shadow-sm ')}
-                                  style={{ borderLeft: `4px solid ${alertaHora ? '#ef4444' : borderColor}` }}
+                                  style={alertaHora ? { borderColor: '#ef4444' } : {}}
                                 >
                                   <div className="px-3 py-2.5 space-y-2">
                                     {/* Etiquetas + Status */}
@@ -1686,7 +1686,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                     onClick={() => { setDetalhe({...d}); carregarArquivosDetalhe(d._tipo, d.id); setEditMode(false); setEditForm({}); carregarComentarios(d._tipo, d.id, false) }}
                                     className={'rounded-xl bg-white dark:bg-white/[0.06] border border-gray-100 dark:border-white/[0.08] cursor-pointer select-none transition-all duration-150 hover:shadow-md shadow-sm '
                                       + (alertaHora ? 'ring-2 ring-red-500 bg-red-50 dark:bg-red-500/10 ' : '')}
-                                    style={{ borderLeft: `4px solid ${alertaHora ? '#ef4444' : borderColor}` }}
+                                    style={alertaHora ? { borderColor: '#ef4444' } : {}}
                                   >
                                     <div className="px-3 py-2.5 space-y-2">
                                       <div className="flex items-start justify-between gap-1">
@@ -2000,7 +2000,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                   + (isDraggingThis ? 'opacity-40 scale-95 ' : '')
                                   + (dragOverCard === d._tipo+'-'+d.id && !isDraggingThis ? 'ring-2 ring-inset ring-blue-400 ' : '')
                                   + (alertaHora ? 'ring-2 ring-red-500 bg-red-50 dark:bg-red-500/10 ' : '')}
-                                style={{ borderLeft: `4px solid ${alertaHora ? '#ef4444' : borderColor}` }}
+                                style={alertaHora ? { borderColor: '#ef4444' } : {}}
                               >
                                 <div className="px-3 py-2.5 space-y-2">
                                   <div className="flex items-start justify-between gap-1">
