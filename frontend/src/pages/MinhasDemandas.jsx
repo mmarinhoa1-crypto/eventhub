@@ -984,7 +984,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                     + (dragOverCard === d._tipo+'-'+d.id && !isDraggingThis ? 'ring-2 ring-inset ring-blue-400 ' : '')
                                     + (alertaHora ? 'ring-2 ring-red-500 bg-red-50 dark:bg-red-500/10 ' : '')
                                     + (isSelected ? 'ring-2 ring-blue-500 shadow-md border-blue-200 ' : 'border-gray-100 dark:border-white/[0.08] shadow-sm ')}
-                                  style={{ borderLeft: `4px solid ${alertaHora ? '#ef4444' : borderColor}` }}
+                                  style={alertaHora ? { borderColor: '#ef4444' } : {}}
                                 >
                                   <div className="px-3 py-2.5 space-y-2">
                                     {/* Etiquetas + Status */}
@@ -1686,7 +1686,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                     onClick={() => { setDetalhe({...d}); carregarArquivosDetalhe(d._tipo, d.id); setEditMode(false); setEditForm({}); carregarComentarios(d._tipo, d.id, false) }}
                                     className={'rounded-xl bg-white dark:bg-white/[0.06] border border-gray-100 dark:border-white/[0.08] cursor-pointer select-none transition-all duration-150 hover:shadow-md shadow-sm '
                                       + (alertaHora ? 'ring-2 ring-red-500 bg-red-50 dark:bg-red-500/10 ' : '')}
-                                    style={{ borderLeft: `4px solid ${alertaHora ? '#ef4444' : borderColor}` }}
+                                    style={alertaHora ? { borderColor: '#ef4444' } : {}}
                                   >
                                     <div className="px-3 py-2.5 space-y-2">
                                       <div className="flex items-start justify-between gap-1">
@@ -2000,7 +2000,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                   + (isDraggingThis ? 'opacity-40 scale-95 ' : '')
                                   + (dragOverCard === d._tipo+'-'+d.id && !isDraggingThis ? 'ring-2 ring-inset ring-blue-400 ' : '')
                                   + (alertaHora ? 'ring-2 ring-red-500 bg-red-50 dark:bg-red-500/10 ' : '')}
-                                style={{ borderLeft: `4px solid ${alertaHora ? '#ef4444' : borderColor}` }}
+                                style={alertaHora ? { borderColor: '#ef4444' } : {}}
                               >
                                 <div className="px-3 py-2.5 space-y-2">
                                   <div className="flex items-start justify-between gap-1">
@@ -2235,10 +2235,10 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
 
         return (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4" onClick={() => { setDetalhe(null); setEditMode(false); setEditForm({}) }}>
-            <div className="bg-white dark:bg-[#1a1a23] rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-gray-200/60 dark:border-white/[0.06]" onClick={e => e.stopPropagation()}>
+            <div className="bg-white dark:bg-[#16161e] rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-gray-200/60 dark:border-white/[0.08]" onClick={e => e.stopPropagation()}>
 
               {/* ── Header ── */}
-              <div className="sticky top-0 bg-white dark:bg-[#1a1a23] border-b border-gray-100 dark:border-white/[0.08] px-6 py-4 flex items-center justify-between rounded-t-2xl z-10 flex-shrink-0">
+              <div className="sticky top-0 bg-white dark:bg-[#16161e] border-b border-gray-100 dark:border-white/[0.08] px-6 py-4 flex items-center justify-between rounded-t-2xl z-10 flex-shrink-0">
                 <div className="flex-1 min-w-0">
                   {editMode ? (
                     <h3 className="font-extrabold text-gray-900 dark:text-white/95 text-lg">Editar Demanda</h3>
@@ -2376,49 +2376,53 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                       </div>
                     )}
 
-                    {/* Configuracao de conteudo */}
+                    {/* Configuracao de conteudo - lado a lado com seletores */}
                     <div>
                       <p className={sectionHdr}>Configuracao de conteudo</p>
-                      <div className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <label className="text-[11px] font-semibold text-gray-500 dark:text-white/50 mb-2 block">Tipo de Conteudo</label>
-                          <div className="flex gap-2 flex-wrap">
+                          <label className="text-[11px] font-semibold text-gray-500 dark:text-white/50 mb-1.5 block">Tipo de Conteudo</label>
+                          <div className="rounded-xl border border-gray-200 dark:border-white/[0.10] bg-white dark:bg-white/[0.04] overflow-hidden">
                             {[
-                              {val:'GIF', icon:'GIF'},
-                              {val:'VIDEO', icon:'VID'},
-                              {val:'ESTATICA', icon:'IMG'},
-                              {val:'FOTO ORGANICA', icon:'ORG'},
-                              {val:'VIDEO ORGANICO', icon:'REC'},
-                              {val:'INTERACAO', icon:'INT'},
+                              {val:'GIF', color:'#d97706'},
+                              {val:'VIDEO', color:'#dc2626'},
+                              {val:'ESTATICA', color:'#2563eb'},
+                              {val:'FOTO ORGANICA', color:'#16a34a'},
+                              {val:'VIDEO ORGANICO', color:'#ea580c'},
+                              {val:'INTERACAO', color:'#7c3aed'},
                             ].map(tc => {
                               const ativo = (editForm.tipo_conteudo||'').split(',').includes(tc.val)
                               return (
                                 <button key={tc.val} type="button" onClick={() => toggleMultiEdit('tipo_conteudo', tc.val)}
-                                  className={'px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ' + (ativo
-                                    ? 'border-amber-400 bg-amber-500 text-white shadow-sm shadow-amber-500/25'
-                                    : 'border-gray-200 dark:border-white/[0.10] text-gray-500 dark:text-white/50 hover:border-amber-300 dark:hover:border-amber-500/40 bg-white dark:bg-white/[0.04]')}>
-                                  <span className="opacity-60 mr-1 text-[10px]">{tc.icon}</span> {tc.val}
+                                  className="w-full text-left px-3 py-1.5 text-xs font-medium transition-colors flex items-center justify-between"
+                                  style={ativo ? { backgroundColor: tc.color + '18', color: tc.color } : {}}
+                                  onMouseEnter={e => { if (!ativo) { e.currentTarget.style.backgroundColor = tc.color + '12'; e.currentTarget.style.color = tc.color } }}
+                                  onMouseLeave={e => { if (!ativo) { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = '' } }}>
+                                  <span className={!ativo ? 'text-gray-600 dark:text-white/60' : ''}>{tc.val}</span>
+                                  {ativo && <CheckCircle size={12} />}
                                 </button>
                               )
                             })}
                           </div>
                         </div>
                         <div>
-                          <label className="text-[11px] font-semibold text-gray-500 dark:text-white/50 mb-2 block">Formato</label>
-                          <div className="flex gap-2 flex-wrap">
+                          <label className="text-[11px] font-semibold text-gray-500 dark:text-white/50 mb-1.5 block">Formato</label>
+                          <div className="rounded-xl border border-gray-200 dark:border-white/[0.10] bg-white dark:bg-white/[0.04] overflow-hidden">
                             {[
-                              {val:'FEED', icon:'FEED'},
-                              {val:'STORIES', icon:'STO'},
-                              {val:'CARROSSEL', icon:'CAR'},
-                              {val:'REELS', icon:'REEL'},
+                              {val:'FEED', color:'#3b82f6'},
+                              {val:'STORIES', color:'#8b5cf6'},
+                              {val:'CARROSSEL', color:'#06b6d4'},
+                              {val:'REELS', color:'#ec4899'},
                             ].map(fm => {
                               const ativo = (editForm.formato||'').split(',').includes(fm.val)
                               return (
                                 <button key={fm.val} type="button" onClick={() => toggleMultiEdit('formato', fm.val)}
-                                  className={'px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ' + (ativo
-                                    ? 'border-blue-400 bg-blue-500 text-white shadow-sm shadow-blue-500/25'
-                                    : 'border-gray-200 dark:border-white/[0.10] text-gray-500 dark:text-white/50 hover:border-blue-300 dark:hover:border-blue-500/40 bg-white dark:bg-white/[0.04]')}>
-                                  <span className="opacity-60 mr-1 text-[10px]">{fm.icon}</span> {fm.val}
+                                  className="w-full text-left px-3 py-1.5 text-xs font-medium transition-colors flex items-center justify-between"
+                                  style={ativo ? { backgroundColor: fm.color + '18', color: fm.color } : {}}
+                                  onMouseEnter={e => { if (!ativo) { e.currentTarget.style.backgroundColor = fm.color + '12'; e.currentTarget.style.color = fm.color } }}
+                                  onMouseLeave={e => { if (!ativo) { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = '' } }}>
+                                  <span className={!ativo ? 'text-gray-600 dark:text-white/60' : ''}>{fm.val}</span>
+                                  {ativo && <CheckCircle size={12} />}
                                 </button>
                               )
                             })}
@@ -2530,74 +2534,81 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                 ) : (
                   /* ═══════════ VIEW MODE ═══════════ */
                   <>
-                    {/* Etiquetas */}
-                    <div>
-                      <p className={sectionHdr}>Etiquetas</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {ETIQUETAS_PADRAO.map(et => {
-                          const ativa = etqs.includes(et.key)
-                          return (
-                            <button key={et.key} onClick={() => toggleEtiqueta(d._tipo, d.id, et.key)}
-                              className="flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full border-2 transition-all"
-                              style={ativa
-                                ? { backgroundColor: isDark ? et.darkBg : et.bg, color: isDark ? et.darkColor : et.color, borderColor: isDark ? et.darkBorder : et.border }
-                                : { backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
-                              {et.label}
-                            </button>
-                          )
-                        })}
+                    {/* Etiquetas + Tags + Detalhes lado a lado */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      {/* Etiquetas - dropdown */}
+                      <div>
+                        <p className={sectionHdr}>Etiquetas</p>
+                        <div className="relative">
+                          <div className="flex flex-wrap gap-1 mb-1">
+                            {etqs.length > 0 ? etqs.map(k => {
+                              const et = ETIQUETAS_PADRAO.find(e => e.key === k)
+                              return et ? <span key={k} className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: isDark ? et.darkBg : et.bg, color: isDark ? et.darkColor : et.color }}>{et.label}</span> : null
+                            }) : <span className="text-[10px] text-gray-400 dark:text-white/30">Nenhuma</span>}
+                          </div>
+                          <div className="rounded-xl border border-gray-200 dark:border-white/[0.10] bg-white dark:bg-white/[0.04] overflow-hidden">
+                            {ETIQUETAS_PADRAO.map(et => {
+                              const ativa = etqs.includes(et.key)
+                              return (
+                                <button key={et.key} onClick={() => toggleEtiqueta(d._tipo, d.id, et.key)}
+                                  className="w-full text-left px-3 py-1.5 text-xs font-medium transition-colors flex items-center justify-between"
+                                  style={ativa ? { backgroundColor: isDark ? et.darkBg : et.bg, color: isDark ? et.darkColor : et.color } : {}}
+                                  onMouseEnter={e => { if (!ativa) { e.currentTarget.style.backgroundColor = isDark ? et.darkBg : et.bg; e.currentTarget.style.color = isDark ? et.darkColor : et.color } }}
+                                  onMouseLeave={e => { if (!ativa) { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = '' } }}>
+                                  <span className={!ativa ? 'text-gray-600 dark:text-white/60' : ''}>{et.label}</span>
+                                  {ativa && <CheckCircle size={12} />}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Tags de Status */}
-                    <div>
-                      <p className={sectionHdr}>Tags</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {TAGS_STATUS.map(tag => {
-                          const ativa = getTag(d._tipo, d.id) === tag.key
-                          const designerBloqueado = isDesigner && tag.key !== 'em_andamento' && tag.key !== 'recebido'
-                          const naoEntregueApenas = tag.key === 'nao_entregue' && isDesigner
-                          const bloqueado = designerBloqueado || naoEntregueApenas
-                          return (
-                            <button key={tag.key} onClick={() => !isReadOnly && !bloqueado && setTagStatus(d._tipo, d.id, tag.key)} disabled={isReadOnly || bloqueado}
-                              className="text-xs font-semibold px-3 py-1 rounded-full border-2 transition-all disabled:cursor-not-allowed disabled:opacity-30"
-                              style={ativa
-                                ? { backgroundColor: tag.color + '18', color: tag.color, borderColor: tag.color }
-                                : { backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
-                              {tag.label}
-                            </button>
-                          )
-                        })}
+                      {/* Tags - dropdown */}
+                      <div>
+                        <p className={sectionHdr}>Tags</p>
+                        <div className="relative">
+                          <div className="mb-1">
+                            {(() => { const t = getTag(d._tipo, d.id); const tObj = t && TAGS_STATUS.find(x => x.key === t); return tObj ? <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: tObj.color + '20', color: tObj.color }}>{tObj.label}</span> : <span className="text-[10px] text-gray-400 dark:text-white/30">Nenhuma</span> })()}
+                          </div>
+                          <div className="rounded-xl border border-gray-200 dark:border-white/[0.10] bg-white dark:bg-white/[0.04] overflow-hidden">
+                            {TAGS_STATUS.map(tag => {
+                              const ativa = getTag(d._tipo, d.id) === tag.key
+                              const designerBloqueado = isDesigner && tag.key !== 'em_andamento' && tag.key !== 'recebido'
+                              const naoEntregueApenas = tag.key === 'nao_entregue' && isDesigner
+                              const bloqueado = isReadOnly || designerBloqueado || naoEntregueApenas
+                              return (
+                                <button key={tag.key} onClick={() => !bloqueado && setTagStatus(d._tipo, d.id, tag.key)} disabled={bloqueado}
+                                  className="w-full text-left px-3 py-1.5 text-xs font-medium transition-colors flex items-center justify-between disabled:opacity-30 disabled:cursor-not-allowed"
+                                  style={ativa ? { backgroundColor: tag.color + '18', color: tag.color } : {}}
+                                  onMouseEnter={e => { if (!ativa && !bloqueado) { e.currentTarget.style.backgroundColor = tag.color + '15'; e.currentTarget.style.color = tag.color } }}
+                                  onMouseLeave={e => { if (!ativa && !bloqueado) { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = '' } }}>
+                                  <span className={!ativa ? 'text-gray-600 dark:text-white/60' : ''}>{tag.label}</span>
+                                  {ativa && <CheckCircle size={12} />}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Metadata badges */}
-                    {(d.tipo_conteudo || d.formato || d.plataforma || d.data_vencimento || d.data_publicacao) && (
-                      <div className="space-y-3">
+                      {/* Detalhes */}
+                      <div>
                         <p className={sectionHdr}>Detalhes</p>
-                        {(d.tipo_conteudo || d.formato || d.plataforma) && (
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {d.plataforma && d._tipo === 'post' && <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-pink-50 dark:bg-pink-500/15 text-pink-600 dark:text-pink-400 border border-pink-200 dark:border-pink-500/25">{d.plataforma}</span>}
-                            {(d.tipo_conteudo||'').split(',').filter(Boolean).map(tc => <span key={tc} className="text-[11px] font-bold px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/25">{tc}</span>)}
-                            {(d.formato||'').split(',').filter(Boolean).map(fm => <span key={fm} className="text-[11px] font-bold px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/25">{fm}</span>)}
-                          </div>
-                        )}
-                        {(d.data_vencimento || d.data_publicacao) && (
-                          <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-white/50">
-                            <span className="flex items-center gap-1.5">
-                              <Calendar size={13} className="text-gray-400 dark:text-white/40" />
-                              {fmtData(d.data_vencimento || d.data_publicacao)}
-                            </span>
-                            {d.hora_publicacao && (
-                              <span className="flex items-center gap-1.5">
-                                <Clock size={13} className="text-gray-400 dark:text-white/40" />
-                                {d.hora_publicacao.slice(0,5)}
-                              </span>
-                            )}
-                          </div>
-                        )}
+                        <div className="space-y-2">
+                          {d.plataforma && <div className="flex items-center gap-2"><span className="text-[10px] text-gray-400 dark:text-white/40 w-16">Plataforma</span><span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-pink-50 dark:bg-pink-500/15 text-pink-600 dark:text-pink-400">{d.plataforma}</span></div>}
+                          {d.tipo_conteudo && <div className="flex items-center gap-2 flex-wrap"><span className="text-[10px] text-gray-400 dark:text-white/40 w-16 flex-shrink-0">Tipo</span>{d.tipo_conteudo.split(',').filter(Boolean).map(tc => <span key={tc} className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400">{tc}</span>)}</div>}
+                          {d.formato && <div className="flex items-center gap-2 flex-wrap"><span className="text-[10px] text-gray-400 dark:text-white/40 w-16 flex-shrink-0">Formato</span>{d.formato.split(',').filter(Boolean).map(fm => <span key={fm} className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400">{fm}</span>)}</div>}
+                          {(d.data_vencimento || d.data_publicacao) && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] text-gray-400 dark:text-white/40 w-16">Data</span>
+                              <span className="text-[11px] font-semibold text-gray-600 dark:text-white/60 flex items-center gap-1"><Calendar size={11} />{fmtData(d.data_vencimento || d.data_publicacao)}</span>
+                              {d.hora_publicacao && <span className="text-[11px] font-semibold text-gray-600 dark:text-white/60 flex items-center gap-1"><Clock size={11} />{d.hora_publicacao.slice(0,5)}</span>}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    )}
+                    </div>
 
                     {/* Content blocks */}
                     {(d.descricao || d.conteudo || d.referencia || d.musica || d.collaborators) && (
