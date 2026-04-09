@@ -2323,11 +2323,9 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                           <label className="text-[11px] font-semibold text-gray-500 dark:text-white/50 mb-1.5 block">Status</label>
                           <select value={editForm.status||''} onChange={e => setEditForm({...editForm, status: e.target.value})}
                             className={selectCls}>
-                            <option value="pendente">Pendente</option>
-                            <option value="em_andamento">Em Producao</option>
-                            <option value="em_revisao">Em Revisao</option>
-                            <option value="aprovado">Aprovado</option>
-                            <option value="publicado">Publicado</option>
+                            {TAGS_STATUS.map(tag => (
+                              <option key={tag.key} value={tag.key}>{tag.label}</option>
+                            ))}
                           </select>
                         </div>
                         {d._tipo === 'post' && (
@@ -2455,31 +2453,6 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                           <input value={editForm.musica||''} onChange={e => setEditForm({...editForm, musica: e.target.value})}
                             placeholder="Nome ou link"
                             className={inputCls} />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Uploads */}
-                    <div>
-                      <p className={sectionHdr}>Uploads</p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="rounded-xl border-2 border-dashed border-green-300 dark:border-green-500/30 bg-green-50/40 dark:bg-green-500/[0.04] p-4">
-                          <p className="text-xs font-bold text-green-600 dark:text-green-400 mb-1">Upload Publicavel</p>
-                          <p className="text-[10px] text-gray-400 dark:text-white/30 mb-3">Pode ser publicado no Instagram</p>
-                          <label className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-green-500/10 dark:bg-green-500/15 text-green-600 dark:text-green-400 text-xs font-semibold hover:bg-green-500/20 transition cursor-pointer">
-                            <input type="file" accept="image/*,video/*,.pdf" multiple className="hidden"
-                              onChange={e => { Array.from(e.target.files).forEach(file => uploadArquivo(d._tipo, d.id, file)); e.target.value='' }} />
-                            <Plus size={14} /> Anexar arquivo
-                          </label>
-                        </div>
-                        <div className="rounded-xl border-2 border-dashed border-amber-300 dark:border-amber-500/30 bg-amber-50/40 dark:bg-amber-500/[0.04] p-4">
-                          <p className="text-xs font-bold text-amber-600 dark:text-amber-400 mb-1">Upload de Referencia</p>
-                          <p className="text-[10px] text-gray-400 dark:text-white/30 mb-3">Uso interno - NAO publica no Instagram</p>
-                          <label className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-amber-500/10 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 text-xs font-semibold hover:bg-amber-500/20 transition cursor-pointer">
-                            <input type="file" accept="image/*,video/*,.pdf,.psd,.ai,.zip" multiple className="hidden"
-                              onChange={e => { Array.from(e.target.files).forEach(file => uploadRefArquivo(d._tipo, d.id, file)); e.target.value='' }} />
-                            <Plus size={14} /> Anexar referencia
-                          </label>
                         </div>
                       </div>
                     </div>
