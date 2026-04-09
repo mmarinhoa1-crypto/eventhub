@@ -979,12 +979,11 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                   onDragOver={e => !isReadOnly && handleCardDragOver(e, d._tipo+'-'+d.id)}
                                   onDrop={e => !isReadOnly && handleCardDrop(e, d, dayStr, dayItems)}
                                   onClick={e => { e.stopPropagation(); const next = isSelected ? null : d; setAdminDetalhe(next); if(next) { setAdminArquivos([]); carregarAdminArqs(next); carregarComentarios(next._tipo, next.id, true) } }}
-                                  className={'rounded-xl bg-white dark:bg-white/[0.06] border cursor-grab select-none transition-all duration-150 hover:shadow-md '
+                                  className={'rounded-xl bg-white dark:bg-white/[0.06] border border-gray-300 dark:border-gray-600 cursor-grab select-none transition-all duration-150 hover:shadow-md shadow-sm '
                                     + (isDraggingThis ? 'opacity-40 scale-95 ' : '')
                                     + (dragOverCard === d._tipo+'-'+d.id && !isDraggingThis ? 'ring-2 ring-inset ring-blue-400 ' : '')
                                     + (alertaHora ? 'ring-2 ring-red-500 bg-red-50 dark:bg-red-500/10 ' : '')
-                                    + (isSelected ? 'ring-2 ring-blue-500 shadow-md border-blue-200 ' : 'border-gray-100 dark:border-white/[0.08] shadow-sm ')}
-                                  style={{ borderLeft: `4px solid ${alertaHora ? '#ef4444' : borderColor}` }}
+                                    + (isSelected ? 'ring-2 ring-blue-500 shadow-md ' : '')}
                                 >
                                   <div className="px-3 py-2.5 space-y-2">
                                     {/* Etiquetas + Status */}
@@ -1684,9 +1683,8 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                   <div
                                     key={'briefing-'+d.id}
                                     onClick={() => { setDetalhe({...d}); carregarArquivosDetalhe(d._tipo, d.id); setEditMode(false); setEditForm({}); carregarComentarios(d._tipo, d.id, false) }}
-                                    className={'rounded-xl bg-white dark:bg-white/[0.06] border border-gray-100 dark:border-white/[0.08] cursor-pointer select-none transition-all duration-150 hover:shadow-md shadow-sm '
+                                    className={'rounded-xl bg-white dark:bg-white/[0.06] border border-gray-300 dark:border-gray-600 cursor-pointer select-none transition-all duration-150 hover:shadow-md shadow-sm '
                                       + (alertaHora ? 'ring-2 ring-red-500 bg-red-50 dark:bg-red-500/10 ' : '')}
-                                    style={{ borderLeft: `4px solid ${alertaHora ? '#ef4444' : borderColor}` }}
                                   >
                                     <div className="px-3 py-2.5 space-y-2">
                                       <div className="flex items-start justify-between gap-1">
@@ -1996,11 +1994,10 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                 onDragOver={e => handleCardDragOver(e, d._tipo+'-'+d.id)}
                                 onDrop={e => handleCardDrop(e, d, dayStr, dayItems)}
                                 onClick={() => { setDetalhe({...d}); carregarArquivosDetalhe(d._tipo, d.id); setEditMode(false); setEditForm({}); carregarComentarios(d._tipo, d.id, false) }}
-                                className={'rounded-xl bg-white dark:bg-white/[0.06] border cursor-grab select-none transition-all duration-150 hover:shadow-md border-gray-100 dark:border-white/[0.08] shadow-sm '
+                                className={'rounded-xl bg-white dark:bg-white/[0.06] border border-gray-300 dark:border-gray-600 cursor-grab select-none transition-all duration-150 hover:shadow-md shadow-sm '
                                   + (isDraggingThis ? 'opacity-40 scale-95 ' : '')
                                   + (dragOverCard === d._tipo+'-'+d.id && !isDraggingThis ? 'ring-2 ring-inset ring-blue-400 ' : '')
                                   + (alertaHora ? 'ring-2 ring-red-500 bg-red-50 dark:bg-red-500/10 ' : '')}
-                                style={{ borderLeft: `4px solid ${alertaHora ? '#ef4444' : borderColor}` }}
                               >
                                 <div className="px-3 py-2.5 space-y-2">
                                   <div className="flex items-start justify-between gap-1">
