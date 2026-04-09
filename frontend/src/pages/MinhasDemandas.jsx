@@ -2742,6 +2742,66 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                   </>
                 )}
 
+                {/* ── Arquivos enviados (preview) ── */}
+                {(arquivos.length > 0 || refArquivos.length > 0) && (
+                  <div className="border-t border-gray-100 dark:border-white/[0.08] pt-5 space-y-4">
+                    {arquivos.length > 0 && (
+                      <div>
+                        <p className="text-xs font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-2">Publicaveis ({arquivos.length})</p>
+                        <div className="grid grid-cols-3 gap-2">
+                          {arquivos.map(a => {
+                            const isImg = a.tipo?.startsWith('image') || /\.(jpg|jpeg|png|gif|webp)$/i.test(a.nome_original || '')
+                            const fileUrl = '/api' + a.url
+                            return (
+                              <div key={a.id} className="group relative rounded-xl overflow-hidden border border-green-200 dark:border-green-500/20 bg-gray-50 dark:bg-white/[0.03] hover:shadow-md transition">
+                                {isImg
+                                  ? <img src={fileUrl} alt={a.nome_original} className="w-full h-20 object-cover cursor-pointer hover:opacity-80 transition" onClick={() => openPreviewWithNav(a, arquivos)} />
+                                  : <a href={fileUrl} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center h-20 gap-1 text-gray-400 hover:text-blue-600 transition"><FileText size={20} /><span className="text-[10px] font-medium px-2 truncate w-full text-center">{a.nome_original}</span></a>
+                                }
+                                <a href={fileUrl} download={a.nome_original || 'arquivo'} onClick={e => e.stopPropagation()}
+                                  className="absolute bottom-1.5 right-1.5 w-7 h-7 bg-blue-500 hover:bg-blue-600 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition z-10">
+                                  <Download size={13} className="text-white" />
+                                </a>
+                                <button onClick={e => { e.stopPropagation(); deletarArquivo(a.id, d._tipo, d.id) }}
+                                  className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-[10px] font-bold">
+                                  <XIcon size={10} />
+                                </button>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    {refArquivos.length > 0 && (
+                      <div>
+                        <p className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-2">Referencias ({refArquivos.length})</p>
+                        <div className="grid grid-cols-3 gap-2">
+                          {refArquivos.map(a => {
+                            const isImg = a.tipo?.startsWith('image') || /\.(jpg|jpeg|png|gif|webp)$/i.test(a.nome_original || '')
+                            const fileUrl = '/api' + a.url
+                            return (
+                              <div key={a.id} className="group relative rounded-xl overflow-hidden border border-amber-200 dark:border-amber-500/20 bg-gray-50 dark:bg-white/[0.03] hover:shadow-md transition">
+                                {isImg
+                                  ? <img src={fileUrl} alt={a.nome_original} className="w-full h-20 object-cover cursor-pointer hover:opacity-80 transition" onClick={() => openPreviewWithNav(a, refArquivos)} />
+                                  : <a href={fileUrl} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center h-20 gap-1 text-gray-400 hover:text-amber-600 transition"><FileText size={20} /><span className="text-[10px] font-medium px-2 truncate w-full text-center">{a.nome_original}</span></a>
+                                }
+                                <a href={fileUrl} download={a.nome_original || 'arquivo'} onClick={e => e.stopPropagation()}
+                                  className="absolute bottom-1.5 right-1.5 w-7 h-7 bg-amber-500 hover:bg-amber-600 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition z-10">
+                                  <Download size={13} className="text-white" />
+                                </a>
+                                <button onClick={e => { e.stopPropagation(); deletarArquivo(a.id, d._tipo, d.id) }}
+                                  className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-[10px] font-bold">
+                                  <XIcon size={10} />
+                                </button>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* ── Comments ── */}
                 <div className="border-t border-gray-100 dark:border-white/[0.08] pt-5 space-y-3">
                   <div className="flex items-center gap-3 flex-wrap">
