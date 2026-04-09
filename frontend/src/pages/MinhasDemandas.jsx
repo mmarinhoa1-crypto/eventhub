@@ -2234,11 +2234,11 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
         const dateDisabledCls = isDateReadOnly ? ' opacity-60 cursor-not-allowed' : ''
 
         return (
-          <div className="fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4" onClick={() => { setDetalhe(null); setEditMode(false); setEditForm({}) }}>
-            <div className="bg-white dark:bg-[#1e1e2a] rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-gray-200 dark:border-white/[0.10]" onClick={e => e.stopPropagation()}>
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }} onClick={() => { setDetalhe(null); setEditMode(false); setEditForm({}) }}>
+            <div className="rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border" style={{ backgroundColor: isDark ? '#1e1e2a' : '#ffffff', borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)' }} onClick={e => e.stopPropagation()}>
 
               {/* ── Header ── */}
-              <div className="sticky top-0 bg-white dark:bg-[#1e1e2a] border-b border-gray-100 dark:border-white/[0.08] px-6 py-4 flex items-center justify-between rounded-t-2xl z-10 flex-shrink-0">
+              <div className="sticky top-0 border-b px-6 py-4 flex items-center justify-between rounded-t-2xl z-10 flex-shrink-0" style={{ backgroundColor: isDark ? '#1e1e2a' : '#ffffff', borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }}>
                 <div className="flex-1 min-w-0">
                   {editMode ? (
                     <h3 className="font-extrabold text-gray-900 dark:text-white/95 text-lg">Editar Demanda</h3>
