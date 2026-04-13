@@ -509,10 +509,14 @@ export default function MinhasDemandas() {
   function sortDayItems(items, dayStr) {
     const orderKey = dayStr
     const order = cardOrder[orderKey]
-    if (!order || !order.length) return items
     const orderMap = {}
-    order.forEach((id, idx) => { orderMap[id] = idx })
+    if (order && order.length) order.forEach((id, idx) => { orderMap[id] = idx })
     return [...items].sort((a, b) => {
+      // "Publicado" sempre vai para o final
+      const pa = (getTag(a._tipo, a.id) === 'publicado' || a.status === 'publicado') ? 1 : 0
+      const pb = (getTag(b._tipo, b.id) === 'publicado' || b.status === 'publicado') ? 1 : 0
+      if (pa !== pb) return pa - pb
+      // Entre itens não publicados, usa ordem manual (drag)
       const idA = a._tipo + '-' + a.id
       const idB = b._tipo + '-' + b.id
       const oA = orderMap[idA] !== undefined ? orderMap[idA] : 9999
