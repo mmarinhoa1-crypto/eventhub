@@ -62,6 +62,7 @@ res.json(r.rows)}catch(e){res.status(500).json({erro:e.message})}});
 
 router.post('/api/eventos/:id/cronograma',auth,async(req,res)=>{try{
 const b=req.body;
+if(!b.hora_publicacao||!b.hora_publicacao.toString().trim())return res.status(400).json({erro:'Horario de publicacao e obrigatorio'});
 const r=await pool.query('INSERT INTO cronograma_marketing(org_id,id_evento,titulo,plataforma,data_publicacao,hora_publicacao,conteudo,hashtags,formato,status,collaborators,aparecer_designer,descricao,tipo_conteudo,referencia,musica) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING *',
 [req.user.org_id,req.params.id,b.titulo,b.plataforma||'',b.data_publicacao||'',b.hora_publicacao||'',b.conteudo||'',b.hashtags||'',b.formato||'',b.status||'pendente',b.collaborators||'',b.destino==='design',b.descricao||'',b.tipo_conteudo||'',b.referencia||'',b.musica||'']);
 const post=r.rows[0];

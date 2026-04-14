@@ -308,6 +308,10 @@ export default function MinhasDemandas() {
   }
 
   async function salvarEdicao() {
+    if (editForm.hora_publicacao !== undefined && !editForm.hora_publicacao?.toString().trim()) {
+      toast.error('Horário de publicação é obrigatório')
+      return
+    }
     try {
       await api.patch('/cronograma/' + detalhe.id, editForm)
       toast.success('Atualizado!')
@@ -328,6 +332,10 @@ export default function MinhasDemandas() {
   }
 
   async function adminSalvarEdicao() {
+    if (adminEditForm.hora_publicacao !== undefined && !adminEditForm.hora_publicacao?.toString().trim()) {
+      toast.error('Horário de publicação é obrigatório')
+      return
+    }
     try {
       await api.patch('/cronograma/' + adminDetalhe.id, adminEditForm)
       toast.success('Atualizado!')
@@ -564,8 +572,8 @@ export default function MinhasDemandas() {
       toast.error('Preencha o titulo e selecione um evento')
       return
     }
-    // Social Media: horário obrigatório (exceto se etiqueta "Impresso" estiver no formato)
-    if (isSocialMedia && !novoPostForm.hora_publicacao?.trim()) {
+    // Horário obrigatório para todos ao criar nova demanda
+    if (!novoPostForm.hora_publicacao?.trim()) {
       toast.error('Preencha o horário de publicação')
       return
     }
