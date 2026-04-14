@@ -14,6 +14,7 @@ const funcoesPorPerfil = {
     { value: 'social_media', label: 'Social Media' },
     { value: 'diretor', label: 'Diretor' },
     { value: 'gestor_trafego', label: 'Gestor de Tráfego' },
+    { value: 'suporte', label: 'Suporte' },
     { value: 'viewer', label: 'Visualizador' },
   ],
   diretor: [

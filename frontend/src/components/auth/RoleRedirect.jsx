@@ -9,6 +9,7 @@ const homeByRole = {
   diretor: '/demandas',
   viewer: '/demandas',
   gestor_trafego: '/demandas',
+  suporte: '/eventos',
 }
 
 export default function RoleRedirect() {

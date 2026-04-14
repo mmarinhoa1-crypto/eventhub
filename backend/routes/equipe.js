@@ -34,7 +34,7 @@ const{nome,email,senha,funcao}=req.body;
 if(!nome||!email||!senha)return res.status(400).json({erro:'Nome, email e senha obrigatorios'});
 const existe=await pool.query('SELECT id FROM usuarios WHERE email=$1',[email]);
 if(existe.rows.length)return res.status(400).json({erro:'Email ja cadastrado'});
-const funcoesValidas=['admin','agent','designer','social_media','diretor','viewer','gestor_trafego'];
+const funcoesValidas=['admin','agent','designer','social_media','diretor','viewer','gestor_trafego','suporte'];
 const funcaoUsuario=funcoesValidas.includes(funcao)?funcao:'agent';
 if(req.user.role==='diretor'&&funcaoUsuario!=='designer'&&funcaoUsuario!=='social_media'&&funcaoUsuario!=='gestor_trafego')return res.status(403).json({erro:'Diretor so pode criar designer, social media ou gestor de trafego'});
 const hash=await bcrypt.hash(senha,10);
@@ -69,7 +69,7 @@ if(nome!==undefined||email!==undefined){
   return res.json(r.rows[0]);
 }
 
-const funcoesValidas=['admin','agent','designer','social_media','diretor','viewer','gestor_trafego'];
+const funcoesValidas=['admin','agent','designer','social_media','diretor','viewer','gestor_trafego','suporte'];
 if(!funcoesValidas.includes(funcao))return res.status(400).json({erro:'Funcao invalida'});
 // Diretor nao pode alterar admin
 if(req.user.role==='diretor'){const alvo=await pool.query('SELECT funcao FROM usuarios WHERE id=$1 AND org_id=$2',[req.params.id,req.user.org_id]);if(alvo.rows[0]&&alvo.rows[0].funcao==='admin')return res.status(403).json({erro:'Sem permissao para alterar admin'})}

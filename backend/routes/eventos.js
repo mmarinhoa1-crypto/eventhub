@@ -83,7 +83,7 @@ const r=await pool.query('SELECT * FROM despesas WHERE id_evento=$1 AND org_id=$
 res.json(r.rows)}catch(e){res.status(500).json({erro:e.message})}});
 
 router.post('/api/eventos',auth,async(req,res)=>{try{
-if(req.user.funcao==='designer'||req.user.funcao==='social_media'||req.user.funcao==='gestor_trafego')return res.status(403).json({erro:'Sem permissao'});
+if(req.user.funcao==='designer'||req.user.funcao==='social_media'||req.user.funcao==='gestor_trafego'||req.user.funcao==='suporte')return res.status(403).json({erro:'Sem permissao'});
 const{nome,id_grupo,orcamento,data_evento,hora_evento,hora_abertura,local_evento,cidade,descricao,publico_alvo,capacidade,atracoes,tipo_evento,info_lotes,observacoes,data_abertura_vendas,hora_abertura_vendas,promo_abertura,pontos_venda,classificacao,instagram,designer,social_media,diretor,designer_id,social_media_id,diretor_id}=req.body;
 const r=await pool.query('INSERT INTO eventos(org_id,nome,id_grupo,orcamento,data_evento,hora_evento,hora_abertura,local_evento,cidade,descricao,publico_alvo,capacidade,atracoes,tipo_evento,info_lotes,observacoes,data_abertura_vendas,hora_abertura_vendas,promo_abertura,pontos_venda,classificacao,instagram,designer,social_media,diretor,designer_id,social_media_id,diretor_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28) RETURNING *',[req.user.org_id,nome,id_grupo||'',parseFloat(orcamento)||0,data_evento||'',hora_evento||'',hora_abertura||'',local_evento||'',cidade||'',descricao||'',publico_alvo||'',parseInt(capacidade)||0,atracoes||'',tipo_evento||'',info_lotes||'',observacoes||'',data_abertura_vendas||'',hora_abertura_vendas||'',promo_abertura||'',pontos_venda||'',classificacao||'',instagram||'',designer||'',social_media||'',diretor||'',designer_id?parseInt(designer_id):null,social_media_id?parseInt(social_media_id):null,diretor_id?parseInt(diretor_id):null]);
 const evento=r.rows[0];
@@ -124,6 +124,7 @@ res.setHeader('Content-Disposition','attachment; filename='+ev.rows[0].nome.repl
 res.send(csv)}catch(e){res.status(500).json({erro:e.message})}});
 
 router.patch('/api/eventos/:id',auth,async(req,res)=>{try{
+if(req.user.funcao!=='admin'&&req.user.funcao!=='diretor')return res.status(403).json({erro:'Sem permissao'});
 const b=req.body;const f=[];const v=[];let i=1;
 ['nome','id_grupo','data_evento','hora_evento','hora_abertura','local_evento','cidade','descricao','publico_alvo','atracoes','tipo_evento','info_lotes','observacoes','data_abertura_vendas','hora_abertura_vendas','promo_abertura','pontos_venda','classificacao','instagram','designer','social_media','diretor','designer_id','social_media_id','diretor_id'].forEach(function(k){if(b[k]!==undefined){f.push(k+'=$'+i);v.push(b[k]);i++}});
 if(b.orcamento!==undefined){f.push('orcamento=$'+i);v.push(parseFloat(b.orcamento)||0);i++}

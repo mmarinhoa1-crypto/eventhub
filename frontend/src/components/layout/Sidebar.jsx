@@ -32,7 +32,7 @@ const financeiroSubLinks = [
 const funcaoLabels = {
   admin: 'Administrador', diretor: 'Diretor', designer: 'Designer',
   social_media: 'Social Media', gestor_trafego: 'Gestor de Tráfego',
-  agent: 'Agente', viewer: 'Visualizador',
+  agent: 'Agente', viewer: 'Visualizador', suporte: 'Suporte',
 }
 
 export default function Sidebar() {
