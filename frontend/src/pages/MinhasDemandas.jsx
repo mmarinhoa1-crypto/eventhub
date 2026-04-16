@@ -2274,11 +2274,13 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                     </>
                   )}
                   <p className="text-xs font-semibold text-pink-500 dark:text-pink-400 mt-0.5">{d.evento_nome}</p>
-                  {d.criado_em && (
-                    <p className="text-[10px] text-gray-400 dark:text-white/40 mt-1">
-                      Demanda lançada às {new Date(d.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }).replace(':', 'h')} do dia {new Date(d.criado_em).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
-                    </p>
-                  )}
+                  <p className="text-[11px] font-medium text-gray-500 dark:text-white/50 mt-1">
+                    {d.criado_em ? (
+                      <>Demanda lançada às {new Date(d.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }).replace(':', 'h')} do dia {new Date(d.criado_em).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</>
+                    ) : (
+                      <span className="text-gray-400 dark:text-white/30">Data de lançamento não disponível</span>
+                    )}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2 ml-4 flex-shrink-0">
                   {editMode ? (
