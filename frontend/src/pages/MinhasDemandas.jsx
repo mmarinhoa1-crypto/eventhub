@@ -1077,6 +1077,13 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                             <div className="min-w-0">
                               <h3 className="text-base font-extrabold text-gray-900 dark:text-white/90 truncate">{d.titulo || 'Sem título'}</h3>
                               <p className="text-xs text-blue-500 font-medium">{d.evento_nome}</p>
+                              <p className="text-[11px] font-medium text-gray-500 dark:text-white/50 mt-1">
+                                {d.criado_em ? (
+                                  <>Demanda lançada às {new Date(d.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }).replace(':', 'h')} do dia {new Date(d.criado_em).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</>
+                                ) : (
+                                  <span className="text-gray-400 dark:text-white/30">Data de lançamento não disponível</span>
+                                )}
+                              </p>
                             </div>
                             <span className={'text-xs font-bold px-2.5 py-1 rounded-full border flex-shrink-0 ' + (atrasado ? 'bg-red-50 text-red-600 border-red-200' : st.bg + ' ' + st.text + ' ' + st.border)}>
                               {atrasado ? 'Atrasado' : st.label}
