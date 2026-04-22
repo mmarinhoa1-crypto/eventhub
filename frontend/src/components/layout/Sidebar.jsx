@@ -24,6 +24,7 @@ const iaSubLinks = [
 
 const financeiroSubLinks = [
   { to: '/financeiro', label: 'Planilha' },
+  { to: '/pendentes', label: 'Comprovantes' },
   { to: '/vendas', label: 'Vendas' },
   { to: '/consumo', label: 'Consumo' },
   { to: '/previsao', label: 'Previsão IA' },
@@ -62,7 +63,7 @@ export default function Sidebar() {
   const isMarketingActive = location.pathname.startsWith('/demandas')
   const isTrafegoActive = ['/trafego', '/anuncios'].some(p => location.pathname.startsWith(p))
   const isIAActive = location.pathname.startsWith('/ia')
-  const isFinanceiroActive = ['/financeiro', '/vendas', '/consumo', '/previsao'].some(p => location.pathname.startsWith(p))
+  const isFinanceiroActive = ['/financeiro', '/pendentes', '/vendas', '/consumo', '/previsao'].some(p => location.pathname.startsWith(p))
 
   // Carregar foto de perfil
   useEffect(() => {
