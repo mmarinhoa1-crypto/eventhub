@@ -37,5 +37,7 @@ app.use(require('./routes/legacy')({ pool, axios, bcrypt, auth, upload, multer, 
 // Worker: notificacoes WhatsApp de demandas (cronograma_marketing)
 // Usa a instancia de marketing (LAB3) - separada da meuwhats que cuida do financeiro
 require('./jobs/notificacoesDemandas').start({ pool, EVO, KEY, INST: INST_MARKETING });
+// Worker: relatorio mensal de atrasos no ultimo dia do mes as 20h
+require('./jobs/relatorioMensalAtrasos').start({ pool, EVO, KEY, INST: INST_MARKETING });
 
 app.listen(PORT,()=>console.log('EventHub rodando na porta '+PORT));
