@@ -25,7 +25,7 @@ export default function ConfiguracoesPage() {
 
   function carregarGrupos() {
     setCarregandoGrupos(true)
-    return api.get('/whatsapp/grupos')
+    return api.get('/whatsapp/grupos-marketing')
       .then(({ data }) => setGrupos(Array.isArray(data) ? data : []))
       .catch(() => toast.error('Erro ao carregar grupos do WhatsApp. Verifique se a instância está conectada.'))
       .finally(() => setCarregandoGrupos(false))
