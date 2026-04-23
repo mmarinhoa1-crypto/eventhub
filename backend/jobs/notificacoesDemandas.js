@@ -1,7 +1,8 @@
 const { enviarGrupoComMencoes, telefoneParaJid } = require('../utils/whatsapp');
 
 const TICK_MS = 5 * 60 * 1000; // 5 minutos
-const ANTECEDENCIA_MS = 60 * 60 * 1000; // 1 hora antes
+const ANTECEDENCIA_MS = 60 * 60 * 1000; // 1 hora antes (deadline do designer)
+const TOLERANCIA_ATRASO_SM_MS = 5 * 60 * 1000; // 5 min depois do horario (atraso SM)
 const PRIMEIRO_TICK_MS = 30 * 1000; // 30s apos boot
 
 // Combina "2026-05-12" + "09:00" em Date local (TZ do servidor)
@@ -13,7 +14,7 @@ function combinarDataHora(dataStr, horaStr) {
   return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(h[1]), Number(h[2]), 0, 0);
 }
 
-// Social media: proximidade 1h antes da publicacao + atraso depois
+// Social media: SO atraso, disparado 5 min apos a hora de publicacao
 // Designer: deadline = publicacao - 1h (deve marcar 'recebido' antes); atraso quando agora >= deadline
 function calcularAlerta(publicacao, agora, tipoFluxo) {
   if (!publicacao) return null;
@@ -21,9 +22,9 @@ function calcularAlerta(publicacao, agora, tipoFluxo) {
     const deadline = new Date(publicacao.getTime() - ANTECEDENCIA_MS);
     return agora >= deadline ? 'atraso' : null;
   }
-  if (agora >= publicacao) return 'atraso';
-  if (publicacao.getTime() - agora.getTime() <= ANTECEDENCIA_MS) return 'proximidade';
-  return null;
+  // SM: atraso so dispara apos tolerancia de 5 min
+  const limiteSM = new Date(publicacao.getTime() + TOLERANCIA_ATRASO_SM_MS);
+  return agora >= limiteSM ? 'atraso' : null;
 }
 
 async function processarLinha(pool, EVO, KEY, INST, l, tipoFluxo) {
@@ -63,13 +64,7 @@ async function processarLinha(pool, EVO, KEY, INST, l, tipoFluxo) {
   }
 
   let texto;
-  if (alerta === 'proximidade') {
-    texto =
-      `🟡 *Demanda chegando* — ${fluxoLabel}\n` +
-      `*${l.titulo}*${eventoLabel}\n` +
-      `Publica em até 1h, às ${l.hora_publicacao}.\n` +
-      `Responsável: ${responsavelLabel}`;
-  } else if (tipoFluxo === 'designer') {
+  if (tipoFluxo === 'designer') {
     const deadline = deadlineDesigner(l.hora_publicacao);
     texto =
       `🔴 *Entrega atrasada* — Designer\n` +
@@ -79,9 +74,10 @@ async function processarLinha(pool, EVO, KEY, INST, l, tipoFluxo) {
       `Responsável: ${responsavelLabel}`;
   } else {
     texto =
-      `🔴 *Demanda atrasada* — ${fluxoLabel}\n` +
+      `🔴 *Demanda atrasada* — Social Media\n` +
       `*${l.titulo}*${eventoLabel}\n` +
       `Deveria ter sido publicada às ${l.hora_publicacao}.\n` +
+      `Marque como *publicado* assim que postar.\n` +
       `Responsável: ${responsavelLabel}`;
   }
 
