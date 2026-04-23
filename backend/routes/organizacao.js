@@ -1,6 +1,6 @@
 const express = require('express');
 
-module.exports = function({ pool, auth }) {
+module.exports = function({ pool, axios, auth, EVO, KEY, INST_MARKETING }) {
   const router = express.Router();
 
 // === CONFIGURACAO DA ORGANIZACAO ===
@@ -8,6 +8,13 @@ module.exports = function({ pool, auth }) {
 router.get('/api/organizacao',auth,async(req,res)=>{try{
 const r=await pool.query('SELECT id,nome,slug,plano,instancia_whatsapp,jid_grupo_equipe FROM organizacoes WHERE id=$1',[req.user.org_id]);
 res.json(r.rows[0]||{})}catch(e){res.status(500).json({erro:e.message})}});
+
+// Lista grupos da instancia de marketing (separada da meuwhats que cuida do financeiro)
+// Usado pelo dropdown de "Grupo da equipe" em /configuracoes
+router.get('/api/whatsapp/grupos-marketing',auth,async(req,res)=>{try{
+const r=await axios.get(EVO+'/group/fetchAllGroups/'+INST_MARKETING+'?getParticipants=false',{headers:{apikey:KEY}});
+const grupos=Array.isArray(r.data)?r.data.map(g=>({id:g.id||g.jid,nome:g.subject||g.nome||g.name||'',participantes:g.size||g.participantsCount||0})):[];
+res.json(grupos)}catch(e){res.status(500).json({erro:e.response?.data||e.message})}});
 
 router.patch('/api/organizacao',auth,async(req,res)=>{try{
 if(req.user.role!=='admin')return res.status(403).json({erro:'Apenas admin pode alterar configuracoes'});
