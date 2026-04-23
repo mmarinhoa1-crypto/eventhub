@@ -33,4 +33,7 @@ app.use(require('./routes/anuncios')({ pool, auth, CLAUDE }));
 app.use(require('./routes/notificacoes')({ pool, auth }));
 app.use(require('./routes/legacy')({ pool, axios, bcrypt, auth, upload, multer, path, CLAUDE, EVO, KEY, INST }));
 
+// Worker: notificacoes WhatsApp de demandas (cronograma_marketing)
+require('./jobs/notificacoesDemandas').start({ pool, EVO, KEY, INST });
+
 app.listen(PORT,()=>console.log('EventHub rodando na porta '+PORT));
