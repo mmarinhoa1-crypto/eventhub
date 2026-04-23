@@ -78,6 +78,7 @@ async function processarLinha(pool, EVO, KEY, INST, l, tipoFluxo) {
 async function tick(pool, EVO, KEY, INST) {
   try {
     // Fluxo Social Media: usa eventos.social_media_id como responsavel
+    // Filtra apenas demandas com data_publicacao >= HOJE no fuso de Brasilia (sem retroativo)
     const sm = await pool.query(`
       SELECT
         c.id, c.titulo, c.data_publicacao, c.hora_publicacao, c.org_id,
@@ -93,12 +94,15 @@ async function tick(pool, EVO, KEY, INST) {
         AND o.jid_grupo_equipe IS NOT NULL AND o.jid_grupo_equipe <> ''
         AND c.data_publicacao IS NOT NULL
         AND c.hora_publicacao IS NOT NULL
+        AND c.data_publicacao ~ '^\\d{4}-\\d{2}-\\d{2}$'
+        AND c.data_publicacao::date >= (NOW() AT TIME ZONE 'America/Sao_Paulo')::date
     `);
     for (const row of sm.rows) {
       await processarLinha(pool, EVO, KEY, INST, row, 'social_media');
     }
 
     // Fluxo Designer: usa eventos.designer_id, considera 'em_revisao' (=tag 'recebido') como entregue
+    // Filtra apenas demandas com data_publicacao >= HOJE no fuso de Brasilia (sem retroativo)
     const ds = await pool.query(`
       SELECT
         c.id, c.titulo, c.data_publicacao, c.hora_publicacao, c.org_id,
@@ -115,6 +119,8 @@ async function tick(pool, EVO, KEY, INST) {
         AND o.jid_grupo_equipe IS NOT NULL AND o.jid_grupo_equipe <> ''
         AND c.data_publicacao IS NOT NULL
         AND c.hora_publicacao IS NOT NULL
+        AND c.data_publicacao ~ '^\\d{4}-\\d{2}-\\d{2}$'
+        AND c.data_publicacao::date >= (NOW() AT TIME ZONE 'America/Sao_Paulo')::date
     `);
     for (const row of ds.rows) {
       await processarLinha(pool, EVO, KEY, INST, row, 'designer');
