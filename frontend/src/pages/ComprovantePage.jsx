@@ -10,17 +10,22 @@ export default function ComprovantePage() {
   const [confirmando, setConfirmando] = useState(false)
   const [resultado, setResultado] = useState(null)
   const [erro, setErro] = useState(null)
-  const [escolhendoCategoria, setEscolhendoCategoria] = useState(false)
   const [undoSeg, setUndoSeg] = useState(0)
   const undoTimer = useRef(null)
 
   // Campos editaveis
   const [valor, setValor] = useState('')
   const [descricao, setDescricao] = useState('')
-  const [fornecedor, setFornecedor] = useState('')
-  const [dataComp, setDataComp] = useState('')
   const [quantidade, setQuantidade] = useState(1)
+  const [categoria, setCategoria] = useState('')
   const [fontePag, setFontePag] = useState('')
+  const [contas, setContas] = useState([])
+
+  // Criar nova conta
+  const [criandoConta, setCriandoConta] = useState(false)
+  const [novaContaNome, setNovaContaNome] = useState('')
+  const [novaContaTitular, setNovaContaTitular] = useState('')
+  const [salvandoConta, setSalvandoConta] = useState(false)
 
   const carregar = () => {
     setLoading(true)
@@ -33,10 +38,10 @@ export default function ComprovantePage() {
           const dd = d.dados || {}
           setValor(parseFloat(dd.valor) || 0)
           setDescricao(dd.descricao || '')
-          setFornecedor(dd.fornecedor || '')
-          setDataComp(dd.data || '')
           setQuantidade(parseInt(dd.quantidade) || 1)
+          setCategoria(dd.centro_custo || 'Outros')
           setFontePag(dd.fonte_pagamento || '')
+          setContas(d.contas || [])
           if (d.status !== 'pendente' && d.undo_seg_restantes > 0) {
             setResultado({ acao: d.confirmed_ref_type || 'ignorar', podeDesfazer: true })
             setUndoSeg(d.undo_seg_restantes)
@@ -70,17 +75,15 @@ export default function ComprovantePage() {
     }
   }, [undoSeg > 0])
 
-  const confirmar = async (acao, categoria = null) => {
+  const confirmar = async (acao) => {
     setConfirmando(true)
     setErro(null)
     try {
       const body = {
         acao,
-        categoria,
+        categoria: acao === 'despesa' ? categoria : null,
         valor: parseFloat(valor) || 0,
         descricao,
-        fornecedor,
-        data: dataComp,
         quantidade: parseInt(quantidade) || 1,
         fonte_pagamento: fontePag,
       }
@@ -94,7 +97,7 @@ export default function ComprovantePage() {
         setErro(d.erro)
         if (d.status) setResultado({ jaFeito: d.status })
       } else {
-        setResultado({ acao: d.acao, categoria, podeDesfazer: true })
+        setResultado({ acao: d.acao, categoria: body.categoria, podeDesfazer: true })
         setUndoSeg(5 * 60)
       }
     } catch (e) {
@@ -120,6 +123,37 @@ export default function ComprovantePage() {
       setErro('Erro ao desfazer: ' + e.message)
     } finally {
       setConfirmando(false)
+    }
+  }
+
+  const criarConta = async () => {
+    if (!novaContaNome.trim()) {
+      setErro('Informe o nome da conta')
+      return
+    }
+    setSalvandoConta(true)
+    setErro(null)
+    try {
+      const r = await fetch(`${API}/${token}/criar-conta`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome: novaContaNome, titular: novaContaTitular }),
+      })
+      const d = await r.json()
+      if (d.erro) {
+        setErro(d.erro)
+      } else {
+        const nova = { id: d.id, nome: d.nome, titular: d.titular, tipo: d.tipo }
+        setContas((prev) => [...prev, nova].sort((a, b) => a.nome.localeCompare(b.nome)))
+        setFontePag(d.nome)
+        setCriandoConta(false)
+        setNovaContaNome('')
+        setNovaContaTitular('')
+      }
+    } catch (e) {
+      setErro('Erro ao criar conta: ' + e.message)
+    } finally {
+      setSalvandoConta(false)
     }
   }
 
@@ -196,48 +230,7 @@ export default function ComprovantePage() {
     )
   }
 
-  const d = data.dados || {}
-  const catSugerida = d.centro_custo || 'Outros'
   const isPdf = data.comprovante_url?.endsWith('.pdf')
-
-  if (escolhendoCategoria) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-4">
-        <div className="max-w-md mx-auto">
-          <div className="bg-white rounded-xl shadow p-5 mb-3">
-            <div className="text-sm text-gray-500 mb-1">Escolher categoria</div>
-            <div className="text-xl font-semibold">
-              R${' '}
-              {(parseFloat(valor) || 0).toLocaleString('pt-BR', {
-                minimumFractionDigits: 2,
-              })}
-            </div>
-            <div className="text-sm text-gray-600">{descricao || ''}</div>
-          </div>
-          <div className="space-y-2">
-            {data.categorias?.map((c) => (
-              <button
-                key={c.nome}
-                disabled={confirmando}
-                onClick={() => confirmar('despesa', c.nome)}
-                className="w-full bg-white hover:bg-gray-100 rounded-xl shadow p-4 text-left flex items-center gap-3 disabled:opacity-50"
-              >
-                <span className="text-2xl">{c.emoji}</span>
-                <span className="font-medium text-gray-800">{c.nome}</span>
-              </button>
-            ))}
-          </div>
-          <button
-            disabled={confirmando}
-            onClick={() => setEscolhendoCategoria(false)}
-            className="w-full mt-3 text-gray-500 p-3"
-          >
-            Voltar
-          </button>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -289,60 +282,96 @@ export default function ComprovantePage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-xs text-gray-500">Fornecedor</label>
-                <input
-                  type="text"
-                  value={fornecedor}
-                  onChange={(e) => setFornecedor(e.target.value)}
-                  className="w-full p-2 rounded border border-gray-200 focus:border-blue-500 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-gray-500">Data</label>
-                <input
-                  type="text"
-                  placeholder="DD/MM/AAAA"
-                  value={dataComp}
-                  onChange={(e) => setDataComp(e.target.value)}
-                  className="w-full p-2 rounded border border-gray-200 focus:border-blue-500 focus:outline-none"
-                />
-              </div>
+            <div>
+              <label className="text-xs text-gray-500">Quantidade</label>
+              <input
+                type="number"
+                min="1"
+                value={quantidade}
+                onChange={(e) => setQuantidade(e.target.value)}
+                className="w-full p-2 rounded border border-gray-200 focus:border-blue-500 focus:outline-none"
+              />
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-xs text-gray-500">Quantidade</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={quantidade}
-                  onChange={(e) => setQuantidade(e.target.value)}
-                  className="w-full p-2 rounded border border-gray-200 focus:border-blue-500 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-gray-500">Pago por</label>
-                <select
-                  value={fontePag}
-                  onChange={(e) => setFontePag(e.target.value)}
-                  className="w-full p-2 rounded border border-gray-200 focus:border-blue-500 focus:outline-none bg-white"
-                >
-                  <option value="">-- Nenhuma --</option>
-                  {data.contas?.map((c) => (
-                    <option key={c.id} value={c.nome}>
-                      {c.nome}
-                      {c.titular ? ` (${c.titular})` : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div>
+              <label className="text-xs text-gray-500">Categoria</label>
+              <select
+                value={categoria}
+                onChange={(e) => setCategoria(e.target.value)}
+                className="w-full p-2 rounded border border-gray-200 focus:border-blue-500 focus:outline-none bg-white"
+              >
+                {data.categorias?.map((c) => (
+                  <option key={c.nome} value={c.nome}>
+                    {c.emoji} {c.nome}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            <div className="text-sm text-gray-500">
-              Categoria sugerida pela IA: <span className="font-medium">{catSugerida}</span>
+            <div>
+              <label className="text-xs text-gray-500">Pago por</label>
+              <select
+                value={criandoConta ? '__nova__' : fontePag}
+                onChange={(e) => {
+                  if (e.target.value === '__nova__') {
+                    setCriandoConta(true)
+                  } else {
+                    setCriandoConta(false)
+                    setFontePag(e.target.value)
+                  }
+                }}
+                className="w-full p-2 rounded border border-gray-200 focus:border-blue-500 focus:outline-none bg-white"
+              >
+                <option value="">-- Nenhuma --</option>
+                {contas?.map((c) => (
+                  <option key={c.id} value={c.nome}>
+                    {c.nome}
+                    {c.titular ? ` (${c.titular})` : ''}
+                  </option>
+                ))}
+                <option value="__nova__">➕ Criar nova conta</option>
+              </select>
             </div>
+
+            {criandoConta && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2">
+                <div className="text-xs font-medium text-blue-900">Nova conta</div>
+                <input
+                  type="text"
+                  placeholder="Nome da conta (ex: Nubank PJ)"
+                  value={novaContaNome}
+                  onChange={(e) => setNovaContaNome(e.target.value)}
+                  className="w-full p-2 rounded border border-gray-200 focus:border-blue-500 focus:outline-none"
+                />
+                <input
+                  type="text"
+                  placeholder="Titular (opcional)"
+                  value={novaContaTitular}
+                  onChange={(e) => setNovaContaTitular(e.target.value)}
+                  className="w-full p-2 rounded border border-gray-200 focus:border-blue-500 focus:outline-none"
+                />
+                <div className="flex gap-2">
+                  <button
+                    disabled={salvandoConta}
+                    onClick={criarConta}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2 text-sm font-medium disabled:opacity-50"
+                  >
+                    {salvandoConta ? 'Salvando...' : 'Salvar conta'}
+                  </button>
+                  <button
+                    disabled={salvandoConta}
+                    onClick={() => {
+                      setCriandoConta(false)
+                      setNovaContaNome('')
+                      setNovaContaTitular('')
+                    }}
+                    className="px-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg py-2 text-sm disabled:opacity-50"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -353,10 +382,10 @@ export default function ComprovantePage() {
         <div className="space-y-2">
           <button
             disabled={confirmando}
-            onClick={() => confirmar('despesa', catSugerida)}
+            onClick={() => confirmar('despesa')}
             className="w-full bg-green-600 hover:bg-green-700 text-white rounded-xl p-4 font-semibold text-lg disabled:opacity-50"
           >
-            ✅ Despesa ({catSugerida})
+            ✅ Despesa ({categoria})
           </button>
           <button
             disabled={confirmando}
@@ -364,13 +393,6 @@ export default function ComprovantePage() {
             className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl p-4 font-semibold text-lg disabled:opacity-50"
           >
             💰 Receita
-          </button>
-          <button
-            disabled={confirmando}
-            onClick={() => setEscolhendoCategoria(true)}
-            className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-xl p-4 font-semibold disabled:opacity-50"
-          >
-            📂 Mudar categoria
           </button>
           <button
             disabled={confirmando}

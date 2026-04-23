@@ -7,7 +7,7 @@ router.get('/api/eventos/:id/despesas',auth,async(req,res)=>{try{
 const r=await pool.query('SELECT * FROM despesas WHERE id_evento=$1 AND org_id=$2 ORDER BY criado_em DESC',[req.params.id,req.user.org_id]);
 res.json(r.rows)}catch(e){res.status(500).json({erro:e.message})}});
 
-router.post("/api/eventos/:id/despesas",auth,async(req,res)=>{try{const{descricao,quantidade,valor_unitario,valor,centro_custo,fonte_pagamento,situacao,data,fornecedor}=req.body;if(!descricao&&!fornecedor)return res.status(400).json({erro:"Descricao obrigatoria"});const r=await pool.query("INSERT INTO despesas(id_evento,org_id,valor,quantidade,valor_unitario,fornecedor,data,descricao,centro_custo,fonte_pagamento,situacao,registrado_por,fonte) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *",[req.params.id,req.user.org_id,parseFloat(valor)||0,parseFloat(quantidade)||1,parseFloat(valor_unitario)||0,fornecedor||"",data||new Date().toISOString().split("T")[0],descricao||"",centro_custo||"Outros",fonte_pagamento||"",situacao||"pendente",req.user.nome||"manual","manual"]);res.json(r.rows[0])}catch(e){console.error(e);res.status(500).json({erro:e.message})}});
+router.post("/api/eventos/:id/despesas",auth,async(req,res)=>{try{const{descricao,quantidade,valor_unitario,valor,centro_custo,fonte_pagamento,situacao,data,fornecedor,id_projecao}=req.body;if(!descricao&&!fornecedor)return res.status(400).json({erro:"Descricao obrigatoria"});const r=await pool.query("INSERT INTO despesas(id_evento,org_id,valor,quantidade,valor_unitario,fornecedor,data,descricao,centro_custo,fonte_pagamento,situacao,registrado_por,fonte,id_projecao) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *",[req.params.id,req.user.org_id,parseFloat(valor)||0,parseFloat(quantidade)||1,parseFloat(valor_unitario)||0,fornecedor||"",data||new Date().toISOString().split("T")[0],descricao||"",centro_custo||"Outros",fonte_pagamento||"",situacao||"pendente",req.user.nome||"manual","manual",id_projecao?parseInt(id_projecao):null]);res.json(r.rows[0])}catch(e){console.error(e);res.status(500).json({erro:e.message})}});
 
 router.get('/api/eventos/:id/exportar',async(req,res)=>{try{
 const ev=await pool.query('SELECT * FROM eventos WHERE id=$1',[req.params.id]);
@@ -23,6 +23,7 @@ router.patch('/api/despesas/:id',auth,async(req,res)=>{try{
 const b=req.body;const f=[];const v=[];let i=1;
 ['descricao','centro_custo','fonte_pagamento','situacao','data','fornecedor'].forEach(function(k){if(b[k]!==undefined){f.push(k+'=$'+i);v.push(b[k]);i++}});
 ['valor','quantidade','valor_unitario','falta_pagar'].forEach(function(k){if(b[k]!==undefined){f.push(k+'=$'+i);v.push(parseFloat(b[k])||0);i++}});
+if(b.id_projecao!==undefined){f.push('id_projecao=$'+i);v.push(b.id_projecao?parseInt(b.id_projecao):null);i++}
 if(!f.length)return res.status(400).json({erro:'Nada'});
 v.push(parseInt(req.params.id));v.push(req.user.org_id);
 const r=await pool.query('UPDATE despesas SET '+f.join(',')+' WHERE id=$'+i+' AND org_id=$'+(i+1)+' RETURNING *',v);
@@ -38,16 +39,17 @@ const r=await pool.query('SELECT * FROM receitas WHERE id_evento=$1 AND org_id=$
 res.json(r.rows)}catch(e){res.status(500).json({erro:e.message})}});
 
 router.post('/api/eventos/:id/receitas',auth,async(req,res)=>{try{
-const{descricao,centro_custo,valor,situacao,conta,data_pagamento}=req.body;
+const{descricao,centro_custo,valor,situacao,conta,data_pagamento,id_projecao}=req.body;
 if(!descricao||!valor)return res.status(400).json({erro:'Descricao e valor obrigatorios'});
-const r=await pool.query('INSERT INTO receitas(org_id,id_evento,descricao,centro_custo,valor,situacao,conta,data_pagamento) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *',
-[req.user.org_id,req.params.id,descricao,centro_custo||'Outro',parseFloat(valor)||0,situacao||'pendente',conta||'',data_pagamento||null]);
+const r=await pool.query('INSERT INTO receitas(org_id,id_evento,descricao,centro_custo,valor,situacao,conta,data_pagamento,id_projecao) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *',
+[req.user.org_id,req.params.id,descricao,centro_custo||'Outro',parseFloat(valor)||0,situacao||'pendente',conta||'',data_pagamento||null,id_projecao?parseInt(id_projecao):null]);
 res.json(r.rows[0])}catch(e){res.status(500).json({erro:e.message})}});
 
 router.patch('/api/receitas/:id',auth,async(req,res)=>{try{
 const b=req.body;const f=[];const v=[];let i=1;
 ['descricao','centro_custo','situacao','conta','data_pagamento'].forEach(function(k){if(b[k]!==undefined){f.push(k+'=$'+i);v.push(b[k]);i++}});
 if(b.valor!==undefined){f.push('valor=$'+i);v.push(parseFloat(b.valor)||0);i++}
+if(b.id_projecao!==undefined){f.push('id_projecao=$'+i);v.push(b.id_projecao?parseInt(b.id_projecao):null);i++}
 if(!f.length)return res.status(400).json({erro:'Nada para atualizar'});
 v.push(parseInt(req.params.id));v.push(req.user.org_id);
 const r=await pool.query('UPDATE receitas SET '+f.join(',')+' WHERE id=$'+i+' AND org_id=$'+(i+1)+' RETURNING *',v);
@@ -393,6 +395,116 @@ res.json({
   baladapp_sync:ev.rows[0].baladapp_ultima_sync
 })
 }catch(e){res.status(500).json({erro:e.message})}});
+
+// === PROJECOES (PLANILHA) ===
+// Listar projecoes de um evento, com valor_realizado e valor_a_pagar agregados
+router.get('/api/eventos/:id/projecoes',auth,async(req,res)=>{try{
+const tipo=req.query.tipo;
+const params=[req.params.id,req.user.org_id];
+let filterTipo='';
+if(tipo==='despesa'||tipo==='receita'){params.push(tipo);filterTipo=' AND p.tipo=$3';}
+const r=await pool.query(
+  `SELECT p.*,
+    CASE WHEN p.tipo='despesa'
+      THEN COALESCE((SELECT SUM(valor) FROM despesas WHERE id_projecao=p.id),0)
+      ELSE COALESCE((SELECT SUM(valor) FROM receitas WHERE id_projecao=p.id),0)
+    END AS valor_realizado,
+    CASE WHEN p.tipo='despesa'
+      THEN COALESCE((SELECT SUM(CASE WHEN situacao='pendente' THEN COALESCE(NULLIF(falta_pagar,0),valor) ELSE 0 END) FROM despesas WHERE id_projecao=p.id),0)
+      ELSE 0
+    END AS valor_a_pagar
+   FROM projecoes_evento p
+   WHERE p.id_evento=$1 AND p.org_id=$2`+filterTipo+
+  ` ORDER BY p.tipo, p.centro_custo NULLS LAST, p.id`,params);
+res.json(r.rows)}catch(e){res.status(500).json({erro:e.message})}});
+
+// Criar projecao
+router.post('/api/eventos/:id/projecoes',auth,async(req,res)=>{try{
+const{tipo,centro_custo,descricao,fornecedor_previsto,valor_projetado,observacoes}=req.body;
+if(!tipo||(tipo!=='despesa'&&tipo!=='receita'))return res.status(400).json({erro:'Tipo deve ser despesa ou receita'});
+if(!descricao||!descricao.trim())return res.status(400).json({erro:'Descricao obrigatoria'});
+const r=await pool.query(
+  `INSERT INTO projecoes_evento(org_id,id_evento,tipo,centro_custo,descricao,fornecedor_previsto,valor_projetado,observacoes,criado_por)
+   VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+  [req.user.org_id,req.params.id,tipo,centro_custo||null,descricao.trim(),fornecedor_previsto||null,parseFloat(valor_projetado)||0,observacoes||null,req.user.nome||'']);
+res.json(r.rows[0])}catch(e){console.error(e);res.status(500).json({erro:e.message})}});
+
+// Atualizar projecao (se valor mudar, grava historico)
+router.patch('/api/projecoes/:id',auth,async(req,res)=>{try{
+const prev=await pool.query('SELECT * FROM projecoes_evento WHERE id=$1 AND org_id=$2',[req.params.id,req.user.org_id]);
+if(!prev.rows.length)return res.status(404).json({erro:'Projecao nao encontrada'});
+const b=req.body;const f=[];const v=[];let i=1;
+['centro_custo','descricao','fornecedor_previsto','observacoes','tipo'].forEach(function(k){if(b[k]!==undefined){f.push(k+'=$'+i);v.push(b[k]);i++}});
+if(b.valor_projetado!==undefined){f.push('valor_projetado=$'+i);v.push(parseFloat(b.valor_projetado)||0);i++}
+if(!f.length)return res.status(400).json({erro:'Nada para atualizar'});
+f.push('atualizado_em=NOW()');
+v.push(parseInt(req.params.id));v.push(req.user.org_id);
+const r=await pool.query('UPDATE projecoes_evento SET '+f.join(',')+' WHERE id=$'+i+' AND org_id=$'+(i+1)+' RETURNING *',v);
+const antes=parseFloat(prev.rows[0].valor_projetado)||0;
+const depois=parseFloat(r.rows[0].valor_projetado)||0;
+if(b.valor_projetado!==undefined && antes!==depois){
+  await pool.query('INSERT INTO projecoes_historico(id_projecao,valor_antes,valor_depois,motivo,alterado_por) VALUES($1,$2,$3,$4,$5)',
+    [r.rows[0].id,antes,depois,b.motivo||null,req.user.nome||'']);
+}
+res.json(r.rows[0])}catch(e){res.status(500).json({erro:e.message})}});
+
+// Deletar projecao (FKs em despesas/receitas viram NULL por ON DELETE SET NULL)
+router.delete('/api/projecoes/:id',auth,async(req,res)=>{try{
+await pool.query('DELETE FROM projecoes_evento WHERE id=$1 AND org_id=$2',[req.params.id,req.user.org_id]);
+res.json({sucesso:true})}catch(e){res.status(500).json({erro:e.message})}});
+
+// Historico de revisoes de uma projecao
+router.get('/api/projecoes/:id/historico',auth,async(req,res)=>{try{
+const r=await pool.query(
+  `SELECT h.* FROM projecoes_historico h
+   JOIN projecoes_evento p ON p.id=h.id_projecao
+   WHERE h.id_projecao=$1 AND p.org_id=$2
+   ORDER BY h.alterado_em DESC`,[req.params.id,req.user.org_id]);
+res.json(r.rows)}catch(e){res.status(500).json({erro:e.message})}});
+
+// Resumo consolidado do evento: totais projetado x realizado x a pagar, por tipo
+router.get('/api/eventos/:id/projecoes/resumo',auth,async(req,res)=>{try{
+const r=await pool.query(
+  `SELECT p.tipo,
+     COALESCE(SUM(p.valor_projetado),0) AS total_projetado,
+     COALESCE(SUM(CASE WHEN p.tipo='despesa'
+       THEN (SELECT COALESCE(SUM(valor),0) FROM despesas WHERE id_projecao=p.id)
+       ELSE (SELECT COALESCE(SUM(valor),0) FROM receitas WHERE id_projecao=p.id) END),0) AS total_realizado
+   FROM projecoes_evento p
+   WHERE p.id_evento=$1 AND p.org_id=$2
+   GROUP BY p.tipo`,[req.params.id,req.user.org_id]);
+// Realizado "fora da projecao" (despesas/receitas sem id_projecao)
+const foraD=await pool.query("SELECT COALESCE(SUM(valor),0) AS t FROM despesas WHERE id_evento=$1 AND org_id=$2 AND id_projecao IS NULL",[req.params.id,req.user.org_id]);
+const foraR=await pool.query("SELECT COALESCE(SUM(valor),0) AS t FROM receitas WHERE id_evento=$1 AND org_id=$2 AND id_projecao IS NULL",[req.params.id,req.user.org_id]);
+const out={despesa:{projetado:0,realizado:0,fora_projecao:parseFloat(foraD.rows[0].t)},
+           receita:{projetado:0,realizado:0,fora_projecao:parseFloat(foraR.rows[0].t)}};
+r.rows.forEach(function(row){
+  out[row.tipo].projetado=parseFloat(row.total_projetado);
+  out[row.tipo].realizado=parseFloat(row.total_realizado);
+});
+res.json(out)}catch(e){res.status(500).json({erro:e.message})}});
+
+// Importacao em lote (usada pelo CSV do frontend)
+router.post('/api/eventos/:id/projecoes/bulk',auth,async(req,res)=>{try{
+const itens=req.body.itens;
+if(!Array.isArray(itens)||!itens.length)return res.status(400).json({erro:'Lista vazia'});
+const client=await pool.connect();
+try{
+  await client.query('BEGIN');
+  const inseridos=[];
+  for(const it of itens){
+    if(!it.descricao||!it.descricao.trim())continue;
+    if(it.tipo!=='despesa'&&it.tipo!=='receita')continue;
+    const r=await client.query(
+      `INSERT INTO projecoes_evento(org_id,id_evento,tipo,centro_custo,descricao,fornecedor_previsto,valor_projetado,observacoes,criado_por)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+      [req.user.org_id,req.params.id,it.tipo,it.centro_custo||null,it.descricao.trim(),it.fornecedor_previsto||null,parseFloat(it.valor_projetado)||0,it.observacoes||null,req.user.nome||'']);
+    inseridos.push(r.rows[0]);
+  }
+  await client.query('COMMIT');
+  res.json({sucesso:true,inseridos:inseridos.length,itens:inseridos});
+}catch(e){await client.query('ROLLBACK');throw e;}finally{client.release();}
+}catch(e){console.error(e);res.status(500).json({erro:e.message})}});
 
   return router;
 };

@@ -402,6 +402,17 @@ return res.json({sucesso:true,acao:'ignorar'});
 res.status(400).json({erro:'Acao invalida'});
 }catch(e){console.error('Erro confirmacao web:',e.message);res.status(500).json({erro:e.message})}});
 
+router.post('/api/public/comprovante/:token/criar-conta',async(req,res)=>{try{
+const{nome,titular,tipo}=req.body;
+if(!nome||!nome.trim())return res.status(400).json({erro:'Nome obrigatorio'});
+const r=await pool.query('SELECT id_evento,org_id,status FROM comprovantes_pendentes WHERE token=$1',[req.params.token]);
+if(!r.rows.length)return res.status(404).json({erro:'Token invalido'});
+const p=r.rows[0];
+if(p.status!=='pendente')return res.status(400).json({erro:'Comprovante ja foi '+p.status});
+const ins=await pool.query('INSERT INTO contas_evento(org_id,id_evento,nome,tipo,titular,percentual) VALUES($1,$2,$3,$4,$5,0) RETURNING id,nome,titular,tipo',[p.org_id,p.id_evento,nome.trim(),tipo||'banco',(titular||'').trim()]);
+res.json(ins.rows[0]);
+}catch(e){console.error('Erro criar conta (web):',e.message);res.status(500).json({erro:e.message})}});
+
 router.post('/api/public/comprovante/:token/desfazer',async(req,res)=>{try{
 const r=await pool.query('SELECT * FROM comprovantes_pendentes WHERE token=$1',[req.params.token]);
 if(!r.rows.length)return res.status(404).json({erro:'Token invalido'});

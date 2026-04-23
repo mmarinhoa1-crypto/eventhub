@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react'
-import { DollarSign, ChevronDown } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { DollarSign, ChevronDown, Search, X, Calendar } from 'lucide-react'
 import api from '../api/client'
 import toast from 'react-hot-toast'
 import FinanceiroTab from '../components/eventos/FinanceiroTab'
+import ProjecaoTab from '../components/eventos/ProjecaoTab'
 
 const subTabs = [
+  { key: 'projecao', label: 'Projeção' },
   { key: 'financeiro', label: 'Planilha' },
   { key: 'fluxo', label: 'Fluxo de Caixa' },
 ]
@@ -25,8 +27,13 @@ export default function FinanceiroPage() {
         const { data } = await api.get('/eventos')
         setEventos(data)
         if (data.length > 0) {
-          setEventoId(data[0].id)
-          setEventoNome(data[0].nome)
+          const hoje = new Date().toISOString().split('T')[0]
+          const futuros = data
+            .filter(e => !e.data_evento || e.data_evento >= hoje)
+            .sort((a, b) => (a.data_evento || '').localeCompare(b.data_evento || ''))
+          const inicial = futuros[0] || data[0]
+          setEventoId(inicial.id)
+          setEventoNome(inicial.nome)
         }
       } catch { toast.error('Erro ao carregar eventos') }
       finally { setLoading(false) }
@@ -72,18 +79,12 @@ export default function FinanceiroPage() {
           </div>
         </div>
         {/* Event selector */}
-        <div className="relative">
-          <select
-            value={eventoId || ''}
-            onChange={e => selecionarEvento(Number(e.target.value))}
-            className="appearance-none bg-white border border-gray-200 rounded-xl px-4 py-2.5 pr-10 text-sm font-medium text-gray-700 shadow-sm hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent cursor-pointer min-w-[250px]"
-          >
-            {eventos.map(ev => (
-              <option key={ev.id} value={ev.id}>{ev.nome}</option>
-            ))}
-          </select>
-          <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-        </div>
+        <EventoSeletor
+          eventos={eventos}
+          eventoId={eventoId}
+          eventoNome={eventoNome}
+          onSelect={selecionarEvento}
+        />
       </div>
 
       {/* Sub tabs */}
@@ -107,6 +108,7 @@ export default function FinanceiroPage() {
             </div>
           </div>
 
+          {activeTab === 'projecao' && <ProjecaoTab eventoId={eventoId} />}
           {activeTab === 'financeiro' && <FinanceiroTab eventoId={eventoId} />}
           {activeTab === 'fluxo' && (
             <>
@@ -217,6 +219,134 @@ export default function FinanceiroPage() {
         <div className="text-center py-20 text-gray-400">
           <DollarSign size={48} className="mx-auto mb-4 opacity-30" />
           <p>Nenhum evento encontrado. Crie um evento primeiro.</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function EventoSeletor({ eventos, eventoId, eventoNome, onSelect }) {
+  const [open, setOpen] = useState(false)
+  const [busca, setBusca] = useState('')
+  const [filtro, setFiltro] = useState('futuros')
+  const containerRef = useRef(null)
+
+  useEffect(() => {
+    function onDocClick(e) {
+      if (containerRef.current && !containerRef.current.contains(e.target)) setOpen(false)
+    }
+    if (open) document.addEventListener('mousedown', onDocClick)
+    return () => document.removeEventListener('mousedown', onDocClick)
+  }, [open])
+
+  const hoje = new Date().toISOString().split('T')[0]
+  const selecionado = eventos.find(e => e.id === eventoId)
+  const dataSelecionado = selecionado?.data_evento || ''
+
+  const filtrados = eventos
+    .filter(ev => {
+      if (busca && !(ev.nome || '').toLowerCase().includes(busca.toLowerCase())) return false
+      const d = ev.data_evento || ''
+      if (filtro === 'futuros') return !d || d >= hoje
+      if (filtro === 'passados') return d && d < hoje
+      return true
+    })
+    .sort((a, b) => {
+      const da = a.data_evento || ''
+      const db = b.data_evento || ''
+      if (filtro === 'passados') return db.localeCompare(da)
+      if (!da) return 1
+      if (!db) return -1
+      return da.localeCompare(db)
+    })
+
+  function fmtData(s) {
+    if (!s) return ''
+    const [y, m, d] = s.split('-')
+    if (!y || !m || !d) return s
+    return d + '/' + m + '/' + y.slice(2)
+  }
+
+  const contagens = {
+    futuros: eventos.filter(e => !e.data_evento || e.data_evento >= hoje).length,
+    passados: eventos.filter(e => e.data_evento && e.data_evento < hoje).length,
+    todos: eventos.length
+  }
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-accent min-w-[280px]"
+      >
+        <Calendar size={14} className="text-gray-400 shrink-0" />
+        <span className="flex-1 text-left truncate">{eventoNome || 'Selecione um evento'}</span>
+        {dataSelecionado && <span className="text-xs text-gray-400 shrink-0">{fmtData(dataSelecionado)}</span>}
+        <ChevronDown size={16} className={'text-gray-400 shrink-0 transition-transform ' + (open ? 'rotate-180' : '')} />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 mt-2 w-[380px] bg-white border border-gray-200 rounded-2xl shadow-xl z-40 overflow-hidden">
+          <div className="p-3 border-b border-gray-100 space-y-2">
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                autoFocus
+                value={busca}
+                onChange={e => setBusca(e.target.value)}
+                placeholder="Buscar evento..."
+                className="w-full pl-8 pr-8 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-blue-400"
+              />
+              {busca && (
+                <button onClick={() => setBusca('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+            <div className="flex gap-1">
+              {[
+                { k: 'futuros', label: 'Futuros' },
+                { k: 'passados', label: 'Passados' },
+                { k: 'todos', label: 'Todos' }
+              ].map(t => (
+                <button
+                  key={t.k}
+                  onClick={() => setFiltro(t.k)}
+                  className={'flex-1 px-2 py-1.5 rounded-lg text-xs font-semibold transition-colors ' +
+                    (filtro === t.k ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200')}
+                >
+                  {t.label} <span className={'ml-1 ' + (filtro === t.k ? 'opacity-80' : 'text-gray-400')}>({contagens[t.k]})</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="max-h-[360px] overflow-y-auto">
+            {filtrados.length === 0 ? (
+              <div className="py-8 text-center text-sm text-gray-400 italic">Nenhum evento encontrado</div>
+            ) : (
+              filtrados.map(ev => {
+                const ativo = ev.id === eventoId
+                const passado = ev.data_evento && ev.data_evento < hoje
+                return (
+                  <button
+                    key={ev.id}
+                    onClick={() => { onSelect(ev.id); setOpen(false); setBusca('') }}
+                    className={'w-full flex items-center justify-between gap-3 px-4 py-2.5 text-left hover:bg-blue-50 transition-colors border-b border-gray-50 last:border-0 ' +
+                      (ativo ? 'bg-blue-50' : '')}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className={'text-sm truncate ' + (ativo ? 'font-bold text-blue-700' : 'font-medium text-gray-800')}>{ev.nome}</p>
+                      {ev.cidade && <p className="text-[11px] text-gray-400 truncate">{ev.cidade}</p>}
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className={'text-xs font-medium ' + (passado ? 'text-gray-400' : 'text-gray-600')}>{ev.data_evento ? fmtData(ev.data_evento) : '—'}</p>
+                      {passado && <span className="text-[9px] text-gray-400 uppercase">passado</span>}
+                    </div>
+                  </button>
+                )
+              })
+            )}
+          </div>
         </div>
       )}
     </div>
