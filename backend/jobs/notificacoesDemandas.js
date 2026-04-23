@@ -2,7 +2,7 @@ const { enviarGrupoComMencoes, telefoneParaJid } = require('../utils/whatsapp');
 
 const TICK_MS = 5 * 60 * 1000; // 5 minutos
 const ANTECEDENCIA_MS = 60 * 60 * 1000; // 1 hora antes (deadline do designer)
-const TOLERANCIA_ATRASO_SM_MS = 5 * 60 * 1000; // 5 min depois do horario (atraso SM)
+const TOLERANCIA_ATRASO_MS = 15 * 60 * 1000; // 15 min de tolerancia para SM e Designer
 const PRIMEIRO_TICK_MS = 30 * 1000; // 30s apos boot
 
 // Combina "2026-05-12" + "09:00" em Date local (TZ do servidor)
@@ -14,17 +14,17 @@ function combinarDataHora(dataStr, horaStr) {
   return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(h[1]), Number(h[2]), 0, 0);
 }
 
-// Social media: SO atraso, disparado 5 min apos a hora de publicacao
-// Designer: deadline = publicacao - 1h (deve marcar 'recebido' antes); atraso quando agora >= deadline
+// Tolerancia de 15 min apos o "ponto de atraso" para nao disparar no minuto exato.
+// Social media: ponto = hora de publicacao -> dispara em (publicacao + 15min)
+// Designer: deadline = publicacao - 1h -> dispara em (publicacao - 1h + 15min) = (publicacao - 45min)
 function calcularAlerta(publicacao, agora, tipoFluxo) {
   if (!publicacao) return null;
   if (tipoFluxo === 'designer') {
-    const deadline = new Date(publicacao.getTime() - ANTECEDENCIA_MS);
-    return agora >= deadline ? 'atraso' : null;
+    const limite = new Date(publicacao.getTime() - ANTECEDENCIA_MS + TOLERANCIA_ATRASO_MS);
+    return agora >= limite ? 'atraso' : null;
   }
-  // SM: atraso so dispara apos tolerancia de 5 min
-  const limiteSM = new Date(publicacao.getTime() + TOLERANCIA_ATRASO_SM_MS);
-  return agora >= limiteSM ? 'atraso' : null;
+  const limite = new Date(publicacao.getTime() + TOLERANCIA_ATRASO_MS);
+  return agora >= limite ? 'atraso' : null;
 }
 
 async function processarLinha(pool, EVO, KEY, INST, l, tipoFluxo) {
