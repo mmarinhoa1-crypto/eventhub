@@ -25,6 +25,7 @@ app.use(require('./routes/chamados')({ pool, axios, auth, EVO, KEY, INST, CLAUDE
 app.use(require('./routes/eventos')({ pool, auth }));
 app.use(require('./routes/marketing')({ pool, axios, auth, upload, CLAUDE }));
 app.use(require('./routes/equipe')({ pool, bcrypt, auth }));
+app.use(require('./routes/organizacao')({ pool, auth }));
 app.use(require('./routes/financeiro')({ pool, ExcelJS, auth }));
 app.use(require('./routes/vendas')({ pool, axios, auth }));
 app.use(require('./routes/consumo')({ pool, auth }));

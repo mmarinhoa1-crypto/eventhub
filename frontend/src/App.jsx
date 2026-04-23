@@ -10,6 +10,7 @@ import ChamadoDetalhePage from './pages/ChamadoDetalhePage'
 import EventosPage from './pages/EventosPage'
 import EventoDetalhePage from './pages/EventoDetalhePage'
 import EquipePage from './pages/EquipePage'
+import ConfiguracoesPage from './pages/ConfiguracoesPage'
 import NotFoundPage from './pages/NotFoundPage'
 import FinanceiroPage from './pages/FinanceiroPage'
 import MinhasDemandas from './pages/MinhasDemandas'
@@ -53,6 +54,14 @@ export default function App() {
           element={
             <ProtectedRoute adminOnly>
               <EquipePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="configuracoes"
+          element={
+            <ProtectedRoute adminOnly>
+              <ConfiguracoesPage />
             </ProtectedRoute>
           }
         />

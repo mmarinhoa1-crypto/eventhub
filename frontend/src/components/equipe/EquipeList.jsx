@@ -24,9 +24,18 @@ const funcaoLabels = {
   gestor_trafego: 'Gestor de Tráfego',
 }
 
+// Formata 5511987654321 -> (11) 98765-4321 / +55
+function formatarTelefone(s) {
+  if (!s) return ''
+  const d = String(s).replace(/\D/g, '')
+  if (d.length === 13) return `+${d.slice(0,2)} (${d.slice(2,4)}) ${d.slice(4,9)}-${d.slice(9)}`
+  if (d.length === 12) return `+${d.slice(0,2)} (${d.slice(2,4)}) ${d.slice(4,8)}-${d.slice(8)}`
+  return s
+}
+
 export default function EquipeList({ membros, onUpdate }) {
   const { usuario } = useAuth()
-  const [editando, setEditando] = useState(null) // { id, nome, email }
+  const [editando, setEditando] = useState(null) // { id, nome, email, telefone_whatsapp }
   const [uploadingId, setUploadingId] = useState(null)
 
   async function alterarFuncao(id, funcao) {
@@ -51,7 +60,7 @@ export default function EquipeList({ membros, onUpdate }) {
   }
 
   function iniciarEdicao(m) {
-    setEditando({ id: m.id, nome: m.nome, email: m.email })
+    setEditando({ id: m.id, nome: m.nome, email: m.email, telefone_whatsapp: m.telefone_whatsapp || '' })
   }
 
   function cancelarEdicao() {
@@ -63,8 +72,18 @@ export default function EquipeList({ membros, onUpdate }) {
       toast.error('Nome e email são obrigatórios')
       return
     }
+    // Validacao do telefone (se preenchido): 12 ou 13 digitos comecando com 55
+    const telLimpo = String(editando.telefone_whatsapp || '').replace(/\D/g, '')
+    if (telLimpo && !/^55\d{10,11}$/.test(telLimpo)) {
+      toast.error('WhatsApp inválido. Use 55 + DDD + número (ex: 5511987654321)')
+      return
+    }
     try {
-      await api.patch(`/equipe/${editando.id}`, { nome: editando.nome, email: editando.email })
+      await api.patch(`/equipe/${editando.id}`, {
+        nome: editando.nome,
+        email: editando.email,
+        telefone_whatsapp: telLimpo,
+      })
       onUpdate()
       setEditando(null)
       toast.success('Dados atualizados')
@@ -100,6 +119,7 @@ export default function EquipeList({ membros, onUpdate }) {
             <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider text-xs">Foto</th>
             <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider text-xs">Nome</th>
             <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider text-xs">Email</th>
+            <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider text-xs">WhatsApp</th>
             <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider text-xs">Função</th>
             <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider text-xs">Ações</th>
           </tr>
@@ -158,6 +178,18 @@ export default function EquipeList({ membros, onUpdate }) {
                     />
                   ) : (
                     m.email
+                  )}
+                </td>
+                <td className="px-4 py-3 text-gray-600">
+                  {emEdicao ? (
+                    <input
+                      className="border border-indigo-400 rounded px-2 py-1 text-sm w-full focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      placeholder="5511987654321"
+                      value={editando.telefone_whatsapp}
+                      onChange={(e) => setEditando((prev) => ({ ...prev, telefone_whatsapp: e.target.value }))}
+                    />
+                  ) : (
+                    m.telefone_whatsapp ? formatarTelefone(m.telefone_whatsapp) : <span className="text-gray-300">—</span>
                   )}
                 </td>
                 <td className="px-4 py-3">

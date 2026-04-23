@@ -55,6 +55,7 @@ export default function Sidebar() {
   const showMarketing = marketingRoles.includes(funcao)
   const canFinanceiro = funcao === 'admin' || funcao === 'diretor'
   const canEquipe = funcao === 'admin' || funcao === 'diretor'
+  const canConfig = funcao === 'admin'
   const canTrafego = funcao === 'admin' || funcao === 'diretor' || funcao === 'gestor_trafego'
   const canIA = funcao === 'admin' || funcao === 'diretor'
   const canDashboard = funcao === 'admin' || funcao === 'agent' || funcao === 'diretor'
@@ -271,6 +272,9 @@ export default function Sidebar() {
               ) : (
                 <span className={`${linkBase} text-gray-300 dark:text-white/20 cursor-default select-none`}>Equipe</span>
               )}
+              {canConfig && (
+                <NavLink to="/configuracoes" className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}>Configurações</NavLink>
+              )}
             </div>
           </nav>
 
@@ -404,6 +408,11 @@ export default function Sidebar() {
                     className={`${mobileLinkBase} w-full text-left ${location.pathname === '/equipe' ? mobileLinkActive : mobileLinkInactive}`}>Equipe</button>
                 ) : (
                   <span className={`${mobileLinkBase} block text-gray-300 dark:text-white/20`}>Equipe</span>
+                )}
+                {/* Configurações */}
+                {canConfig && (
+                  <button onClick={() => { navigate('/configuracoes'); setMobileOpen(false) }}
+                    className={`${mobileLinkBase} w-full text-left ${location.pathname === '/configuracoes' ? mobileLinkActive : mobileLinkInactive}`}>Configurações</button>
                 )}
               </div>
               <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-white/[0.08]">
