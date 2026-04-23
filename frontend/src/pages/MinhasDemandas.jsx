@@ -164,6 +164,25 @@ export default function MinhasDemandas() {
     return diff >= -5 * 60 * 1000 && diff <= 30 * 60 * 1000
   }
 
+  // Atrasada quando passou do horario (data + hora) e status ainda nao eh final.
+  // Usado para sobrescrever a tag visual "Atrasado" mesmo quando ha tag manual (ex: Recebido).
+  function isAtrasadoComHora(d) {
+    if (!d) return false
+    if (['publicado','concluido','cancelado'].includes(d.status)) return false
+    const dt = (d._data || d.data_publicacao || '').slice(0, 10)
+    if (!dt) return false
+    const agora = new Date()
+    const y = agora.getFullYear(), mo = String(agora.getMonth()+1).padStart(2,'0'), da = String(agora.getDate()).padStart(2,'0')
+    const hojeLocal = `${y}-${mo}-${da}`
+    if (dt < hojeLocal) return true
+    if (dt > hojeLocal) return false
+    if (!d.hora_publicacao) return false
+    const m = String(d.hora_publicacao).match(/^(\d{1,2}):(\d{2})/)
+    if (!m) return false
+    const limite = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), Number(m[1]), Number(m[2]), 0, 0)
+    return agora >= limite
+  }
+
   useEffect(() => {
     carregar()
     if (isGestor) {
@@ -697,14 +716,17 @@ export default function MinhasDemandas() {
   const todasDemandas = data.posts.map(p => ({ ...p, _tipo: 'post', _data: p.data_publicacao }))
   const totalDemandas = todasDemandas.length
 
-  // Tag efetiva: 1) tag manual, 2) status do banco, 3) cálculo por data
+  // Tag efetiva (em ordem de precedencia):
+  // 1) status final no banco (publicado/concluido/cancelado) - encerra fluxo
+  // 2) atrasado calculado (passou do horario data+hora) - sobrescreve tag manual
+  // 3) tag manual atribuida pelo admin
+  // 4) status mapeado pelo banco
   function tagEfetiva(d) {
+    if (['concluido','publicado','cancelado'].includes(d.status)) return STATUS_TO_TAG[d.status] || d.status
+    if (isAtrasadoComHora(d)) return 'atrasado'
     const tag = getTag('post', d.id)
     if (tag) return tag
-    // Se o status do banco já indica concluído/publicado, não é atrasado
-    if (['concluido','aprovado','publicado','cancelado'].includes(d.status)) return STATUS_TO_TAG[d.status] || d.status
-    const dt = d._data?.slice(0, 10)
-    if (dt && dt < hoje) return 'atrasado'
+    if (d.status === 'aprovado') return STATUS_TO_TAG[d.status] || d.status
     return STATUS_TO_TAG[d.status] || null
   }
 
@@ -772,9 +794,8 @@ export default function MinhasDemandas() {
         if (filtroEvento !== 'todos') filteredItems = filteredItems.filter(d => d.id_evento === Number(filtroEvento))
         if (filtroStatusAdmin !== 'todos') {
           filteredItems = filteredItems.filter(d => {
-            const tag = getTag(d._tipo, d.id)
-            const autoTag = (d._data?.slice(0,10) < hoje && !['concluido','aprovado','publicado','cancelado'].includes(d.status)) ? 'atrasado' : (STATUS_TO_TAG[d.status] || null)
-            return (tag || autoTag) === filtroStatusAdmin
+            const efetiva = tagEfetiva(d)
+            return efetiva === filtroStatusAdmin
           })
         }
         if (filtroBusca.trim()) { const q = filtroBusca.toLowerCase(); filteredItems = filteredItems.filter(d => (d.titulo||'').toLowerCase().includes(q) || (d.evento_nome||'').toLowerCase().includes(q)) }
@@ -970,14 +991,12 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
 
                             <div className="overflow-y-auto space-y-2 flex-1 min-h-0">
                             {dayItems.map(d => {
-                              const atrasado = dayStr < todayStr && !['concluido','aprovado','publicado','cancelado'].includes(d.status)
+                              const atrasado = isAtrasadoComHora(d)
                               const accentColor = atrasado ? '#ef4444' : (plataformaColor[d.plataforma] || '#6b7280')
                               const isDraggingThis = draggedItem && draggedItem.id === d.id && draggedItem._tipo === d._tipo
                               const isSelected = adminDetalhe && adminDetalhe.id === d.id && adminDetalhe._tipo === d._tipo
 
-                              const cardTag = getTag(d._tipo, d.id)
-                              const autoTagKey = atrasado ? 'atrasado' : (STATUS_TO_TAG[d.status] || null)
-                              const activeTagKey = cardTag || autoTagKey
+                              const activeTagKey = tagEfetiva(d)
                               const tagConf = activeTagKey ? TAGS_STATUS.find(t => t.key === activeTagKey) : null
                               const borderColor = tagConf ? tagConf.color : accentColor
                               const alertaHora = isAlertaHorario(d._data, d.hora_publicacao, activeTagKey)
@@ -1056,7 +1075,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                   const adminTagStatus = adminTag && TAGS_STATUS.find(t => t.key === adminTag)
                   const st = adminTagStatus ? { bg:'', text:'', border:'', dot:'bg-gray-500', label: adminTagStatus.label } : (stConfig[d.status] || stConfig.pendente)
                   const resp = getResponsavel(d)
-                  const atrasado = adminTag === 'atrasado' || (!adminTag && d._data?.slice(0,10) < todayCheck && !['concluido','aprovado','publicado','cancelado'].includes(d.status))
+                  const atrasado = adminTag === 'atrasado' || isAtrasadoComHora(d)
                   const etqs = getEtiquetas(d._tipo, d.id)
 
                   function toggleMultiAdmin(field, val) {
@@ -1637,12 +1656,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
               let allItems = bList.map(b => ({...b, _tipo:'post', _data: b.data_publicacao}))
               if (filtroBusca.trim()) { const q = filtroBusca.toLowerCase(); allItems = allItems.filter(d => (d.titulo||'').toLowerCase().includes(q) || (d.evento_nome||'').toLowerCase().includes(q)) }
               if (filtro !== 'todas') {
-                const hoje2 = new Date().toISOString().split('T')[0]
-                allItems = allItems.filter(d => {
-                  const tag = getTag('post', d.id)
-                  const autoTag = (d._data?.slice(0,10) < hoje2 && !['concluido','aprovado','publicado','cancelado'].includes(d.status)) ? 'atrasado' : (STATUS_TO_TAG[d.status] || null)
-                  return (tag || autoTag) === filtro
-                })
+                allItems = allItems.filter(d => tagEfetiva(d) === filtro)
               }
               const dsStatusConf = {
                 pendente:     { label: 'Pendente',    cls: 'bg-yellow-100 text-yellow-700' },
@@ -1691,10 +1705,8 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                           <div className="p-2 space-y-2 flex-1 flex flex-col min-h-0">
                             <div className="overflow-y-auto space-y-2 flex-1 min-h-0">
                               {dayItems.map(d => {
-                                const atrasado = dayStr < todayStr && !['concluido','aprovado','publicado','cancelado'].includes(d.status)
-                                const cardTag = getTag(d._tipo, d.id)
-                                const autoTagKey = atrasado ? 'atrasado' : (STATUS_TO_TAG[d.status] || null)
-                                const activeTagKey = cardTag || autoTagKey
+                                const atrasado = isAtrasadoComHora(d)
+                                const activeTagKey = tagEfetiva(d)
                                 const tagConf = activeTagKey ? TAGS_STATUS.find(t => t.key === activeTagKey) : null
                                 const borderColor = tagConf ? tagConf.color : '#8b5cf6'
                                 const alertaHora = isAlertaHorario(d._data, d.hora_publicacao, activeTagKey)
@@ -1926,12 +1938,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
           let allItems = demandasFiltradas.map(p => ({...p, _tipo:'post', _data: p.data_publicacao}))
           if (filtroBusca.trim()) { const q = filtroBusca.toLowerCase(); allItems = allItems.filter(d => (d.titulo||'').toLowerCase().includes(q) || (d.evento_nome||'').toLowerCase().includes(q)) }
           if (filtro !== 'todas') {
-            const hoje2 = new Date().toISOString().split('T')[0]
-            allItems = allItems.filter(d => {
-              const tag = getTag(d._tipo, d.id)
-              const autoTag = (d._data?.slice(0,10) < hoje2 && !['concluido','aprovado','publicado','cancelado'].includes(d.status)) ? 'atrasado' : (STATUS_TO_TAG[d.status] || null)
-              return (tag || autoTag) === filtro
-            })
+            allItems = allItems.filter(d => tagEfetiva(d) === filtro)
           }
           const smStatusConf = {
             pendente:     { label: 'Pendente',    cls: 'bg-yellow-100 text-yellow-700' },
@@ -1998,12 +2005,10 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                         </div>}
                         <div className="overflow-y-auto space-y-2 flex-1 min-h-0">
                           {dayItems.map(d => {
-                            const atrasado = dayStr < todayStr && !['concluido','aprovado','publicado','cancelado'].includes(d.status)
+                            const atrasado = isAtrasadoComHora(d)
                             const accentColor = atrasado ? '#ef4444' : (plataformaColor[d.plataforma] || '#6b7280')
                             const isDraggingThis = draggedItem && draggedItem.id === d.id && draggedItem._tipo === d._tipo
-                            const cardTag = getTag(d._tipo, d.id)
-                            const autoTagKey = atrasado ? 'atrasado' : (STATUS_TO_TAG[d.status] || null)
-                            const activeTagKey = cardTag || autoTagKey
+                            const activeTagKey = tagEfetiva(d)
                             const tagConf = activeTagKey ? TAGS_STATUS.find(t => t.key === activeTagKey) : null
                             const borderColor = tagConf ? tagConf.color : accentColor
                             const alertaHora = isAlertaHorario(d._data, d.hora_publicacao, activeTagKey)
