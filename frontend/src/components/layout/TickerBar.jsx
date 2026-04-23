@@ -9,7 +9,8 @@ export default function TickerBar() {
   const funcao = usuario?.funcao || 'viewer'
   const isDark = tema === 'dark'
 
-  const isSocialDesigner = funcao === 'social_media' || funcao === 'designer'
+  const isDesigner = funcao === 'designer'
+  const isSocialMedia = funcao === 'social_media'
   const isGestor = funcao === 'admin' || funcao === 'diretor'
 
   const [pendentes, setPendentes] = useState(0)
@@ -28,13 +29,20 @@ export default function TickerBar() {
     return () => clearInterval(interval)
   }, [isGestor])
 
-  if (!isSocialDesigner && !isGestor) return null
+  if (!isDesigner && !isSocialMedia && !isGestor) return null
 
   const textColor = isDark ? '#ffffff' : '#000000'
 
   // Mensagem diferente por perfil
   let msg
-  if (isSocialDesigner) {
+  if (isDesigner) {
+    msg = (
+      <>
+        <span style={{ color: '#f80d52', fontWeight: 800 }}>EXTREMAMENTE IMPORTANTE</span>
+        <span style={{ color: textColor }}> ENTREGAR AS DEMANDAS COM PELO MENOS 1 HORA DE ANTECEDÊNCIA DO HORÁRIO ESTIPULADO.</span>
+      </>
+    )
+  } else if (isSocialMedia) {
     msg = (
       <>
         <span style={{ color: '#f80d52', fontWeight: 800 }}>EXTREMAMENTE IMPORTANTE</span>
