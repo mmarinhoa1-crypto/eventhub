@@ -86,6 +86,8 @@ export default function MinhasDemandas() {
   const isReadOnly = isGestorTrafego
   const isDateReadOnly = isGestorTrafego || isDesigner
   const isGestor = isAdmin || isDiretor || isGestorTrafego
+  // Perspectiva para tagEfetiva: designer nao vê 'atrasado' apos marcar 'recebido'
+  const perspectivaTag = isDesigner ? 'designer' : 'gestor'
 
   const [data, setData] = useState({ briefings: [], posts: [], eventos: [] })
   const [equipe, setEquipe] = useState([])
@@ -162,6 +164,15 @@ export default function MinhasDemandas() {
     if (isNaN(target)) return false
     const diff = target.getTime() - Date.now()
     return diff >= -5 * 60 * 1000 && diff <= 30 * 60 * 1000
+  }
+
+  // Postgres armazena timestamps em UTC sem indicacao. Forca parse como UTC para
+  // que o navegador converta corretamente para o fuso local (Brasilia).
+  function parseTimestampUTC(s) {
+    if (!s) return null
+    const str = String(s)
+    if (/[Zz]$|[+-]\d{2}:?\d{2}$/.test(str)) return new Date(str)
+    return new Date(str.replace(' ', 'T') + 'Z')
   }
 
   // Atrasada quando passou do horario (data + hora) e status ainda nao eh final.
@@ -675,7 +686,7 @@ export default function MinhasDemandas() {
 
   function isAtrasado(item, campoData, tipo) {
     if (tipo) {
-      const te = tagEfetiva({ ...item, _tipo: tipo, _data: item[campoData] })
+      const te = tagEfetiva({ ...item, _tipo: tipo, _data: item[campoData] }, perspectivaTag)
       return te === 'atrasado'
     }
     const d = item[campoData] || ''
@@ -686,7 +697,7 @@ export default function MinhasDemandas() {
   function filtrarPorData(items, campoData, tipo) {
     if (filtro === 'todas') return items
     return items.filter(item => {
-      const te = tipo ? tagEfetiva({ ...item, _tipo: tipo, _data: item[campoData] }) : null
+      const te = tipo ? tagEfetiva({ ...item, _tipo: tipo, _data: item[campoData] }, perspectivaTag) : null
       const d = item[campoData] || ''
       const dataISO = d.includes('/') ? d.split('/').reverse().join('-') : d.slice(0,10)
       if (filtro === 'hoje') return dataISO === hoje
@@ -718,11 +729,17 @@ export default function MinhasDemandas() {
 
   // Tag efetiva (em ordem de precedencia):
   // 1) status final no banco (publicado/concluido/cancelado) - encerra fluxo
-  // 2) atrasado calculado (passou do horario data+hora) - sobrescreve tag manual
-  // 3) tag manual atribuida pelo admin
-  // 4) status mapeado pelo banco
-  function tagEfetiva(d) {
+  // 2) perspectiva 'designer' + status>=recebido: nunca mostra atrasado (designer ja entregou)
+  // 3) atrasado calculado (passou do horario data+hora) - sobrescreve tag manual
+  // 4) tag manual atribuida pelo admin
+  // 5) status mapeado pelo banco
+  function tagEfetiva(d, perspectiva = 'gestor') {
     if (['concluido','publicado','cancelado'].includes(d.status)) return STATUS_TO_TAG[d.status] || d.status
+    // Designer ja entregou (recebido/aprovado): nao mostra atrasado pra ele.
+    // Pra gestor/SM continua mostrando atrasado (eles precisam ver pra agir).
+    if (perspectiva === 'designer' && ['em_revisao','aprovado'].includes(d.status)) {
+      return STATUS_TO_TAG[d.status] || null
+    }
     if (isAtrasadoComHora(d)) return 'atrasado'
     const tag = getTag('post', d.id)
     if (tag) return tag
@@ -730,8 +747,8 @@ export default function MinhasDemandas() {
     return STATUS_TO_TAG[d.status] || null
   }
 
-  const pendentesDemandas = todasDemandas.filter(d => { const t = tagEfetiva(d); return t === 'pendente' || t === 'em_andamento' }).length
-  const atrasadosDemandas = todasDemandas.filter(d => { const t = tagEfetiva(d); return t === 'atrasado' || t === 'nao_entregue' }).length
+  const pendentesDemandas = todasDemandas.filter(d => { const t = tagEfetiva(d, perspectivaTag); return t === 'pendente' || t === 'em_andamento' }).length
+  const atrasadosDemandas = todasDemandas.filter(d => { const t = tagEfetiva(d, perspectivaTag); return t === 'atrasado' || t === 'nao_entregue' }).length
 
   if (loading) return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
 
@@ -776,9 +793,9 @@ export default function MinhasDemandas() {
           const items = allItems.filter(d => pertenceAoMembro(d, membroId))
           return {
             total: items.length,
-            pendente: items.filter(x => { const t = tagEfetiva(x); return t === 'pendente' || t === 'em_andamento' }).length,
-            producao: items.filter(x => { const t = tagEfetiva(x); return t === 'recebido' }).length,
-            atrasado: items.filter(x => { const t = tagEfetiva(x); return t === 'atrasado' || t === 'nao_entregue' }).length,
+            pendente: items.filter(x => { const t = tagEfetiva(x, perspectivaTag); return t === 'pendente' || t === 'em_andamento' }).length,
+            producao: items.filter(x => { const t = tagEfetiva(x, perspectivaTag); return t === 'recebido' }).length,
+            atrasado: items.filter(x => { const t = tagEfetiva(x, perspectivaTag); return t === 'atrasado' || t === 'nao_entregue' }).length,
           }
         }
 
@@ -794,7 +811,7 @@ export default function MinhasDemandas() {
         if (filtroEvento !== 'todos') filteredItems = filteredItems.filter(d => d.id_evento === Number(filtroEvento))
         if (filtroStatusAdmin !== 'todos') {
           filteredItems = filteredItems.filter(d => {
-            const efetiva = tagEfetiva(d)
+            const efetiva = tagEfetiva(d, perspectivaTag)
             return efetiva === filtroStatusAdmin
           })
         }
@@ -996,7 +1013,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                               const isDraggingThis = draggedItem && draggedItem.id === d.id && draggedItem._tipo === d._tipo
                               const isSelected = adminDetalhe && adminDetalhe.id === d.id && adminDetalhe._tipo === d._tipo
 
-                              const activeTagKey = tagEfetiva(d)
+                              const activeTagKey = tagEfetiva(d, perspectivaTag)
                               const tagConf = activeTagKey ? TAGS_STATUS.find(t => t.key === activeTagKey) : null
                               const borderColor = tagConf ? tagConf.color : accentColor
                               const alertaHora = isAlertaHorario(d._data, d.hora_publicacao, activeTagKey)
@@ -1098,7 +1115,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                               <p className="text-xs text-blue-500 font-medium">{d.evento_nome}</p>
                               <p className="text-[11px] font-medium text-gray-500 dark:text-white/50 mt-1">
                                 {d.criado_em ? (
-                                  <>Demanda lançada às {new Date(d.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }).replace(':', 'h')} do dia {new Date(d.criado_em).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</>
+                                  <>Demanda lançada às {parseTimestampUTC(d.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }).replace(':', 'h')} do dia {parseTimestampUTC(d.criado_em).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'America/Sao_Paulo' })}</>
                                 ) : (
                                   <span className="text-gray-400 dark:text-white/30">Data de lançamento não disponível</span>
                                 )}
@@ -1656,7 +1673,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
               let allItems = bList.map(b => ({...b, _tipo:'post', _data: b.data_publicacao}))
               if (filtroBusca.trim()) { const q = filtroBusca.toLowerCase(); allItems = allItems.filter(d => (d.titulo||'').toLowerCase().includes(q) || (d.evento_nome||'').toLowerCase().includes(q)) }
               if (filtro !== 'todas') {
-                allItems = allItems.filter(d => tagEfetiva(d) === filtro)
+                allItems = allItems.filter(d => tagEfetiva(d, perspectivaTag) === filtro)
               }
               const dsStatusConf = {
                 pendente:     { label: 'Pendente',    cls: 'bg-yellow-100 text-yellow-700' },
@@ -1706,7 +1723,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                             <div className="overflow-y-auto space-y-2 flex-1 min-h-0">
                               {dayItems.map(d => {
                                 const atrasado = isAtrasadoComHora(d)
-                                const activeTagKey = tagEfetiva(d)
+                                const activeTagKey = tagEfetiva(d, perspectivaTag)
                                 const tagConf = activeTagKey ? TAGS_STATUS.find(t => t.key === activeTagKey) : null
                                 const borderColor = tagConf ? tagConf.color : '#8b5cf6'
                                 const alertaHora = isAlertaHorario(d._data, d.hora_publicacao, activeTagKey)
@@ -1938,7 +1955,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
           let allItems = demandasFiltradas.map(p => ({...p, _tipo:'post', _data: p.data_publicacao}))
           if (filtroBusca.trim()) { const q = filtroBusca.toLowerCase(); allItems = allItems.filter(d => (d.titulo||'').toLowerCase().includes(q) || (d.evento_nome||'').toLowerCase().includes(q)) }
           if (filtro !== 'todas') {
-            allItems = allItems.filter(d => tagEfetiva(d) === filtro)
+            allItems = allItems.filter(d => tagEfetiva(d, perspectivaTag) === filtro)
           }
           const smStatusConf = {
             pendente:     { label: 'Pendente',    cls: 'bg-yellow-100 text-yellow-700' },
@@ -2008,7 +2025,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                             const atrasado = isAtrasadoComHora(d)
                             const accentColor = atrasado ? '#ef4444' : (plataformaColor[d.plataforma] || '#6b7280')
                             const isDraggingThis = draggedItem && draggedItem.id === d.id && draggedItem._tipo === d._tipo
-                            const activeTagKey = tagEfetiva(d)
+                            const activeTagKey = tagEfetiva(d, perspectivaTag)
                             const tagConf = activeTagKey ? TAGS_STATUS.find(t => t.key === activeTagKey) : null
                             const borderColor = tagConf ? tagConf.color : accentColor
                             const alertaHora = isAlertaHorario(d._data, d.hora_publicacao, activeTagKey)
@@ -2288,7 +2305,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                   <p className="text-xs font-semibold text-pink-500 dark:text-pink-400 mt-0.5">{d.evento_nome}</p>
                   <p className="text-[11px] font-medium text-gray-500 dark:text-white/50 mt-1">
                     {d.criado_em ? (
-                      <>Demanda lançada às {new Date(d.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }).replace(':', 'h')} do dia {new Date(d.criado_em).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</>
+                      <>Demanda lançada às {parseTimestampUTC(d.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }).replace(':', 'h')} do dia {parseTimestampUTC(d.criado_em).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'America/Sao_Paulo' })}</>
                     ) : (
                       <span className="text-gray-400 dark:text-white/30">Data de lançamento não disponível</span>
                     )}
