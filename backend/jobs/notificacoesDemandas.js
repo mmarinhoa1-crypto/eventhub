@@ -45,7 +45,9 @@ async function processarLinha(pool, EVO, KEY, INST, l, tipoFluxo) {
   );
   if (ins.rowCount === 0) return false;
 
-  const responsavelJid = telefoneParaJid(l.responsavel_telefone);
+  // Prioriza jid_whatsapp resolvido (formato real do WhatsApp, sem "9 fantasma");
+  // se nao tiver, cai para o fallback derivado do telefone (pode falhar mention).
+  const responsavelJid = l.responsavel_jid || telefoneParaJid(l.responsavel_telefone);
   const responsavelLabel = responsavelJid
     ? `@${responsavelJid.split('@')[0]}`
     : (l.responsavel_nome || 'sem responsável');
@@ -106,6 +108,7 @@ async function tick(pool, EVO, KEY, INST) {
         e.nome AS evento_nome,
         u.nome AS responsavel_nome,
         u.telefone_whatsapp AS responsavel_telefone,
+        u.jid_whatsapp AS responsavel_jid,
         o.jid_grupo_equipe
       FROM cronograma_marketing c
       JOIN eventos e ON e.id = c.id_evento AND e.org_id = c.org_id
@@ -130,6 +133,7 @@ async function tick(pool, EVO, KEY, INST) {
         e.nome AS evento_nome,
         u.nome AS responsavel_nome,
         u.telefone_whatsapp AS responsavel_telefone,
+        u.jid_whatsapp AS responsavel_jid,
         o.jid_grupo_equipe
       FROM cronograma_marketing c
       JOIN eventos e ON e.id = c.id_evento AND e.org_id = c.org_id

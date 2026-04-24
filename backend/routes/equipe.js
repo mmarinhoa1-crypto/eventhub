@@ -15,8 +15,9 @@ const avatarUpload = multer({
   }
 });
 
-module.exports = function({ pool, bcrypt, auth }) {
+module.exports = function({ pool, bcrypt, auth, EVO, KEY, INST_MARKETING }) {
   const router = express.Router();
+  const { resolverJidWhatsapp } = require('../utils/whatsapp');
 
 // === GESTAO DE EQUIPE ===
 
@@ -44,7 +45,9 @@ const funcoesValidas=['admin','agent','designer','social_media','diretor','viewe
 const funcaoUsuario=funcoesValidas.includes(funcao)?funcao:'agent';
 if(req.user.role==='diretor'&&funcaoUsuario!=='designer'&&funcaoUsuario!=='social_media'&&funcaoUsuario!=='gestor_trafego')return res.status(403).json({erro:'Diretor so pode criar designer, social media ou gestor de trafego'});
 const hash=await bcrypt.hash(senha,10);
-const r=await pool.query('INSERT INTO usuarios(org_id,nome,email,hash_senha,funcao,telefone_whatsapp) VALUES($1,$2,$3,$4,$5,$6) RETURNING id,nome,email,funcao,telefone_whatsapp',[req.user.org_id,nome,email,hash,funcaoUsuario,tel===undefined?null:tel]);
+const telSalvar = tel===undefined?null:tel;
+const jidSalvar = telSalvar ? await resolverJidWhatsapp(EVO, KEY, INST_MARKETING, telSalvar) : null;
+const r=await pool.query('INSERT INTO usuarios(org_id,nome,email,hash_senha,funcao,telefone_whatsapp,jid_whatsapp) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id,nome,email,funcao,telefone_whatsapp,jid_whatsapp',[req.user.org_id,nome,email,hash,funcaoUsuario,telSalvar,jidSalvar]);
 res.json(r.rows[0])}catch(e){res.status(500).json({erro:e.message})}});
 
 router.delete('/api/equipe/:id',auth,async(req,res)=>{try{
@@ -73,9 +76,14 @@ if(nome!==undefined||email!==undefined||telRaw!==undefined){
   const sets=[];const vals=[];let idx=1;
   if(nome!==undefined){sets.push(`nome=$${idx++}`);vals.push(nome.trim());}
   if(email!==undefined){sets.push(`email=$${idx++}`);vals.push(email.trim());}
-  if(telRaw!==undefined){sets.push(`telefone_whatsapp=$${idx++}`);vals.push(tel);}
+  if(telRaw!==undefined){
+    sets.push(`telefone_whatsapp=$${idx++}`);vals.push(tel);
+    // Sempre re-resolve o JID quando o telefone muda (mesmo se virar null)
+    const novoJid = tel ? await resolverJidWhatsapp(EVO, KEY, INST_MARKETING, tel) : null;
+    sets.push(`jid_whatsapp=$${idx++}`);vals.push(novoJid);
+  }
   vals.push(req.params.id);vals.push(req.user.org_id);
-  const r=await pool.query(`UPDATE usuarios SET ${sets.join(',')} WHERE id=$${idx} AND org_id=$${idx+1} RETURNING id,nome,email,funcao,telefone_whatsapp`,vals);
+  const r=await pool.query(`UPDATE usuarios SET ${sets.join(',')} WHERE id=$${idx} AND org_id=$${idx+1} RETURNING id,nome,email,funcao,telefone_whatsapp,jid_whatsapp`,vals);
   return res.json(r.rows[0]);
 }
 
