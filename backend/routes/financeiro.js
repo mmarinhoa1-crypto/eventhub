@@ -420,13 +420,16 @@ res.json(r.rows)}catch(e){res.status(500).json({erro:e.message})}});
 
 // Criar projecao
 router.post('/api/eventos/:id/projecoes',auth,async(req,res)=>{try{
-const{tipo,centro_custo,descricao,fornecedor_previsto,valor_projetado,observacoes}=req.body;
+const{tipo,centro_custo,descricao,fornecedor_previsto,valor_projetado,observacoes,quantidade,valor_unitario}=req.body;
 if(!tipo||(tipo!=='despesa'&&tipo!=='receita'))return res.status(400).json({erro:'Tipo deve ser despesa ou receita'});
 if(!descricao||!descricao.trim())return res.status(400).json({erro:'Descricao obrigatoria'});
+const qtd=quantidade!=null?parseFloat(quantidade):null;
+const vu=valor_unitario!=null?parseFloat(valor_unitario):null;
+const total=(qtd!=null&&vu!=null)?(qtd*vu):(parseFloat(valor_projetado)||0);
 const r=await pool.query(
-  `INSERT INTO projecoes_evento(org_id,id_evento,tipo,centro_custo,descricao,fornecedor_previsto,valor_projetado,observacoes,criado_por)
-   VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
-  [req.user.org_id,req.params.id,tipo,centro_custo||null,descricao.trim(),fornecedor_previsto||null,parseFloat(valor_projetado)||0,observacoes||null,req.user.nome||'']);
+  `INSERT INTO projecoes_evento(org_id,id_evento,tipo,centro_custo,descricao,fornecedor_previsto,valor_projetado,observacoes,criado_por,quantidade,valor_unitario)
+   VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+  [req.user.org_id,req.params.id,tipo,centro_custo||null,descricao.trim(),fornecedor_previsto||null,total,observacoes||null,req.user.nome||'',qtd,vu]);
 res.json(r.rows[0])}catch(e){console.error(e);res.status(500).json({erro:e.message})}});
 
 // Atualizar projecao (se valor mudar, grava historico)
@@ -435,7 +438,16 @@ const prev=await pool.query('SELECT * FROM projecoes_evento WHERE id=$1 AND org_
 if(!prev.rows.length)return res.status(404).json({erro:'Projecao nao encontrada'});
 const b=req.body;const f=[];const v=[];let i=1;
 ['centro_custo','descricao','fornecedor_previsto','observacoes','tipo'].forEach(function(k){if(b[k]!==undefined){f.push(k+'=$'+i);v.push(b[k]);i++}});
-if(b.valor_projetado!==undefined){f.push('valor_projetado=$'+i);v.push(parseFloat(b.valor_projetado)||0);i++}
+if(b.quantidade!==undefined){f.push('quantidade=$'+i);v.push(b.quantidade==null||b.quantidade===''?null:parseFloat(b.quantidade));i++}
+if(b.valor_unitario!==undefined){f.push('valor_unitario=$'+i);v.push(b.valor_unitario==null||b.valor_unitario===''?null:parseFloat(b.valor_unitario));i++}
+// Se qtd ou valor_unitario mudou mas valor_projetado nao veio, recalcula a partir do estado combinado
+if(b.valor_projetado!==undefined){
+  f.push('valor_projetado=$'+i);v.push(parseFloat(b.valor_projetado)||0);i++;
+}else if(b.quantidade!==undefined||b.valor_unitario!==undefined){
+  const novaQtd=b.quantidade!==undefined?(b.quantidade==null||b.quantidade===''?null:parseFloat(b.quantidade)):prev.rows[0].quantidade;
+  const novoVU=b.valor_unitario!==undefined?(b.valor_unitario==null||b.valor_unitario===''?null:parseFloat(b.valor_unitario)):prev.rows[0].valor_unitario;
+  if(novaQtd!=null&&novoVU!=null){f.push('valor_projetado=$'+i);v.push(parseFloat(novaQtd)*parseFloat(novoVU));i++}
+}
 if(!f.length)return res.status(400).json({erro:'Nada para atualizar'});
 f.push('atualizado_em=NOW()');
 v.push(parseInt(req.params.id));v.push(req.user.org_id);
@@ -484,6 +496,165 @@ r.rows.forEach(function(row){
 });
 res.json(out)}catch(e){res.status(500).json({erro:e.message})}});
 
+// Exportar projecao em XLSX seguindo o layout da tela
+router.get('/api/eventos/:id/projecoes/exportar',auth,async(req,res)=>{try{
+const ev=await pool.query('SELECT * FROM eventos WHERE id=$1 AND org_id=$2',[req.params.id,req.user.org_id]);
+if(!ev.rows.length)return res.status(404).json({erro:'Evento nao encontrado'});
+const evento=ev.rows[0];
+const it=await pool.query(
+  `SELECT p.*,
+    CASE WHEN p.tipo='despesa'
+      THEN COALESCE((SELECT SUM(valor) FROM despesas WHERE id_projecao=p.id),0)
+      ELSE COALESCE((SELECT SUM(valor) FROM receitas WHERE id_projecao=p.id),0)
+    END AS valor_realizado,
+    CASE WHEN p.tipo='despesa'
+      THEN COALESCE((SELECT SUM(CASE WHEN situacao='pendente' THEN COALESCE(NULLIF(falta_pagar,0),valor) ELSE 0 END) FROM despesas WHERE id_projecao=p.id),0)
+      ELSE 0
+    END AS valor_a_pagar
+   FROM projecoes_evento p
+   WHERE p.id_evento=$1 AND p.org_id=$2
+   ORDER BY p.tipo, p.centro_custo NULLS LAST, p.id`,[req.params.id,req.user.org_id]);
+const foraD=await pool.query("SELECT COALESCE(SUM(valor),0) AS t FROM despesas WHERE id_evento=$1 AND org_id=$2 AND id_projecao IS NULL",[req.params.id,req.user.org_id]);
+const foraR=await pool.query("SELECT COALESCE(SUM(valor),0) AS t FROM receitas WHERE id_evento=$1 AND org_id=$2 AND id_projecao IS NULL",[req.params.id,req.user.org_id]);
+const itens=it.rows;
+const despesas=itens.filter(function(i){return i.tipo==='despesa'});
+const receitas=itens.filter(function(i){return i.tipo==='receita'});
+const CENTROS=['Artistico','Estrutura do Evento','Divulgacao e Midia','Documentacao e Taxas','Operacional','Bar','Open Bar','Alimentacao','Outros'];
+const despesaSet=new Set(CENTROS);
+const orfas=despesas.filter(function(i){return !despesaSet.has(i.centro_custo||'')});
+const sum=function(arr,k){return arr.reduce(function(s,i){return s+parseFloat(i[k]||0)},0)};
+const totDespProj=sum(despesas,'valor_projetado');
+const totDespReal=sum(despesas,'valor_realizado')+parseFloat(foraD.rows[0].t);
+const totRecProj=sum(receitas,'valor_projetado');
+const totRecReal=sum(receitas,'valor_realizado')+parseFloat(foraR.rows[0].t);
+const lucroProj=totRecProj-totDespProj;
+const lucroReal=totRecReal-totDespReal;
+
+const wb=new ExcelJS.Workbook();
+const ws=wb.addWorksheet('Projecao');
+const headerFill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1a1a2e'}};
+const sectionFill={type:'pattern',pattern:'solid',fgColor:{argb:'FF16213e'}};
+const subFill={type:'pattern',pattern:'solid',fgColor:{argb:'FFe8e8e8'}};
+const totalFill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0f3460'}};
+const resumoFill={type:'pattern',pattern:'solid',fgColor:{argb:'FFf5f5f5'}};
+const whiteFont={color:{argb:'FFFFFFFF'},bold:true};
+const moneyFmt='#,##0.00';
+const COLS=['Descricao','Fornecedor','Qtd','Valor Unit','Projetado','Realizado','Variacao'];
+ws.columns=[{width:40},{width:24},{width:10},{width:14},{width:14},{width:14},{width:14}];
+
+// Titulo
+var t=ws.addRow([evento.nome.toUpperCase()+' - PROJECAO ORCADA']);
+t.font={bold:true,size:14,color:{argb:'FF1a1a2e'}};
+ws.mergeCells(t.number,1,t.number,COLS.length);
+ws.addRow([]);
+
+// Resumo
+var rh=ws.addRow(['RESUMO','','','','']);
+rh.eachCell(function(c){c.fill=headerFill;c.font=whiteFont;c.alignment={horizontal:'left'}});
+ws.mergeCells(rh.number,1,rh.number,COLS.length);
+function resumoRow(label,projetado,realizado){
+  var r=ws.addRow([label,'','','',projetado,realizado,'']);
+  r.getCell(5).numFmt=moneyFmt; r.getCell(6).numFmt=moneyFmt;
+  r.eachCell(function(c){c.fill=resumoFill});
+  r.getCell(1).font={bold:true};
+  return r;
+}
+resumoRow('Receita projetada',totRecProj,totRecReal);
+resumoRow('Despesa projetada',totDespProj,totDespReal);
+var lp=resumoRow('Lucro projetado',lucroProj,lucroReal);
+if(lucroProj<0)lp.getCell(5).font={color:{argb:'FFFF0000'},bold:true};
+if(lucroReal<0)lp.getCell(6).font={color:{argb:'FFFF0000'},bold:true};
+ws.addRow([]);
+
+// Bloco helper
+function bloco(titulo,lista){
+  var sr=ws.addRow([titulo.toUpperCase(),'','','','']);
+  sr.font={bold:true,color:{argb:'FFFFFFFF'},size:11};
+  sr.eachCell(function(c){c.fill=sectionFill});
+  ws.mergeCells(sr.number,1,sr.number,COLS.length);
+  if(!lista.length){
+    var vz=ws.addRow(['vazio','','','','','','']);
+    vz.getCell(1).font={italic:true,color:{argb:'FF888888'}};
+    return;
+  }
+  var hdr=ws.addRow(COLS);
+  hdr.eachCell(function(c){c.fill=headerFill;c.font=whiteFont;c.alignment={horizontal:'center'}});
+  hdr.height=20;
+  lista.forEach(function(i){
+    var proj=parseFloat(i.valor_projetado||0);
+    var real=parseFloat(i.valor_realizado||0);
+    var vari=real-proj;
+    var qtd=i.quantidade!=null?parseFloat(i.quantidade):'';
+    var vu=i.valor_unitario!=null?parseFloat(i.valor_unitario):'';
+    var r=ws.addRow([i.descricao||'',i.fornecedor_previsto||'',qtd,vu,proj,real,vari]);
+    if(typeof qtd==='number')r.getCell(3).numFmt='#,##0.###';
+    if(typeof vu==='number')r.getCell(4).numFmt=moneyFmt;
+    r.getCell(5).numFmt=moneyFmt; r.getCell(6).numFmt=moneyFmt; r.getCell(7).numFmt=moneyFmt;
+  });
+  var subProj=sum(lista,'valor_projetado');
+  var subReal=sum(lista,'valor_realizado');
+  var subVari=subReal-subProj;
+  var sub=ws.addRow(['SUBTOTAL','','','',subProj,subReal,subVari]);
+  sub.font={bold:true};
+  sub.eachCell(function(c){c.fill=subFill});
+  sub.getCell(5).numFmt=moneyFmt; sub.getCell(6).numFmt=moneyFmt; sub.getCell(7).numFmt=moneyFmt;
+}
+
+// DESPESAS
+var dh=ws.addRow(['DESPESAS','','','','','','']);
+dh.font={bold:true,color:{argb:'FFFFFFFF'},size:12};
+dh.eachCell(function(c){c.fill=totalFill});
+ws.mergeCells(dh.number,1,dh.number,COLS.length);
+CENTROS.forEach(function(centro){
+  var lista=despesas.filter(function(i){return (i.centro_custo||'')===centro});
+  if(lista.length){bloco(centro,lista);ws.addRow([])}
+});
+if(orfas.length){bloco('Sem categoria',orfas);ws.addRow([])}
+if(parseFloat(foraD.rows[0].t)>0){
+  var av=ws.addRow(['Realizado fora da projecao: '+parseFloat(foraD.rows[0].t).toFixed(2),'','','','','','']);
+  av.getCell(1).font={italic:true,color:{argb:'FFB45309'}};
+  ws.addRow([]);
+}
+// Total despesas
+var td=ws.addRow(['TOTAL DESPESAS','','','',totDespProj,totDespReal,totDespReal-totDespProj]);
+td.font={bold:true,color:{argb:'FFFFFFFF'},size:12};
+td.eachCell(function(c){c.fill=totalFill});
+td.getCell(5).numFmt=moneyFmt; td.getCell(6).numFmt=moneyFmt; td.getCell(7).numFmt=moneyFmt;
+ws.addRow([]);
+
+// RECEITAS
+var rh2=ws.addRow(['RECEITAS','','','','','','']);
+rh2.font={bold:true,color:{argb:'FFFFFFFF'},size:12};
+rh2.eachCell(function(c){c.fill=totalFill});
+ws.mergeCells(rh2.number,1,rh2.number,COLS.length);
+bloco('Receitas',receitas);
+if(parseFloat(foraR.rows[0].t)>0){
+  ws.addRow([]);
+  var avR=ws.addRow(['Realizado fora da projecao: '+parseFloat(foraR.rows[0].t).toFixed(2),'','','','','','']);
+  avR.getCell(1).font={italic:true,color:{argb:'FFB45309'}};
+}
+ws.addRow([]);
+var tr=ws.addRow(['TOTAL RECEITAS','','','',totRecProj,totRecReal,totRecReal-totRecProj]);
+tr.font={bold:true,color:{argb:'FFFFFFFF'},size:12};
+tr.eachCell(function(c){c.fill=totalFill});
+tr.getCell(5).numFmt=moneyFmt; tr.getCell(6).numFmt=moneyFmt; tr.getCell(7).numFmt=moneyFmt;
+ws.addRow([]);
+
+// LUCRO final
+var lr=ws.addRow(['LUCRO','','','',lucroProj,lucroReal,lucroReal-lucroProj]);
+lr.font={bold:true,color:{argb:'FFFFFFFF'},size:13};
+lr.eachCell(function(c){c.fill=headerFill});
+lr.getCell(5).numFmt=moneyFmt; lr.getCell(6).numFmt=moneyFmt; lr.getCell(7).numFmt=moneyFmt;
+
+// Bordas
+ws.eachRow(function(row){row.eachCell(function(cell){cell.border={top:{style:'thin',color:{argb:'FFcccccc'}},bottom:{style:'thin',color:{argb:'FFcccccc'}},left:{style:'thin',color:{argb:'FFcccccc'}},right:{style:'thin',color:{argb:'FFcccccc'}}}})});
+
+res.setHeader('Content-Type','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+res.setHeader('Content-Disposition','attachment; filename=projecao_'+evento.nome.replace(/\s/g,'_')+'.xlsx');
+await wb.xlsx.write(res);
+res.end();
+}catch(e){console.error(e);res.status(500).json({erro:e.message})}});
+
 // Importacao em lote (usada pelo CSV do frontend)
 router.post('/api/eventos/:id/projecoes/bulk',auth,async(req,res)=>{try{
 const itens=req.body.itens;
@@ -495,10 +666,13 @@ try{
   for(const it of itens){
     if(!it.descricao||!it.descricao.trim())continue;
     if(it.tipo!=='despesa'&&it.tipo!=='receita')continue;
+    const qtd=it.quantidade!=null&&it.quantidade!==''?parseFloat(it.quantidade):null;
+    const vu=it.valor_unitario!=null&&it.valor_unitario!==''?parseFloat(it.valor_unitario):null;
+    const total=(qtd!=null&&vu!=null)?(qtd*vu):(parseFloat(it.valor_projetado)||0);
     const r=await client.query(
-      `INSERT INTO projecoes_evento(org_id,id_evento,tipo,centro_custo,descricao,fornecedor_previsto,valor_projetado,observacoes,criado_por)
-       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
-      [req.user.org_id,req.params.id,it.tipo,it.centro_custo||null,it.descricao.trim(),it.fornecedor_previsto||null,parseFloat(it.valor_projetado)||0,it.observacoes||null,req.user.nome||'']);
+      `INSERT INTO projecoes_evento(org_id,id_evento,tipo,centro_custo,descricao,fornecedor_previsto,valor_projetado,observacoes,criado_por,quantidade,valor_unitario)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+      [req.user.org_id,req.params.id,it.tipo,it.centro_custo||null,it.descricao.trim(),it.fornecedor_previsto||null,total,it.observacoes||null,req.user.nome||'',qtd,vu]);
     inseridos.push(r.rows[0]);
   }
   await client.query('COMMIT');

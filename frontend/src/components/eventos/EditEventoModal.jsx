@@ -57,6 +57,10 @@ export default function EditEventoModal({ open, onClose, evento, onUpdated }) {
         designer_id: evento.designer_id || '',
         social_media_id: evento.social_media_id || '',
         diretor_id: evento.diretor_id || '',
+        status_evento: evento.status_evento || 'ativo',
+        publico: evento.publico || '',
+        tipo_local: evento.tipo_local || '',
+        tipo_bar: evento.tipo_bar || '',
       })
     }
   }, [evento])
@@ -79,6 +83,29 @@ export default function EditEventoModal({ open, onClose, evento, onUpdated }) {
   async function handleSubmit(e) {
     e.preventDefault()
     if (!form.nome.trim()) return
+
+    // Validação de finalização: dados obrigatórios pra IA aprender
+    if (form.status_evento === 'finalizado') {
+      if (!form.publico || Number(form.publico) <= 0) {
+        return toast.error('Para finalizar: preencha "Público real"')
+      }
+      if (!form.tipo_bar) {
+        return toast.error('Para finalizar: selecione "Tipo de Bar"')
+      }
+      if (form.tipo_bar === 'misto') {
+        try {
+          const { data: setores } = await api.get('/consumo/setores/evento/' + evento.id)
+          const temOpen = setores.some(s => s.tipo === 'open' && Number(s.publico_real) > 0)
+          const temVendido = setores.some(s => s.tipo === 'vendido' && Number(s.publico_real) > 0)
+          if (!temOpen || !temVendido) {
+            return toast.error('Bar misto requer ao menos 1 setor "open" e 1 "vendido" com público em Consumo')
+          }
+        } catch {
+          return toast.error('Erro ao validar setores — tente novamente')
+        }
+      }
+    }
+
     setLoading(true)
     try {
       const designerSel = designers.find(d => d.id === Number(form.designer_id))
