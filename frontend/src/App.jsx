@@ -21,6 +21,8 @@ import AnunciosPage from './pages/AnunciosPage'
 import IAPage from './pages/IAPage'
 import TrafegoPage from './pages/TrafegoPage'
 import InstagramCallbackPage from './pages/InstagramCallbackPage'
+import ComprovantePage from './pages/ComprovantePage'
+import PendentesPage from './pages/PendentesPage'
 
 export default function App() {
   return (
@@ -28,6 +30,7 @@ export default function App() {
       <Route path="/entrar" element={<LoginPage />} />
       <Route path="/registrar" element={<RegistrarPage />} />
       <Route path="/instagram-callback" element={<InstagramCallbackPage />} />
+      <Route path="/comprovante/:token" element={<ComprovantePage />} />
       <Route
         element={
           <ProtectedRoute>
@@ -41,6 +44,7 @@ export default function App() {
         <Route path="eventos" element={<EventosPage />} />
         <Route path="eventos/:id" element={<EventoDetalhePage />} />
         <Route path="financeiro" element={<FinanceiroPage />} />
+        <Route path="pendentes" element={<PendentesPage />} />
         <Route path="demandas" element={<MinhasDemandas />} />
         <Route path="marketing" element={<Navigate to="/demandas" replace />} />
         <Route path="previsao" element={<PrevisaoPage />} />
