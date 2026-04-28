@@ -101,7 +101,10 @@ async function processarLinha(pool, EVO, KEY, INST, l, tipoFluxo) {
 async function tick(pool, EVO, KEY, INST) {
   try {
     // Fluxo Social Media: usa eventos.social_media_id como responsavel
-    // Filtra apenas demandas com data_publicacao >= HOJE no fuso de Brasilia (sem retroativo)
+    // Filtra apenas demandas com data_publicacao >= HOJE no fuso de Brasilia (sem retroativo).
+    // SM so eh notificado quando a demanda nao precisa de designer (aparecer_designer=FALSE)
+    // OU quando o designer ja entregou (status em_revisao ou aprovado). Se o designer ainda
+    // nao entregou, o atraso eh dele, nao do SM.
     const sm = await pool.query(`
       SELECT
         c.id, c.titulo, c.data_publicacao, c.hora_publicacao, c.org_id,
@@ -121,6 +124,7 @@ async function tick(pool, EVO, KEY, INST) {
         AND c.data_publicacao ~ '^\\d{4}-\\d{2}-\\d{2}$'
         AND c.data_publicacao::date >= (NOW() AT TIME ZONE 'America/Sao_Paulo')::date
         AND c.is_impresso IS NOT TRUE
+        AND (c.aparecer_designer = FALSE OR c.status IN ('em_revisao','aprovado'))
     `);
     for (const row of sm.rows) {
       await processarLinha(pool, EVO, KEY, INST, row, 'social_media');
