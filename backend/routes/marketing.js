@@ -83,7 +83,7 @@ res.json({sucesso:true,ativo:!!ativo});
 
 router.patch('/api/cronograma/:id',auth,async(req,res)=>{try{
 const b=req.body;const fields=[];const vals=[];let idx=1;
-['titulo','plataforma','data_publicacao','hora_publicacao','conteudo','hashtags','formato','status','feedback','auto_publish','boost_enabled','boost_budget','boost_duration','boost_age_min','boost_age_max','boost_cities','collaborators','id_evento','aparecer_designer','descricao','referencia','musica','legenda','tipo_conteudo'].forEach(function(k){if(b[k]!==undefined){fields.push(k+'=$'+idx);vals.push(b[k]);idx++}});
+['titulo','plataforma','data_publicacao','hora_publicacao','conteudo','hashtags','formato','status','feedback','auto_publish','boost_enabled','boost_budget','boost_duration','boost_age_min','boost_age_max','boost_cities','collaborators','id_evento','aparecer_designer','descricao','referencia','musica','legenda','tipo_conteudo','is_impresso'].forEach(function(k){if(b[k]!==undefined){fields.push(k+'=$'+idx);vals.push(b[k]);idx++}});
 vals.push(parseInt(req.params.id));vals.push(req.user.org_id);
 const r=await pool.query('UPDATE cronograma_marketing SET '+fields.join(',')+' WHERE id=$'+idx+' AND org_id=$'+(idx+1)+' RETURNING *',vals);
 const updated=r.rows[0];

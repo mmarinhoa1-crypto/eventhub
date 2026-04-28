@@ -120,6 +120,7 @@ async function tick(pool, EVO, KEY, INST) {
         AND c.hora_publicacao IS NOT NULL
         AND c.data_publicacao ~ '^\\d{4}-\\d{2}-\\d{2}$'
         AND c.data_publicacao::date >= (NOW() AT TIME ZONE 'America/Sao_Paulo')::date
+        AND c.is_impresso IS NOT TRUE
     `);
     for (const row of sm.rows) {
       await processarLinha(pool, EVO, KEY, INST, row, 'social_media');
@@ -146,6 +147,7 @@ async function tick(pool, EVO, KEY, INST) {
         AND c.hora_publicacao IS NOT NULL
         AND c.data_publicacao ~ '^\\d{4}-\\d{2}-\\d{2}$'
         AND c.data_publicacao::date >= (NOW() AT TIME ZONE 'America/Sao_Paulo')::date
+        AND c.is_impresso IS NOT TRUE
     `);
     for (const row of ds.rows) {
       await processarLinha(pool, EVO, KEY, INST, row, 'designer');

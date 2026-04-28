@@ -495,6 +495,27 @@ export default function MinhasDemandas() {
     saveEtiquetas(tipo, id, getEtiquetas(tipo, id).filter(e => e !== etiqueta))
   }
 
+  // Combina etiquetas locais (localStorage) com a etiqueta 'impresso' que vem do banco.
+  // Pra exibicao: usar SEMPRE getEtiquetasFinal em vez de getEtiquetas direto.
+  function getEtiquetasFinal(d) {
+    const local = getEtiquetas(d._tipo || 'item', d.id) || []
+    const semImpresso = local.filter(e => e !== 'impresso')
+    return d.is_impresso ? [...semImpresso, 'impresso'] : semImpresso
+  }
+
+  // Toggle especial pra etiqueta 'impresso' que vai pro banco (worker WA filtra por ela).
+  async function toggleImpresso(d) {
+    const novo = !d.is_impresso
+    try {
+      await api.patch('/cronograma/' + d.id, { is_impresso: novo })
+      d.is_impresso = novo
+      carregar()
+      toast.success(novo ? 'Marcado como Impresso' : 'Removida etiqueta Impresso')
+    } catch (e) {
+      toast.error('Erro ao atualizar Impresso: ' + (e.response?.data?.erro || e.message))
+    }
+  }
+
   function getTag(tipo, id) {
     return tagsStore[(tipo || 'item') + '-' + id] || null
   }
@@ -1037,7 +1058,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                     {/* Etiquetas + Status */}
                                     <div className="flex items-start justify-between gap-1">
                                       <div className="flex gap-1 flex-wrap flex-1 min-w-0">
-                                        {getEtiquetas(d._tipo, d.id).map(etKey => {
+                                        {getEtiquetasFinal(d).map(etKey => {
                                           const et = ETIQUETAS_PADRAO.find(e => e.key === etKey)
                                           return et
                                             ? <span key={etKey} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: isDark ? et.darkBg : et.bg, color: isDark ? et.darkColor : et.color }}>{et.label}</span>
@@ -1093,7 +1114,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                   const st = adminTagStatus ? { bg:'', text:'', border:'', dot:'bg-gray-500', label: adminTagStatus.label } : (stConfig[d.status] || stConfig.pendente)
                   const resp = getResponsavel(d)
                   const atrasado = adminTag === 'atrasado' || isAtrasadoComHora(d)
-                  const etqs = getEtiquetas(d._tipo, d.id)
+                  const etqs = getEtiquetasFinal(d)
 
                   function toggleMultiAdmin(field, val) {
                     const arr = (adminEditForm[field]||'').split(',').filter(Boolean)
@@ -1177,7 +1198,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                               {ETIQUETAS_PADRAO.map(et => {
                                 const ativa = etqs.includes(et.key)
                                 return (
-                                  <button key={et.key} onClick={() => !isReadOnly && toggleEtiqueta(d._tipo, d.id, et.key)} disabled={isReadOnly}
+                                  <button key={et.key} onClick={() => { if (isReadOnly) return; if (et.key === 'impresso') toggleImpresso(d); else toggleEtiqueta(d._tipo, d.id, et.key) }} disabled={isReadOnly}
                                     className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border-2 transition-all disabled:cursor-not-allowed"
                                     style={ativa
                                       ? { backgroundColor: isDark ? et.darkBg : et.bg, color: isDark ? et.darkColor : et.color, borderColor: isDark ? et.darkBorder : et.border }
@@ -1737,7 +1758,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                     <div className="px-3 py-2.5 space-y-2">
                                       <div className="flex items-start justify-between gap-1">
                                         <div className="flex gap-1 flex-wrap flex-1 min-w-0">
-                                          {getEtiquetas(d._tipo, d.id).map(etKey => {
+                                          {getEtiquetasFinal(d).map(etKey => {
                                             const et = ETIQUETAS_PADRAO.find(e => e.key === etKey)
                                             return et
                                               ? <span key={etKey} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: isDark ? et.darkBg : et.bg, color: isDark ? et.darkColor : et.color }}>{et.label}</span>
@@ -2046,7 +2067,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                 <div className="px-3 py-2.5 space-y-2">
                                   <div className="flex items-start justify-between gap-1">
                                     <div className="flex gap-1 flex-wrap flex-1 min-w-0">
-                                      {getEtiquetas(d._tipo, d.id).map(etKey => {
+                                      {getEtiquetasFinal(d).map(etKey => {
                                         const et = ETIQUETAS_PADRAO.find(e => e.key === etKey)
                                         return et
                                           ? <span key={etKey} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: isDark ? et.darkBg : et.bg, color: isDark ? et.darkColor : et.color }}>{et.label}</span>
@@ -2261,7 +2282,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
       {/* ===== DETAIL MODAL (Designer/SocialMedia/Admin) ===== */}
       {detalhe && (() => {
         const d = detalhe
-        const etqs = getEtiquetas(d._tipo, d.id)
+        const etqs = getEtiquetasFinal(d)
 
         function toggleMultiEdit(field, val) {
           const arr = (editForm[field]||'').split(',').filter(Boolean)
@@ -2586,7 +2607,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                         {ETIQUETAS_PADRAO.map(et => {
                           const ativa = etqs.includes(et.key)
                           return (
-                            <button key={et.key} onClick={() => toggleEtiqueta(d._tipo, d.id, et.key)}
+                            <button key={et.key} onClick={() => { if (et.key === 'impresso') toggleImpresso(d); else toggleEtiqueta(d._tipo, d.id, et.key) }}
                               className="flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full border-2 transition-all"
                               style={ativa
                                 ? { backgroundColor: isDark ? et.darkBg : et.bg, color: isDark ? et.darkColor : et.color, borderColor: isDark ? et.darkBorder : et.border }
