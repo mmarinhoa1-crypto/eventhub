@@ -1131,7 +1131,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                         <Paperclip size={10} />
                                         <span className="font-semibold">Uploads: {(cardArquivos[d._tipo + '-' + d.id] || []).length}</span>
                                       </div>
-                                      {horaCardExibida(d) && <span className="flex items-center gap-0.5 font-bold text-gray-500 dark:text-white/50"><Clock size={9} />{horaCardExibida(d).slice(0,5)}</span>}
+                                      {horaCardExibida(d) && <span className="flex items-center gap-0.5 font-bold text-gray-500 dark:text-white/50"><Clock size={9} />{isDesigner && <span className="text-[9px] font-semibold mr-0.5">Horário de entrega:</span>}{horaCardExibida(d).slice(0,5)}</span>}
                                     </div>
                                   </div>
                                 </div>
@@ -1838,7 +1838,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                           <Paperclip size={10} />
                                           <span className="font-semibold">Uploads: {(cardArquivos[d._tipo + '-' + d.id] || []).length}</span>
                                         </div>
-                                        {horaCardExibida(d) && <span className="flex items-center gap-0.5 font-bold text-gray-500 dark:text-white/50"><Clock size={9} />{horaCardExibida(d).slice(0,5)}</span>}
+                                        {horaCardExibida(d) && <span className="flex items-center gap-0.5 font-bold text-gray-500 dark:text-white/50"><Clock size={9} />{isDesigner && <span className="text-[9px] font-semibold mr-0.5">Horário de entrega:</span>}{horaCardExibida(d).slice(0,5)}</span>}
                                       </div>
                                     </div>
                                   </div>
@@ -2147,7 +2147,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                       <Paperclip size={10} />
                                       <span className="font-semibold">Uploads: {(cardArquivos[d._tipo + '-' + d.id] || []).length}</span>
                                     </div>
-                                    {horaCardExibida(d) && <span className="flex items-center gap-0.5 font-bold text-gray-500 dark:text-white/50"><Clock size={9} />{horaCardExibida(d).slice(0,5)}</span>}
+                                    {horaCardExibida(d) && <span className="flex items-center gap-0.5 font-bold text-gray-500 dark:text-white/50"><Clock size={9} />{isDesigner && <span className="text-[9px] font-semibold mr-0.5">Horário de entrega:</span>}{horaCardExibida(d).slice(0,5)}</span>}
                                   </div>
                                 </div>
                               </div>
