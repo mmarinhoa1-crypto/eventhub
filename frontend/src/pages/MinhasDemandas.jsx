@@ -138,7 +138,7 @@ export default function MinhasDemandas() {
     try { return JSON.parse(localStorage.getItem('eventhub_etiquetas') || '{}') } catch { return {} }
   })
   const [tagsStore, setTagsStore] = useState({})
-  const [novoPostForm, setNovoPostForm] = useState({ titulo: '', plataforma: 'Instagram', data_publicacao: '', hora_publicacao: '', conteudo: '', tipo_conteudo: '', formato: '', descricao: '', referencia: '', musica: '', destino: 'social', status: 'pendente', collaborators: '', id_evento: '' })
+  const [novoPostForm, setNovoPostForm] = useState({ titulo: '', plataforma: 'Instagram', data_publicacao: '', hora_publicacao: '', hora_entrega: '', conteudo: '', tipo_conteudo: '', formato: '', descricao: '', referencia: '', musica: '', destino: 'social', status: 'pendente', collaborators: '', id_evento: '' })
   const [novoPostArquivos, setNovoPostArquivos] = useState([])
   const [criandoPost, setCriandoPost] = useState(false)
   const [designerTab, setDesignerTab] = useState('briefings')
@@ -166,6 +166,12 @@ export default function MinhasDemandas() {
     return diff >= -5 * 60 * 1000 && diff <= 30 * 60 * 1000
   }
 
+  // Helper: a hora "principal" exibida no card depende do papel.
+  // Designer ve apenas hora_entrega (deadline dele). Demais ve hora_publicacao.
+  function horaCardExibida(d) {
+    return (isDesigner ? d.hora_entrega : d.hora_publicacao) || ''
+  }
+
   // Postgres armazena timestamps em UTC sem indicacao. Forca parse como UTC para
   // que o navegador converta corretamente para o fuso local (Brasilia).
   function parseTimestampUTC(s) {
@@ -176,10 +182,12 @@ export default function MinhasDemandas() {
   }
 
   // Atrasada quando passou do horario (data + hora) e status ainda nao eh final.
-  // Usado para sobrescrever a tag visual "Atrasado" mesmo quando ha tag manual (ex: Recebido).
+  // Designer: hora de referencia eh hora_entrega; demais: hora_publicacao.
+  // Designer ja entregou (em_revisao/aprovado): nunca atrasado pra ele.
   function isAtrasadoComHora(d) {
     if (!d) return false
     if (['publicado','concluido','cancelado'].includes(d.status)) return false
+    if (isDesigner && ['em_revisao','aprovado'].includes(d.status)) return false
     const dt = (d._data || d.data_publicacao || '').slice(0, 10)
     if (!dt) return false
     const agora = new Date()
@@ -187,8 +195,9 @@ export default function MinhasDemandas() {
     const hojeLocal = `${y}-${mo}-${da}`
     if (dt < hojeLocal) return true
     if (dt > hojeLocal) return false
-    if (!d.hora_publicacao) return false
-    const m = String(d.hora_publicacao).match(/^(\d{1,2}):(\d{2})/)
+    const horaRef = isDesigner ? d.hora_entrega : d.hora_publicacao
+    if (!horaRef) return false
+    const m = String(horaRef).match(/^(\d{1,2}):(\d{2})/)
     if (!m) return false
     const limite = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), Number(m[1]), Number(m[2]), 0, 0)
     return agora >= limite
@@ -339,8 +348,18 @@ export default function MinhasDemandas() {
 
   async function salvarEdicao() {
     if (editForm.hora_publicacao !== undefined && !editForm.hora_publicacao?.toString().trim()) {
-      toast.error('Horário de publicação é obrigatório')
+      toast.error('Horário de postagem é obrigatório')
       return
+    }
+    if (editForm.aparecer_designer) {
+      if (!editForm.hora_entrega?.toString().trim()) {
+        toast.error('Horário de entrega é obrigatório quando "Aparecer para o Designer" está ativo')
+        return
+      }
+      if (editForm.hora_publicacao && editForm.hora_entrega >= editForm.hora_publicacao) {
+        toast.error('Horário de entrega deve ser ANTES do horário de postagem')
+        return
+      }
     }
     try {
       await api.patch('/cronograma/' + detalhe.id, editForm)
@@ -348,7 +367,7 @@ export default function MinhasDemandas() {
       setDetalhe({...detalhe, ...editForm})
       setEditMode(false)
       carregar()
-    } catch { toast.error('Erro ao salvar') }
+    } catch (err) { toast.error(err.response?.data?.erro || 'Erro ao salvar') }
   }
 
   async function excluirDemanda(id, fecharModal) {
@@ -363,8 +382,18 @@ export default function MinhasDemandas() {
 
   async function adminSalvarEdicao() {
     if (adminEditForm.hora_publicacao !== undefined && !adminEditForm.hora_publicacao?.toString().trim()) {
-      toast.error('Horário de publicação é obrigatório')
+      toast.error('Horário de postagem é obrigatório')
       return
+    }
+    if (adminEditForm.aparecer_designer) {
+      if (!adminEditForm.hora_entrega?.toString().trim()) {
+        toast.error('Horário de entrega é obrigatório quando "Aparecer para o Designer" está ativo')
+        return
+      }
+      if (adminEditForm.hora_publicacao && adminEditForm.hora_entrega >= adminEditForm.hora_publicacao) {
+        toast.error('Horário de entrega deve ser ANTES do horário de postagem')
+        return
+      }
     }
     try {
       await api.patch('/cronograma/' + adminDetalhe.id, adminEditForm)
@@ -372,7 +401,7 @@ export default function MinhasDemandas() {
       setAdminDetalhe({...adminDetalhe, ...adminEditForm})
       setAdminEditMode(false)
       carregar()
-    } catch { toast.error('Erro ao salvar') }
+    } catch (err) { toast.error(err.response?.data?.erro || 'Erro ao salvar') }
   }
 
   async function atualizarStatus(tipo, id, novoStatus) {
@@ -625,8 +654,19 @@ export default function MinhasDemandas() {
     }
     // Horário obrigatório para todos ao criar nova demanda
     if (!novoPostForm.hora_publicacao?.trim()) {
-      toast.error('Preencha o horário de publicação')
+      toast.error('Preencha o horário de postagem')
       return
+    }
+    // Quando "Aparecer para o Designer" esta ativo, hora_entrega vira obrigatoria
+    if (novoPostForm.destino === 'design') {
+      if (!novoPostForm.hora_entrega?.trim()) {
+        toast.error('Horário de entrega é obrigatório quando "Aparecer para o Designer" está ativo')
+        return
+      }
+      if (novoPostForm.hora_entrega >= novoPostForm.hora_publicacao) {
+        toast.error('Horário de entrega deve ser ANTES do horário de postagem')
+        return
+      }
     }
     setCriandoPost(true)
     try {
@@ -648,7 +688,7 @@ export default function MinhasDemandas() {
       }
       toast.success('Post criado!')
       setShowNovoPost(false)
-      setNovoPostForm({ titulo: '', plataforma: 'Instagram', data_publicacao: '', hora_publicacao: '', conteudo: '', tipo_conteudo: '', formato: '', descricao: '', referencia: '', musica: '', destino: 'social', status: 'pendente', collaborators: '', id_evento: '' })
+      setNovoPostForm({ titulo: '', plataforma: 'Instagram', data_publicacao: '', hora_publicacao: '', hora_entrega: '', conteudo: '', tipo_conteudo: '', formato: '', descricao: '', referencia: '', musica: '', destino: 'social', status: 'pendente', collaborators: '', id_evento: '' })
       novoPostArquivos.forEach(item => { if (item.previewUrl) URL.revokeObjectURL(item.previewUrl) })
       setNovoPostArquivos([])
       carregar()
@@ -1037,7 +1077,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                               const activeTagKey = tagEfetiva(d, perspectivaTag)
                               const tagConf = activeTagKey ? TAGS_STATUS.find(t => t.key === activeTagKey) : null
                               const borderColor = tagConf ? tagConf.color : accentColor
-                              const alertaHora = isAlertaHorario(d._data, d.hora_publicacao, activeTagKey)
+                              const alertaHora = isAlertaHorario(d._data, horaCardExibida(d), activeTagKey)
 
                               return (
                                 <div
@@ -1091,7 +1131,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                         <Paperclip size={10} />
                                         <span className="font-semibold">Uploads: {(cardArquivos[d._tipo + '-' + d.id] || []).length}</span>
                                       </div>
-                                      {d.hora_publicacao && <span className="flex items-center gap-0.5 font-bold text-gray-500 dark:text-white/50"><Clock size={9} />{d.hora_publicacao.slice(0,5)}</span>}
+                                      {horaCardExibida(d) && <span className="flex items-center gap-0.5 font-bold text-gray-500 dark:text-white/50"><Clock size={9} />{horaCardExibida(d).slice(0,5)}</span>}
                                     </div>
                                   </div>
                                 </div>
@@ -1156,7 +1196,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                     titulo: d.titulo||'', descricao: d.descricao||'', conteudo: d.conteudo||'',
                                     referencia: d.referencia||'', musica: d.musica||'',
                                     data_vencimento: d.data_vencimento||'', data_publicacao: d.data_publicacao||'',
-                                    hora_publicacao: d.hora_publicacao||'', collaborators: d.collaborators||'',
+                                    hora_publicacao: d.hora_publicacao||'', hora_entrega: d.hora_entrega||'', collaborators: d.collaborators||'',
                                     tipo_conteudo: d.tipo_conteudo||'', formato: d.formato||'',
                                     plataforma: d.plataforma||'Instagram', status: d.status||'pendente',
                                     id_evento: d.id_evento||'',
@@ -1279,10 +1319,20 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                       className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                                   </div>
                                   <div>
-                                    <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Hora</label>
+                                    <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Horário de postagem</label>
                                     <input type="time" value={adminEditForm.hora_publicacao||''} onChange={e => setAdminEditForm({...adminEditForm, hora_publicacao: e.target.value})}
                                       className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                                   </div>
+                                  {adminEditForm.aparecer_designer && (
+                                    <div>
+                                      <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Horário de entrega (designer) <span className="text-red-500">*</span></label>
+                                      <input type="time" value={adminEditForm.hora_entrega||''} onChange={e => setAdminEditForm({...adminEditForm, hora_entrega: e.target.value})}
+                                        className={'w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent ' + ((!adminEditForm.hora_entrega || (adminEditForm.hora_publicacao && adminEditForm.hora_entrega >= adminEditForm.hora_publicacao)) ? 'border-red-300' : 'border-gray-200')} />
+                                      {adminEditForm.hora_entrega && adminEditForm.hora_publicacao && adminEditForm.hora_entrega >= adminEditForm.hora_publicacao && (
+                                        <p className="text-[10px] text-red-500 mt-1">Deve ser ANTES do horário de postagem</p>
+                                      )}
+                                    </div>
+                                  )}
                                   <div>
                                     <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Collaborators</label>
                                     <input value={adminEditForm.collaborators||''} onChange={e => setAdminEditForm({...adminEditForm, collaborators: e.target.value})}
@@ -1747,7 +1797,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                 const activeTagKey = tagEfetiva(d, perspectivaTag)
                                 const tagConf = activeTagKey ? TAGS_STATUS.find(t => t.key === activeTagKey) : null
                                 const borderColor = tagConf ? tagConf.color : '#8b5cf6'
-                                const alertaHora = isAlertaHorario(d._data, d.hora_publicacao, activeTagKey)
+                                const alertaHora = isAlertaHorario(d._data, horaCardExibida(d), activeTagKey)
                                 return (
                                   <div
                                     key={'briefing-'+d.id}
@@ -1788,7 +1838,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                           <Paperclip size={10} />
                                           <span className="font-semibold">Uploads: {(cardArquivos[d._tipo + '-' + d.id] || []).length}</span>
                                         </div>
-                                        {d.hora_publicacao && <span className="flex items-center gap-0.5 font-bold text-gray-500 dark:text-white/50"><Clock size={9} />{d.hora_publicacao.slice(0,5)}</span>}
+                                        {horaCardExibida(d) && <span className="flex items-center gap-0.5 font-bold text-gray-500 dark:text-white/50"><Clock size={9} />{horaCardExibida(d).slice(0,5)}</span>}
                                       </div>
                                     </div>
                                   </div>
@@ -2049,7 +2099,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                             const activeTagKey = tagEfetiva(d, perspectivaTag)
                             const tagConf = activeTagKey ? TAGS_STATUS.find(t => t.key === activeTagKey) : null
                             const borderColor = tagConf ? tagConf.color : accentColor
-                            const alertaHora = isAlertaHorario(d._data, d.hora_publicacao, activeTagKey)
+                            const alertaHora = isAlertaHorario(d._data, horaCardExibida(d), activeTagKey)
                             return (
                               <div
                                 key={d._tipo+'-'+d.id}
@@ -2097,7 +2147,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                       <Paperclip size={10} />
                                       <span className="font-semibold">Uploads: {(cardArquivos[d._tipo + '-' + d.id] || []).length}</span>
                                     </div>
-                                    {d.hora_publicacao && <span className="flex items-center gap-0.5 font-bold text-gray-500 dark:text-white/50"><Clock size={9} />{d.hora_publicacao.slice(0,5)}</span>}
+                                    {horaCardExibida(d) && <span className="flex items-center gap-0.5 font-bold text-gray-500 dark:text-white/50"><Clock size={9} />{horaCardExibida(d).slice(0,5)}</span>}
                                   </div>
                                 </div>
                               </div>
@@ -2173,10 +2223,20 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                     className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
                 </div>
                 <div>
-                  <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Hora {isSocialMedia && <span className="text-red-500">*</span>}</label>
+                  <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Horário de postagem <span className="text-red-500">*</span></label>
                   <input type="time" value={novoPostForm.hora_publicacao} onChange={e => setNovoPostForm({...novoPostForm, hora_publicacao: e.target.value})}
-                    className={'w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent ' + (isSocialMedia && !novoPostForm.hora_publicacao ? 'border-red-300' : 'border-gray-200')} />
+                    className={'w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent ' + (!novoPostForm.hora_publicacao ? 'border-red-300' : 'border-gray-200')} />
                 </div>
+                {novoPostForm.destino === 'design' && (
+                  <div>
+                    <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Horário de entrega (designer) <span className="text-red-500">*</span></label>
+                    <input type="time" value={novoPostForm.hora_entrega} onChange={e => setNovoPostForm({...novoPostForm, hora_entrega: e.target.value})}
+                      className={'w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent ' + ((!novoPostForm.hora_entrega || (novoPostForm.hora_publicacao && novoPostForm.hora_entrega >= novoPostForm.hora_publicacao)) ? 'border-red-300' : 'border-gray-200')} />
+                    {novoPostForm.hora_entrega && novoPostForm.hora_publicacao && novoPostForm.hora_entrega >= novoPostForm.hora_publicacao && (
+                      <p className="text-[10px] text-red-500 mt-1">Deve ser ANTES do horário de postagem</p>
+                    )}
+                  </div>
+                )}
               </div>
               {/* Tipo de Conteudo */}
               <div>
@@ -2353,7 +2413,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                             titulo: d.titulo||'', descricao: d.descricao||'', conteudo: d.conteudo||'',
                             referencia: d.referencia||'', musica: d.musica||'',
                             data_vencimento: d.data_vencimento||'', data_publicacao: d.data_publicacao||'',
-                            hora_publicacao: d.hora_publicacao||'', collaborators: d.collaborators||'',
+                            hora_publicacao: d.hora_publicacao||'', hora_entrega: d.hora_entrega||'', collaborators: d.collaborators||'',
                             tipo_conteudo: d.tipo_conteudo||'', formato: d.formato||'',
                             plataforma: d.plataforma||'Instagram', status: d.status||'pendente',
                             id_evento: d.id_evento||'',
@@ -2428,14 +2488,29 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                               disabled={isDateReadOnly}
                               className={inputCls + dateDisabledCls} />
                           </div>
-                          <div>
-                            <label className="text-[11px] font-semibold text-gray-500 dark:text-white/50 mb-1.5 flex items-center gap-1.5">
-                              <Clock size={12} /> Hora
-                            </label>
-                            <input type="time" value={editForm.hora_publicacao||''} onChange={e => !isDateReadOnly && setEditForm({...editForm, hora_publicacao: e.target.value})}
-                              disabled={isDateReadOnly}
-                              className={inputCls + dateDisabledCls} />
-                          </div>
+                          {!isDesigner && (
+                            <div>
+                              <label className="text-[11px] font-semibold text-gray-500 dark:text-white/50 mb-1.5 flex items-center gap-1.5">
+                                <Clock size={12} /> Horário de postagem
+                              </label>
+                              <input type="time" value={editForm.hora_publicacao||''} onChange={e => !isDateReadOnly && setEditForm({...editForm, hora_publicacao: e.target.value})}
+                                disabled={isDateReadOnly}
+                                className={inputCls + dateDisabledCls} />
+                            </div>
+                          )}
+                          {editForm.aparecer_designer && (
+                            <div>
+                              <label className="text-[11px] font-semibold text-gray-500 dark:text-white/50 mb-1.5 flex items-center gap-1.5">
+                                <Clock size={12} /> Horário de entrega (designer) {!isDesigner && <span className="text-red-500">*</span>}
+                              </label>
+                              <input type="time" value={editForm.hora_entrega||''} onChange={e => !isDateReadOnly && setEditForm({...editForm, hora_entrega: e.target.value})}
+                                disabled={isDateReadOnly}
+                                className={inputCls + dateDisabledCls + ((!isDesigner && editForm.hora_publicacao && editForm.hora_entrega && editForm.hora_entrega >= editForm.hora_publicacao) ? ' border-red-300' : '')} />
+                              {!isDesigner && editForm.hora_entrega && editForm.hora_publicacao && editForm.hora_entrega >= editForm.hora_publicacao && (
+                                <p className="text-[10px] text-red-500 mt-1">Deve ser ANTES do horário de postagem</p>
+                              )}
+                            </div>
+                          )}
                         </div>
                         <div className="mt-3">
                           <label className="text-[11px] font-semibold text-gray-500 dark:text-white/50 mb-1.5 block">Collaborators</label>

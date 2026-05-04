@@ -15,22 +15,21 @@ function combinarDataHora(dataStr, horaStr) {
 }
 
 // Tolerancia de 15 min apos o "ponto de atraso" para nao disparar no minuto exato.
-// Social media: ponto = hora de publicacao -> dispara em (publicacao + 15min)
-// Designer: deadline = publicacao - 1h -> dispara em (publicacao - 1h + 15min) = (publicacao - 45min)
-function calcularAlerta(publicacao, agora, tipoFluxo) {
-  if (!publicacao) return null;
-  if (tipoFluxo === 'designer') {
-    const limite = new Date(publicacao.getTime() - ANTECEDENCIA_MS + TOLERANCIA_ATRASO_MS);
-    return agora >= limite ? 'atraso' : null;
-  }
-  const limite = new Date(publicacao.getTime() + TOLERANCIA_ATRASO_MS);
+// Social media: ponto = hora_publicacao -> dispara em (hora_publicacao + 15min)
+// Designer:    ponto = hora_entrega    -> dispara em (hora_entrega + 15min)
+function calcularAlerta(referencia, agora) {
+  if (!referencia) return null;
+  const limite = new Date(referencia.getTime() + TOLERANCIA_ATRASO_MS);
   return agora >= limite ? 'atraso' : null;
 }
 
 async function processarLinha(pool, EVO, KEY, INST, l, tipoFluxo) {
   const agora = new Date();
-  const publicacao = combinarDataHora(l.data_publicacao, l.hora_publicacao);
-  const alerta = calcularAlerta(publicacao, agora, tipoFluxo);
+  // Para designer, usa hora_entrega (definida pelo SM); para SM, usa hora_publicacao.
+  const horaRef = tipoFluxo === 'designer' ? l.hora_entrega : l.hora_publicacao;
+  if (!horaRef) return false;
+  const referencia = combinarDataHora(l.data_publicacao, horaRef);
+  const alerta = calcularAlerta(referencia, agora);
   if (!alerta) return false;
 
   const refTipo = `cronograma_marketing_${tipoFluxo}`;
@@ -54,24 +53,12 @@ async function processarLinha(pool, EVO, KEY, INST, l, tipoFluxo) {
   const eventoLabel = l.evento_nome ? ` _(${l.evento_nome})_` : '';
   const fluxoLabel = tipoFluxo === 'designer' ? 'Designer' : 'Social Media';
 
-  // Para designer, deadline = publicacao - 1h (formatado HH:MM)
-  function deadlineDesigner(horaStr) {
-    const m = String(horaStr || '').match(/^(\d{1,2}):(\d{2})/);
-    if (!m) return horaStr;
-    const totalMin = Number(m[1]) * 60 + Number(m[2]) - 60;
-    if (totalMin < 0) return '00:00';
-    const hh = String(Math.floor(totalMin / 60)).padStart(2, '0');
-    const mm = String(totalMin % 60).padStart(2, '0');
-    return `${hh}:${mm}`;
-  }
-
   let texto;
   if (tipoFluxo === 'designer') {
-    const deadline = deadlineDesigner(l.hora_publicacao);
     texto =
       `🔴 *Entrega atrasada* — Designer\n` +
       `*${l.titulo}*${eventoLabel}\n` +
-      `Publicação às ${l.hora_publicacao}, entrega era pra estar pronta às ${deadline}.\n` +
+      `Entrega era pra estar pronta às ${l.hora_entrega}.\n` +
       `Marque a demanda como *recebido* assim que entregar.\n` +
       `Responsável: ${responsavelLabel}`;
   } else {
@@ -107,7 +94,7 @@ async function tick(pool, EVO, KEY, INST) {
     // nao entregou, o atraso eh dele, nao do SM.
     const sm = await pool.query(`
       SELECT
-        c.id, c.titulo, c.data_publicacao, c.hora_publicacao, c.org_id,
+        c.id, c.titulo, c.data_publicacao, c.hora_publicacao, c.hora_entrega, c.org_id,
         e.nome AS evento_nome,
         u.nome AS responsavel_nome,
         u.telefone_whatsapp AS responsavel_telefone,
@@ -134,7 +121,7 @@ async function tick(pool, EVO, KEY, INST) {
     // Filtra apenas demandas com data_publicacao >= HOJE no fuso de Brasilia (sem retroativo)
     const ds = await pool.query(`
       SELECT
-        c.id, c.titulo, c.data_publicacao, c.hora_publicacao, c.org_id,
+        c.id, c.titulo, c.data_publicacao, c.hora_publicacao, c.hora_entrega, c.org_id,
         e.nome AS evento_nome,
         u.nome AS responsavel_nome,
         u.telefone_whatsapp AS responsavel_telefone,
@@ -148,7 +135,7 @@ async function tick(pool, EVO, KEY, INST) {
         AND c.status NOT IN ('em_revisao','aprovado','publicado','concluido','cancelado')
         AND o.jid_grupo_equipe IS NOT NULL AND o.jid_grupo_equipe <> ''
         AND c.data_publicacao IS NOT NULL
-        AND c.hora_publicacao IS NOT NULL
+        AND c.hora_entrega IS NOT NULL AND c.hora_entrega <> ''
         AND c.data_publicacao ~ '^\\d{4}-\\d{2}-\\d{2}$'
         AND c.data_publicacao::date >= (NOW() AT TIME ZONE 'America/Sao_Paulo')::date
         AND c.is_impresso IS NOT TRUE

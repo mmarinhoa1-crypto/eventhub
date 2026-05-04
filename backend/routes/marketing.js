@@ -8,6 +8,29 @@ module.exports = function({ pool, axios, auth, upload, CLAUDE }) {
   const IG_REDIRECT_URI = 'https://app.314br.com/api/instagram/callback';
   const IG_REDIRECT_URI_DIRECT = 'https://app.314br.com/api/instagram/callback-direct';
 
+// Helper: valida regras de horario de entrega vs publicacao.
+// - aparecerDesigner=true exige hora_entrega
+// - hora_entrega deve ser estritamente anterior a hora_publicacao
+// Retorna string com mensagem de erro, ou null se ok.
+function validarHorarios(aparecerDesigner, horaPublicacao, horaEntrega) {
+  if (aparecerDesigner && (!horaEntrega || !String(horaEntrega).trim())) {
+    return 'Horario de entrega e obrigatorio quando "Aparecer para o designer" esta ativo';
+  }
+  if (horaPublicacao && horaEntrega) {
+    const re = /^([0-2]?[0-9]):([0-5][0-9])/;
+    const mp = re.exec(String(horaPublicacao));
+    const me = re.exec(String(horaEntrega));
+    if (mp && me) {
+      const minP = Number(mp[1]) * 60 + Number(mp[2]);
+      const minE = Number(me[1]) * 60 + Number(me[2]);
+      if (minE >= minP) {
+        return 'Horario de entrega deve ser anterior ao horario de postagem';
+      }
+    }
+  }
+  return null;
+}
+
 // === BRIEFINGS DE MARKETING ===
 router.get('/api/briefings/todos',auth,async(req,res)=>{try{
 const r=await pool.query('SELECT b.*, e.nome as evento_nome FROM briefings b LEFT JOIN eventos e ON b.id_evento=e.id WHERE b.org_id=$1 ORDER BY b.criado_em DESC',[req.user.org_id]);
@@ -63,8 +86,11 @@ res.json(r.rows)}catch(e){res.status(500).json({erro:e.message})}});
 router.post('/api/eventos/:id/cronograma',auth,async(req,res)=>{try{
 const b=req.body;
 if(!b.hora_publicacao||!b.hora_publicacao.toString().trim())return res.status(400).json({erro:'Horario de publicacao e obrigatorio'});
-const r=await pool.query('INSERT INTO cronograma_marketing(org_id,id_evento,titulo,plataforma,data_publicacao,hora_publicacao,conteudo,hashtags,formato,status,collaborators,aparecer_designer,descricao,tipo_conteudo,referencia,musica) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING *',
-[req.user.org_id,req.params.id,b.titulo,b.plataforma||'',b.data_publicacao||'',b.hora_publicacao||'',b.conteudo||'',b.hashtags||'',b.formato||'',b.status||'pendente',b.collaborators||'',b.destino==='design',b.descricao||'',b.tipo_conteudo||'',b.referencia||'',b.musica||'']);
+const aparecerDesigner = b.destino==='design' || b.aparecer_designer===true;
+const erroHor = validarHorarios(aparecerDesigner, b.hora_publicacao, b.hora_entrega);
+if (erroHor) return res.status(400).json({erro:erroHor});
+const r=await pool.query('INSERT INTO cronograma_marketing(org_id,id_evento,titulo,plataforma,data_publicacao,hora_publicacao,hora_entrega,conteudo,hashtags,formato,status,collaborators,aparecer_designer,descricao,tipo_conteudo,referencia,musica) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING *',
+[req.user.org_id,req.params.id,b.titulo,b.plataforma||'',b.data_publicacao||'',b.hora_publicacao||'',b.hora_entrega||null,b.conteudo||'',b.hashtags||'',b.formato||'',b.status||'pendente',b.collaborators||'',aparecerDesigner,b.descricao||'',b.tipo_conteudo||'',b.referencia||'',b.musica||'']);
 const post=r.rows[0];
 // Criar briefing automaticamente vinculado ao post (compatibilidade)
 try{
@@ -83,7 +109,19 @@ res.json({sucesso:true,ativo:!!ativo});
 
 router.patch('/api/cronograma/:id',auth,async(req,res)=>{try{
 const b=req.body;const fields=[];const vals=[];let idx=1;
-['titulo','plataforma','data_publicacao','hora_publicacao','conteudo','hashtags','formato','status','feedback','auto_publish','boost_enabled','boost_budget','boost_duration','boost_age_min','boost_age_max','boost_cities','collaborators','id_evento','aparecer_designer','descricao','referencia','musica','legenda','tipo_conteudo','is_impresso'].forEach(function(k){if(b[k]!==undefined){fields.push(k+'=$'+idx);vals.push(b[k]);idx++}});
+// Se o PATCH toca em horarios ou aparecer_designer, valida considerando o estado atual mesclado.
+if (b.hora_publicacao!==undefined || b.hora_entrega!==undefined || b.aparecer_designer!==undefined) {
+  const atual = await pool.query('SELECT hora_publicacao, hora_entrega, aparecer_designer FROM cronograma_marketing WHERE id=$1 AND org_id=$2',[req.params.id,req.user.org_id]);
+  if (atual.rows[0]) {
+    const cur = atual.rows[0];
+    const horaPub = b.hora_publicacao!==undefined ? b.hora_publicacao : cur.hora_publicacao;
+    const horaEnt = b.hora_entrega!==undefined ? b.hora_entrega : cur.hora_entrega;
+    const apDes  = b.aparecer_designer!==undefined ? b.aparecer_designer : cur.aparecer_designer;
+    const erroHor = validarHorarios(apDes, horaPub, horaEnt);
+    if (erroHor) return res.status(400).json({erro:erroHor});
+  }
+}
+['titulo','plataforma','data_publicacao','hora_publicacao','hora_entrega','conteudo','hashtags','formato','status','feedback','auto_publish','boost_enabled','boost_budget','boost_duration','boost_age_min','boost_age_max','boost_cities','collaborators','id_evento','aparecer_designer','descricao','referencia','musica','legenda','tipo_conteudo','is_impresso'].forEach(function(k){if(b[k]!==undefined){fields.push(k+'=$'+idx);vals.push(b[k]);idx++}});
 vals.push(parseInt(req.params.id));vals.push(req.user.org_id);
 const r=await pool.query('UPDATE cronograma_marketing SET '+fields.join(',')+' WHERE id=$'+idx+' AND org_id=$'+(idx+1)+' RETURNING *',vals);
 const updated=r.rows[0];
