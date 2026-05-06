@@ -134,9 +134,6 @@ export default function MinhasDemandas() {
   const [dragOverDay, setDragOverDay] = useState(null)
   const [cardOrder, setCardOrder] = useState({})
   const [dragOverCard, setDragOverCard] = useState(null)
-  const [etiquetasStore, setEtiquetasStore] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('eventhub_etiquetas') || '{}') } catch { return {} }
-  })
   const [tagsStore, setTagsStore] = useState({})
   const [novoPostForm, setNovoPostForm] = useState({ titulo: '', plataforma: 'Instagram', data_publicacao: '', hora_publicacao: '', hora_entrega: '', conteudo: '', tipo_conteudo: '', formato: '', descricao: '', referencia: '', musica: '', destino: 'social', status: 'pendente', collaborators: '', id_evento: '', etiquetas: [] })
   const [novoPostArquivos, setNovoPostArquivos] = useState([])
@@ -347,7 +344,8 @@ export default function MinhasDemandas() {
   }
 
   async function salvarEdicao() {
-    if (editForm.hora_publicacao !== undefined && !editForm.hora_publicacao?.toString().trim()) {
+    const isImpresso = (editForm.etiquetas || []).includes('impresso') || !!editForm.is_impresso
+    if (!isImpresso && editForm.hora_publicacao !== undefined && !editForm.hora_publicacao?.toString().trim()) {
       toast.error('Horário de postagem é obrigatório')
       return
     }
@@ -362,9 +360,13 @@ export default function MinhasDemandas() {
       }
     }
     try {
-      await api.patch('/cronograma/' + detalhe.id, editForm)
+      // etiquetas / is_impresso sao gerenciados pelo toggle direto (toggleEtiqueta).
+      // Filtra do payload aqui pra evitar race condition (sobrescrever toggle recente).
+      // eslint-disable-next-line no-unused-vars
+      const { etiquetas, is_impresso, ...payload } = editForm
+      await api.patch('/cronograma/' + detalhe.id, payload)
       toast.success('Atualizado!')
-      setDetalhe({...detalhe, ...editForm})
+      setDetalhe({...detalhe, ...payload})
       setEditMode(false)
       carregar()
     } catch (err) { toast.error(err.response?.data?.erro || 'Erro ao salvar') }
@@ -381,7 +383,8 @@ export default function MinhasDemandas() {
   }
 
   async function adminSalvarEdicao() {
-    if (adminEditForm.hora_publicacao !== undefined && !adminEditForm.hora_publicacao?.toString().trim()) {
+    const isImpresso = (adminEditForm.etiquetas || []).includes('impresso') || !!adminEditForm.is_impresso
+    if (!isImpresso && adminEditForm.hora_publicacao !== undefined && !adminEditForm.hora_publicacao?.toString().trim()) {
       toast.error('Horário de postagem é obrigatório')
       return
     }
@@ -396,9 +399,11 @@ export default function MinhasDemandas() {
       }
     }
     try {
-      await api.patch('/cronograma/' + adminDetalhe.id, adminEditForm)
+      // eslint-disable-next-line no-unused-vars
+      const { etiquetas, is_impresso, ...payload } = adminEditForm
+      await api.patch('/cronograma/' + adminDetalhe.id, payload)
       toast.success('Atualizado!')
-      setAdminDetalhe({...adminDetalhe, ...adminEditForm})
+      setAdminDetalhe({...adminDetalhe, ...payload})
       setAdminEditMode(false)
       carregar()
     } catch (err) { toast.error(err.response?.data?.erro || 'Erro ao salvar') }
@@ -497,51 +502,24 @@ export default function MinhasDemandas() {
     } catch { toast.error('Erro ao atualizar data') }
   }
 
-  function getEtiquetas(tipo, id) {
-    return etiquetasStore[(tipo || 'item') + '-' + id] || []
-  }
-
-  function saveEtiquetas(tipo, id, novas) {
-    const key = (tipo || 'item') + '-' + id
-    const novo = { ...etiquetasStore, [key]: novas }
-    setEtiquetasStore(novo)
-    try { localStorage.setItem('eventhub_etiquetas', JSON.stringify(novo)) } catch {}
-  }
-
-  function toggleEtiqueta(tipo, id, etiqueta) {
-    const atual = getEtiquetas(tipo, id)
-    saveEtiquetas(tipo, id, atual.includes(etiqueta) ? atual.filter(e => e !== etiqueta) : [...atual, etiqueta])
-  }
-
-  function addEtiquetaCustom(tipo, id, texto) {
-    const t = texto.trim()
-    if (!t) return
-    const atual = getEtiquetas(tipo, id)
-    if (!atual.includes(t)) saveEtiquetas(tipo, id, [...atual, t])
-  }
-
-  function removeEtiqueta(tipo, id, etiqueta) {
-    saveEtiquetas(tipo, id, getEtiquetas(tipo, id).filter(e => e !== etiqueta))
-  }
-
-  // Combina etiquetas locais (localStorage) com a etiqueta 'impresso' que vem do banco.
-  // Pra exibicao: usar SEMPRE getEtiquetasFinal em vez de getEtiquetas direto.
+  // Etiquetas vem do banco (campo cronograma_marketing.etiquetas TEXT[]).
+  // Compartilhadas entre toda a equipe; nao usa mais localStorage.
   function getEtiquetasFinal(d) {
-    const local = getEtiquetas(d._tipo || 'item', d.id) || []
-    const semImpresso = local.filter(e => e !== 'impresso')
-    return d.is_impresso ? [...semImpresso, 'impresso'] : semImpresso
+    return Array.isArray(d.etiquetas) ? d.etiquetas : []
   }
 
-  // Toggle especial pra etiqueta 'impresso' que vai pro banco (worker WA filtra por ela).
-  async function toggleImpresso(d) {
-    const novo = !d.is_impresso
+  // Toggle de etiqueta: faz PATCH na API com o array atualizado.
+  async function toggleEtiqueta(d, etiqueta) {
+    const atuais = Array.isArray(d.etiquetas) ? d.etiquetas : []
+    const novas = atuais.includes(etiqueta) ? atuais.filter(e => e !== etiqueta) : [...atuais, etiqueta]
     try {
-      await api.patch('/cronograma/' + d.id, { is_impresso: novo })
-      d.is_impresso = novo
+      await api.patch('/cronograma/' + d.id, { etiquetas: novas })
+      d.etiquetas = novas
+      // Mantem is_impresso espelhado localmente (backend tambem faz, mas evita refetch)
+      d.is_impresso = novas.includes('impresso')
       carregar()
-      toast.success(novo ? 'Marcado como Impresso' : 'Removida etiqueta Impresso')
     } catch (e) {
-      toast.error('Erro ao atualizar Impresso: ' + (e.response?.data?.erro || e.message))
+      toast.error('Erro ao atualizar etiqueta: ' + (e.response?.data?.erro || e.message))
     }
   }
 
@@ -652,8 +630,9 @@ export default function MinhasDemandas() {
       toast.error('Preencha o titulo e selecione um evento')
       return
     }
-    // Horário obrigatório para todos ao criar nova demanda
-    if (!novoPostForm.hora_publicacao?.trim()) {
+    // Horário de postagem deixa de ser obrigatório quando "Impresso" está marcado.
+    const isImpresso = (novoPostForm.etiquetas || []).includes('impresso')
+    if (!isImpresso && !novoPostForm.hora_publicacao?.trim()) {
       toast.error('Preencha o horário de postagem')
       return
     }
@@ -670,15 +649,9 @@ export default function MinhasDemandas() {
     }
     setCriandoPost(true)
     try {
-      const { id_evento, etiquetas, ...dados } = novoPostForm
-      // 'impresso' vai pro banco via is_impresso; demais etiquetas ficam no localStorage
-      const etiquetasLocal = (etiquetas || []).filter(e => e !== 'impresso')
-      dados.is_impresso = (etiquetas || []).includes('impresso')
+      const { id_evento, ...dados } = novoPostForm
+      // Backend salva etiquetas no banco e sincroniza is_impresso automaticamente
       const { data: post } = await api.post('/eventos/' + id_evento + '/cronograma', dados)
-      // Salvar etiquetas locais usando o id retornado pelo backend
-      if (etiquetasLocal.length && post?.id) {
-        saveEtiquetas('post', post.id, etiquetasLocal)
-      }
       if (novoPostArquivos.length > 0) {
         for (let i = 0; i < novoPostArquivos.length; i++) {
           const file = novoPostArquivos[i].file
@@ -1203,7 +1176,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                     titulo: d.titulo||'', descricao: d.descricao||'', conteudo: d.conteudo||'',
                                     referencia: d.referencia||'', musica: d.musica||'',
                                     data_vencimento: d.data_vencimento||'', data_publicacao: d.data_publicacao||'',
-                                    hora_publicacao: d.hora_publicacao||'', hora_entrega: d.hora_entrega||'', collaborators: d.collaborators||'',
+                                    hora_publicacao: d.hora_publicacao||'', hora_entrega: d.hora_entrega||'', etiquetas: Array.isArray(d.etiquetas) ? d.etiquetas : [], is_impresso: !!d.is_impresso, collaborators: d.collaborators||'',
                                     tipo_conteudo: d.tipo_conteudo||'', formato: d.formato||'',
                                     plataforma: d.plataforma||'Instagram', status: d.status||'pendente',
                                     id_evento: d.id_evento||'',
@@ -1245,7 +1218,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                               {ETIQUETAS_PADRAO.map(et => {
                                 const ativa = etqs.includes(et.key)
                                 return (
-                                  <button key={et.key} onClick={() => { if (isReadOnly) return; if (et.key === 'impresso') toggleImpresso(d); else toggleEtiqueta(d._tipo, d.id, et.key) }} disabled={isReadOnly}
+                                  <button key={et.key} onClick={() => { if (isReadOnly) return; toggleEtiqueta(d, et.key) }} disabled={isReadOnly}
                                     className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border-2 transition-all disabled:cursor-not-allowed"
                                     style={ativa
                                       ? { backgroundColor: isDark ? et.darkBg : et.bg, color: isDark ? et.darkColor : et.color, borderColor: isDark ? et.darkBorder : et.border }
@@ -2440,7 +2413,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                             titulo: d.titulo||'', descricao: d.descricao||'', conteudo: d.conteudo||'',
                             referencia: d.referencia||'', musica: d.musica||'',
                             data_vencimento: d.data_vencimento||'', data_publicacao: d.data_publicacao||'',
-                            hora_publicacao: d.hora_publicacao||'', hora_entrega: d.hora_entrega||'', collaborators: d.collaborators||'',
+                            hora_publicacao: d.hora_publicacao||'', hora_entrega: d.hora_entrega||'', etiquetas: Array.isArray(d.etiquetas) ? d.etiquetas : [], is_impresso: !!d.is_impresso, collaborators: d.collaborators||'',
                             tipo_conteudo: d.tipo_conteudo||'', formato: d.formato||'',
                             plataforma: d.plataforma||'Instagram', status: d.status||'pendente',
                             id_evento: d.id_evento||'',
@@ -2709,7 +2682,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                         {ETIQUETAS_PADRAO.map(et => {
                           const ativa = etqs.includes(et.key)
                           return (
-                            <button key={et.key} onClick={() => { if (et.key === 'impresso') toggleImpresso(d); else toggleEtiqueta(d._tipo, d.id, et.key) }}
+                            <button key={et.key} onClick={() => { toggleEtiqueta(d, et.key) }}
                               className="flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full border-2 transition-all"
                               style={ativa
                                 ? { backgroundColor: isDark ? et.darkBg : et.bg, color: isDark ? et.darkColor : et.color, borderColor: isDark ? et.darkBorder : et.border }
