@@ -89,8 +89,8 @@ if(!b.hora_publicacao||!b.hora_publicacao.toString().trim())return res.status(40
 const aparecerDesigner = b.destino==='design' || b.aparecer_designer===true;
 const erroHor = validarHorarios(aparecerDesigner, b.hora_publicacao, b.hora_entrega);
 if (erroHor) return res.status(400).json({erro:erroHor});
-const r=await pool.query('INSERT INTO cronograma_marketing(org_id,id_evento,titulo,plataforma,data_publicacao,hora_publicacao,hora_entrega,conteudo,hashtags,formato,status,collaborators,aparecer_designer,descricao,tipo_conteudo,referencia,musica) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING *',
-[req.user.org_id,req.params.id,b.titulo,b.plataforma||'',b.data_publicacao||'',b.hora_publicacao||'',b.hora_entrega||null,b.conteudo||'',b.hashtags||'',b.formato||'',b.status||'pendente',b.collaborators||'',aparecerDesigner,b.descricao||'',b.tipo_conteudo||'',b.referencia||'',b.musica||'']);
+const r=await pool.query('INSERT INTO cronograma_marketing(org_id,id_evento,titulo,plataforma,data_publicacao,hora_publicacao,hora_entrega,conteudo,hashtags,formato,status,collaborators,aparecer_designer,descricao,tipo_conteudo,referencia,musica,is_impresso) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18) RETURNING *',
+[req.user.org_id,req.params.id,b.titulo,b.plataforma||'',b.data_publicacao||'',b.hora_publicacao||'',b.hora_entrega||null,b.conteudo||'',b.hashtags||'',b.formato||'',b.status||'pendente',b.collaborators||'',aparecerDesigner,b.descricao||'',b.tipo_conteudo||'',b.referencia||'',b.musica||'',!!b.is_impresso]);
 const post=r.rows[0];
 // Criar briefing automaticamente vinculado ao post (compatibilidade)
 try{

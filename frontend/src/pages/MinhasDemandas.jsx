@@ -138,7 +138,7 @@ export default function MinhasDemandas() {
     try { return JSON.parse(localStorage.getItem('eventhub_etiquetas') || '{}') } catch { return {} }
   })
   const [tagsStore, setTagsStore] = useState({})
-  const [novoPostForm, setNovoPostForm] = useState({ titulo: '', plataforma: 'Instagram', data_publicacao: '', hora_publicacao: '', hora_entrega: '', conteudo: '', tipo_conteudo: '', formato: '', descricao: '', referencia: '', musica: '', destino: 'social', status: 'pendente', collaborators: '', id_evento: '' })
+  const [novoPostForm, setNovoPostForm] = useState({ titulo: '', plataforma: 'Instagram', data_publicacao: '', hora_publicacao: '', hora_entrega: '', conteudo: '', tipo_conteudo: '', formato: '', descricao: '', referencia: '', musica: '', destino: 'social', status: 'pendente', collaborators: '', id_evento: '', etiquetas: [] })
   const [novoPostArquivos, setNovoPostArquivos] = useState([])
   const [criandoPost, setCriandoPost] = useState(false)
   const [designerTab, setDesignerTab] = useState('briefings')
@@ -670,8 +670,15 @@ export default function MinhasDemandas() {
     }
     setCriandoPost(true)
     try {
-      const { id_evento, ...dados } = novoPostForm
+      const { id_evento, etiquetas, ...dados } = novoPostForm
+      // 'impresso' vai pro banco via is_impresso; demais etiquetas ficam no localStorage
+      const etiquetasLocal = (etiquetas || []).filter(e => e !== 'impresso')
+      dados.is_impresso = (etiquetas || []).includes('impresso')
       const { data: post } = await api.post('/eventos/' + id_evento + '/cronograma', dados)
+      // Salvar etiquetas locais usando o id retornado pelo backend
+      if (etiquetasLocal.length && post?.id) {
+        saveEtiquetas('post', post.id, etiquetasLocal)
+      }
       if (novoPostArquivos.length > 0) {
         for (let i = 0; i < novoPostArquivos.length; i++) {
           const file = novoPostArquivos[i].file
@@ -688,7 +695,7 @@ export default function MinhasDemandas() {
       }
       toast.success('Post criado!')
       setShowNovoPost(false)
-      setNovoPostForm({ titulo: '', plataforma: 'Instagram', data_publicacao: '', hora_publicacao: '', hora_entrega: '', conteudo: '', tipo_conteudo: '', formato: '', descricao: '', referencia: '', musica: '', destino: 'social', status: 'pendente', collaborators: '', id_evento: '' })
+      setNovoPostForm({ titulo: '', plataforma: 'Instagram', data_publicacao: '', hora_publicacao: '', hora_entrega: '', conteudo: '', tipo_conteudo: '', formato: '', descricao: '', referencia: '', musica: '', destino: 'social', status: 'pendente', collaborators: '', id_evento: '', etiquetas: [] })
       novoPostArquivos.forEach(item => { if (item.previewUrl) URL.revokeObjectURL(item.previewUrl) })
       setNovoPostArquivos([])
       carregar()
@@ -2262,6 +2269,26 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                   ))}
                 </div>
               </div>
+              {/* Etiquetas (so SM/admin/diretor) */}
+              {(isSocialMedia || isAdmin || isDiretor) && (
+                <div>
+                  <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2 block">Etiquetas</label>
+                  <div className="flex gap-2 flex-wrap">
+                    {ETIQUETAS_PADRAO.map(et => {
+                      const ativa = (novoPostForm.etiquetas || []).includes(et.key)
+                      return (
+                        <button key={et.key} type="button" onClick={() => setNovoPostForm(f => ({...f, etiquetas: ativa ? (f.etiquetas||[]).filter(x => x !== et.key) : [...(f.etiquetas||[]), et.key]}))}
+                          className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border-2 transition-all"
+                          style={ativa
+                            ? { backgroundColor: isDark ? et.darkBg : et.bg, color: isDark ? et.darkColor : et.color, borderColor: isDark ? et.darkBorder : et.border }
+                            : { backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
+                          {et.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
               {/* Conteudo */}
               <div>
                 <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Conteudo / Legenda</label>
