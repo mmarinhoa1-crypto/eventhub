@@ -49,6 +49,7 @@ const ETIQUETAS_PADRAO = [
   { key: 'em_foco',   label: 'Em Foco',    color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe',   darkColor: '#a78bfa', darkBg: 'rgba(124,58,237,0.18)',  darkBorder: 'rgba(124,58,237,0.35)' },
   { key: 'organico',  label: 'Orgânico',   color: '#10b981', bg: '#ecfdf5', border: '#a7f3d0',   darkColor: '#34d399', darkBg: 'rgba(16,185,129,0.18)',  darkBorder: 'rgba(16,185,129,0.35)' },
   { key: 'impresso',  label: 'Impresso',   color: '#ea580c', bg: '#fff7ed', border: '#fdba74',   darkColor: '#fb923c', darkBg: 'rgba(234,88,12,0.18)',  darkBorder: 'rgba(234,88,12,0.35)' },
+  { key: 'atencao',   label: 'Atenção',    color: '#ca8a04', bg: '#fefce8', border: '#fde047',   darkColor: '#facc15', darkBg: 'rgba(202,138,4,0.18)',   darkBorder: 'rgba(202,138,4,0.35)' },
 ]
 
 const TAGS_STATUS = [
@@ -1325,7 +1326,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                 <div>
                                   <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2 block">Tipo de Conteúdo</label>
                                   <div className="flex gap-2 flex-wrap">
-                                    {['GIF','VIDEO','ESTATICA','FOTO ORGÂNICA','VÍDEO ORGÂNICO','INTERAÇÃO'].map(tc => {
+                                    {['GIF','VIDEO','ESTATICA','FOTO ORGÂNICA','VÍDEO ORGÂNICO','INTERAÇÃO','CAPA REELS'].map(tc => {
                                       const ativo = (adminEditForm.tipo_conteudo||'').split(',').includes(tc)
                                       return (
                                         <button key={tc} type="button" onClick={() => toggleMultiAdmin('tipo_conteudo', tc)}
@@ -2222,7 +2223,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
               <div>
                 <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2 block">Tipo de Conteudo</label>
                 <div className="flex gap-2 flex-wrap">
-                  {['GIF','VIDEO','ESTATICA','FOTO ORGÂNICA','VÍDEO ORGÂNICO','INTERAÇÃO'].map(tc => (
+                  {['GIF','VIDEO','ESTATICA','FOTO ORGÂNICA','VÍDEO ORGÂNICO','INTERAÇÃO','CAPA REELS'].map(tc => (
                     <button key={tc} type="button" onClick={() => toggleNovoPostMulti('tipo_conteudo', tc)}
                       className={'px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition ' + (novoPostForm.tipo_conteudo?.split(',').includes(tc) ? 'border-blue-500 bg-blue-500 text-white shadow-md' : 'border-gray-200 bg-white text-gray-500 hover:border-blue-300')}>
                       {tc === 'ESTATICA' ? '🖼️' : tc === 'VIDEO' ? '🎬' : '✨'} {tc}
