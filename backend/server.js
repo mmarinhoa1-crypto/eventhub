@@ -1,4 +1,8 @@
-const express=require('express'),ExcelJS=require('exceljs'),multer=require('multer'),path=require('path'),cors=require('cors'),axios=require('axios'),{Pool}=require('pg'),bcrypt=require('bcryptjs'),jwt=require('jsonwebtoken');
+const express=require('express'),ExcelJS=require('exceljs'),multer=require('multer'),path=require('path'),cors=require('cors'),axios=require('axios'),pg=require('pg'),{Pool}=pg,bcrypt=require('bcryptjs'),jwt=require('jsonwebtoken');
+// Banco grava 'timestamp without time zone' em UTC. Por padrao a lib pg interpreta
+// esses valores como horario LOCAL do node (Brasilia, TZ -03), o que causa
+// deslocamento de +3h no Date enviado ao frontend. Forca interpretar como UTC.
+pg.types.setTypeParser(1114, str => str === null ? null : new Date(str + 'Z'));
 require('dotenv').config();
 const app=express();
 app.disable('x-powered-by');app.use(cors({origin:'*'}));app.use(express.json({limit:'10mb'}));
