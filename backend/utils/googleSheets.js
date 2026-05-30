@@ -1,83 +1,81 @@
-// Integracao com Google Sheets via Service Account.
-// Cada evento pode ter um google_sheet_id associado. Quando uma despesa
-// ou receita eh criada/editada/removida, sistema reescreve a aba
-// "EventHub Dados" da planilha com TODO o estado atual do evento.
-// Idempotente: sempre limpa a aba e regrava do zero.
+// Integracao com Google Sheets via OAuth do usuario.
 //
-// A planilha "bonita" do usuario fica em outra aba e puxa dados da
-// "EventHub Dados" via formulas (QUERY/FILTER/IMPORTRANGE).
+// Cada organizacao tem 1 conta Google conectada (refresh_token salvo na
+// tabela organizacoes). O sistema usa essa autorizacao pra criar
+// planilhas no Drive do proprio usuario (usando a cota gratuita de 15GB
+// do Gmail) e pra ler/escrever na aba "EventHub Dados" delas.
 //
-// Pre-requisitos:
-//  - googleapis instalado
-//  - Variavel de ambiente GOOGLE_SHEETS_CREDENTIALS_PATH apontando para o
-//    arquivo JSON da Service Account
-//  - Cada planilha alvo deve estar compartilhada com o email da
-//    Service Account (Editor)
-//  - Google Sheets API ativada no projeto GCP da Service Account
+// Por que OAuth em vez de Service Account:
+//   Service Accounts tem 0GB de quota no Drive em contas gratuitas
+//   (sem Google Workspace), entao falham ao copiar/criar arquivos com
+//   erro "Drive storage quota has been exceeded".
+//
+// Fluxo:
+//   1. User clica "Conectar Google" no UI -> /api/auth/google/start
+//   2. Google redireciona pra /api/auth/google/callback com auth code
+//   3. Backend troca code por refresh_token, salva em organizacoes
+//   4. Esta lib usa refresh_token pra obter access_token quando precisa
+//
+// O refresh_token nao expira enquanto o app estiver em modo Production
+// no Google Cloud Console (escopo drive.file e non-sensitive, nao
+// requer verificacao Google).
 
-const fs = require('fs');
 const { google } = require('googleapis');
 
 const ABA_DADOS = 'EventHub Dados';
+
 const SCOPES = [
-  'https://www.googleapis.com/auth/spreadsheets',
-  'https://www.googleapis.com/auth/drive',
+  'https://www.googleapis.com/auth/drive.file',         // criar/editar arquivos do app
+  'https://www.googleapis.com/auth/spreadsheets',       // sheets RW
+  'https://www.googleapis.com/auth/userinfo.email',     // pegar email do user pra UI
 ];
 
-let cachedAuth = null;
-let cachedSheets = null;
-let cachedDrive = null;
-
-function getAuth() {
-  if (cachedAuth) return cachedAuth;
-  const path = process.env.GOOGLE_SHEETS_CREDENTIALS_PATH;
-  if (!path) {
-    console.warn('[sheets] GOOGLE_SHEETS_CREDENTIALS_PATH nao configurado - integracao desabilitada');
-    return null;
-  }
-  try {
-    const credentials = JSON.parse(fs.readFileSync(path, 'utf8'));
-    cachedAuth = new google.auth.GoogleAuth({ credentials, scopes: SCOPES });
-    return cachedAuth;
-  } catch (e) {
-    console.error('[sheets] erro ao carregar credenciais:', e.message);
-    return null;
-  }
+function buildOAuth2Client() {
+  return new google.auth.OAuth2(
+    process.env.GOOGLE_OAUTH_CLIENT_ID,
+    process.env.GOOGLE_OAUTH_CLIENT_SECRET,
+    process.env.GOOGLE_OAUTH_REDIRECT_URI
+  );
 }
 
-function getSheetsClient() {
-  if (cachedSheets) return cachedSheets;
-  const auth = getAuth();
-  if (!auth) return null;
-  cachedSheets = google.sheets({ version: 'v4', auth });
-  return cachedSheets;
-}
-
-function getDriveClient() {
-  if (cachedDrive) return cachedDrive;
-  const auth = getAuth();
-  if (!auth) return null;
-  cachedDrive = google.drive({ version: 'v3', auth });
-  return cachedDrive;
+// Retorna um cliente OAuth2 autenticado com o refresh_token da org.
+// Lib googleapis renova access_token automaticamente quando vence.
+async function getOAuthClient(pool, orgId) {
+  if (!process.env.GOOGLE_OAUTH_CLIENT_ID || !process.env.GOOGLE_OAUTH_CLIENT_SECRET) {
+    return { client: null, reason: 'sem-oauth-config' };
+  }
+  const r = await pool.query(
+    'SELECT google_oauth_refresh_token FROM organizacoes WHERE id=$1',
+    [orgId]
+  );
+  if (!r.rows.length || !r.rows[0].google_oauth_refresh_token) {
+    return { client: null, reason: 'sem-conexao-google' };
+  }
+  const client = buildOAuth2Client();
+  client.setCredentials({ refresh_token: r.rows[0].google_oauth_refresh_token });
+  return { client };
 }
 
 // Duplica a planilha-template definida em GOOGLE_SHEETS_TEMPLATE_ID,
-// renomeia para o nome do evento, mantem na mesma pasta do template
-// (que normalmente eh a pasta "Financeiro Eventos" compartilhada com
-// a Service Account), e grava o novo ID em eventos.google_sheet_id.
+// renomeia para o nome do evento, mantem na mesma pasta do template,
+// e grava o novo ID em eventos.google_sheet_id.
 async function criarPlanilhaParaEvento(pool, eventoId) {
-  const drive = getDriveClient();
-  if (!drive) return { skipped: true, reason: 'sem-credenciais' };
-
   const TEMPLATE_ID = process.env.GOOGLE_SHEETS_TEMPLATE_ID;
   if (!TEMPLATE_ID) return { skipped: true, reason: 'sem-template-id' };
 
-  const ev = await pool.query('SELECT id, nome, google_sheet_id FROM eventos WHERE id=$1', [eventoId]);
+  const ev = await pool.query(
+    'SELECT id, nome, google_sheet_id, org_id FROM eventos WHERE id=$1',
+    [eventoId]
+  );
   if (!ev.rows.length) return { skipped: true, reason: 'evento-inexistente' };
   if (ev.rows[0].google_sheet_id && String(ev.rows[0].google_sheet_id).trim()) {
     return { skipped: true, reason: 'ja-tem-planilha', google_sheet_id: ev.rows[0].google_sheet_id };
   }
 
+  const { client, reason } = await getOAuthClient(pool, ev.rows[0].org_id);
+  if (!client) return { skipped: true, reason: reason || 'sem-oauth' };
+
+  const drive = google.drive({ version: 'v3', auth: client });
   const nomeEvento = String(ev.rows[0].nome || `Evento ${eventoId}`).trim();
 
   // Pega parents (pasta) do template pra preservar localizacao da copia
@@ -164,13 +162,13 @@ function montarLinhas({ evento, despesas, receitas }) {
 }
 
 // Sincroniza o evento na planilha. Idempotente: limpa a aba "EventHub Dados"
-// e regrava com o estado atual do banco.
-// Nao bloqueia o caller (usar em background com .catch).
+// e regrava com o estado atual do banco. Cria planilha do template se evento
+// ainda nao tem uma vinculada.
 async function sincronizarEvento(pool, eventoId) {
-  const sheets = getSheetsClient();
-  if (!sheets) return { skipped: true, reason: 'sem-credenciais' };
-
-  const ev = await pool.query('SELECT id, nome, google_sheet_id FROM eventos WHERE id=$1', [eventoId]);
+  const ev = await pool.query(
+    'SELECT id, nome, google_sheet_id, org_id FROM eventos WHERE id=$1',
+    [eventoId]
+  );
   if (!ev.rows.length) return { skipped: true, reason: 'evento-inexistente' };
   const evento = ev.rows[0];
 
@@ -188,6 +186,10 @@ async function sincronizarEvento(pool, eventoId) {
     }
   }
 
+  const { client, reason } = await getOAuthClient(pool, evento.org_id);
+  if (!client) return { skipped: true, reason: reason || 'sem-oauth' };
+  const sheets = google.sheets({ version: 'v4', auth: client });
+
   const despesas = (await pool.query(
     `SELECT id, descricao, centro_custo, quantidade, valor_unitario, valor,
             fornecedor, fonte_pagamento, data, data_vencimento, falta_pagar, situacao
@@ -203,7 +205,6 @@ async function sincronizarEvento(pool, eventoId) {
   const spreadsheetId = String(evento.google_sheet_id).trim();
   await garantirAbaDados(sheets, spreadsheetId);
 
-  // Limpa aba inteira
   await sheets.spreadsheets.values.clear({
     spreadsheetId,
     range: `${ABA_DADOS}!A:Z`,
@@ -221,17 +222,23 @@ async function sincronizarEvento(pool, eventoId) {
 }
 
 // Wrapper que dispara sync em background sem bloquear o caller.
-// Usa setImmediate pra rodar fora do ciclo atual do event loop.
 function sincronizarEventoBackground(pool, eventoId) {
   if (!eventoId) return;
   setImmediate(() => {
     sincronizarEvento(pool, eventoId)
       .then(r => {
         if (r && r.ok) console.log(`[sheets] sync ok evento=${eventoId} despesas=${r.despesas} receitas=${r.receitas}`);
-        else if (r && r.skipped) console.log(`[sheets] sync skip evento=${eventoId} (${r.reason})`);
+        else if (r && r.skipped) console.log(`[sheets] sync skip evento=${eventoId} (${r.reason}${r.detalhe ? ': ' + r.detalhe : ''})`);
       })
       .catch(e => console.error(`[sheets] sync ERRO evento=${eventoId}:`, e.message));
   });
 }
 
-module.exports = { sincronizarEvento, sincronizarEventoBackground, criarPlanilhaParaEvento };
+module.exports = {
+  sincronizarEvento,
+  sincronizarEventoBackground,
+  criarPlanilhaParaEvento,
+  buildOAuth2Client,
+  getOAuthClient,
+  SCOPES,
+};

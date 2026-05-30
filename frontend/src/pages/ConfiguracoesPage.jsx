@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Save, RefreshCw } from 'lucide-react'
+import { Save, RefreshCw, Link2, Unlink, CheckCircle2 } from 'lucide-react'
 import api from '../api/client'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
@@ -13,6 +13,8 @@ export default function ConfiguracoesPage() {
   const [org, setOrg] = useState(null)
   const [grupos, setGrupos] = useState([])
   const [jidSelecionado, setJidSelecionado] = useState('')
+  const [googleStatus, setGoogleStatus] = useState(null)
+  const [googleAction, setGoogleAction] = useState(false)
 
   function carregarConfig() {
     return api.get('/organizacao')
@@ -31,10 +33,53 @@ export default function ConfiguracoesPage() {
       .finally(() => setCarregandoGrupos(false))
   }
 
+  function carregarGoogleStatus() {
+    return api.get('/auth/google/status')
+      .then(({ data }) => setGoogleStatus(data))
+      .catch(() => { /* silencioso — se nao tem rota, ignora */ })
+  }
+
   useEffect(() => {
-    Promise.all([carregarConfig(), carregarGrupos()])
+    Promise.all([carregarConfig(), carregarGrupos(), carregarGoogleStatus()])
       .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('google') === 'connected') {
+      toast.success('Conta Google conectada com sucesso!')
+      window.history.replaceState({}, '', '/configuracoes')
+      carregarGoogleStatus()
+    } else if (params.get('google') === 'erro') {
+      toast.error('Erro ao conectar Google: ' + (params.get('motivo') || 'desconhecido'))
+      window.history.replaceState({}, '', '/configuracoes')
+    }
+  }, [])
+
+  async function conectarGoogle() {
+    setGoogleAction(true)
+    try {
+      const { data } = await api.post('/auth/google/start')
+      window.location.href = data.url
+    } catch (e) {
+      toast.error(e.response?.data?.erro || 'Erro ao iniciar conexao Google')
+      setGoogleAction(false)
+    }
+  }
+
+  async function desconectarGoogle() {
+    if (!confirm('Desconectar a conta Google? Eventos sem planilha vinculada deixarao de sincronizar ate reconectar.')) return
+    setGoogleAction(true)
+    try {
+      await api.post('/auth/google/disconnect')
+      toast.success('Conta Google desconectada')
+      carregarGoogleStatus()
+    } catch (e) {
+      toast.error(e.response?.data?.erro || 'Erro ao desconectar')
+    } finally {
+      setGoogleAction(false)
+    }
+  }
 
   async function salvar() {
     setSalvando(true)
@@ -123,10 +168,75 @@ export default function ConfiguracoesPage() {
         </div>
       </Card>
 
+      <Card>
+        <div className="p-4 space-y-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white/90">📊 Google Sheets</h3>
+            <p className="text-sm text-gray-600 dark:text-white/60 mt-1">
+              Conecte sua conta Google para que o sistema crie e atualize automaticamente as planilhas financeiras dos eventos no seu Drive.
+            </p>
+          </div>
+
+          {googleStatus?.connected ? (
+            <div className="rounded-lg border border-green-200 dark:border-green-500/30 bg-green-50 dark:bg-green-500/10 p-3">
+              <div className="flex items-start justify-between gap-3 flex-wrap">
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="text-green-600 dark:text-green-400 mt-0.5" size={18} />
+                  <div>
+                    <p className="text-sm font-medium text-green-900 dark:text-green-300">Conectado</p>
+                    <p className="text-xs text-green-700 dark:text-green-400/90">
+                      Conta: <strong>{googleStatus.email || '(email não disponível)'}</strong>
+                    </p>
+                    {googleStatus.connected_at && (
+                      <p className="text-[11px] text-green-700/80 dark:text-green-400/70">
+                        desde {new Date(googleStatus.connected_at).toLocaleString('pt-BR')}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <button
+                  onClick={desconectarGoogle}
+                  disabled={googleAction}
+                  className="text-xs text-red-600 dark:text-red-400 hover:underline disabled:opacity-50 flex items-center gap-1"
+                >
+                  <Unlink size={12} /> Desconectar
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.03] p-3">
+              <p className="text-sm text-gray-700 dark:text-white/80 mb-3">
+                Nenhuma conta Google conectada. As planilhas dos eventos não serão criadas/atualizadas automaticamente.
+              </p>
+              <button
+                onClick={conectarGoogle}
+                disabled={googleAction || !googleStatus?.oauth_configured}
+                className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-sm font-medium flex items-center gap-2"
+              >
+                <Link2 size={14} />
+                {googleAction ? 'Abrindo...' : 'Conectar conta Google'}
+              </button>
+              {googleStatus && !googleStatus.oauth_configured && (
+                <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                  ⚠ OAuth não configurado no servidor (variáveis GOOGLE_OAUTH_CLIENT_ID/SECRET ausentes).
+                </p>
+              )}
+            </div>
+          )}
+
+          {googleStatus && !googleStatus.template_configured && (
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              ⚠ Template de planilha não configurado no servidor (GOOGLE_SHEETS_TEMPLATE_ID).
+              Avise o administrador.
+            </p>
+          )}
+        </div>
+      </Card>
+
       {org && (
         <Card>
           <div className="p-4 space-y-2 text-sm">
-            <h3 className="text-lg font-semibold text-gray-900">Organização</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white/90">Organização</h3>
             <div className="grid grid-cols-2 gap-2 text-gray-700">
               <div><span className="text-gray-500">Nome:</span> {org.nome}</div>
               <div><span className="text-gray-500">Plano:</span> {org.plano}</div>
