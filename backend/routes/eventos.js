@@ -1,4 +1,5 @@
 const express = require('express');
+const { criarPlanilhaParaEvento, sincronizarEventoBackground } = require('../utils/googleSheets');
 module.exports = function({ pool, auth }) {
   const router = express.Router();
 
@@ -134,6 +135,37 @@ v.push(parseInt(req.params.id));v.push(req.user.org_id);
 const r=await pool.query('UPDATE eventos SET '+f.join(',')+' WHERE id=$'+i+' AND org_id=$'+(i+1)+' RETURNING *',v);
 if(!r.rows.length)return res.status(404).json({erro:'Evento nao encontrado'});
 res.json(r.rows[0])}catch(e){res.status(500).json({erro:e.message})}});
+
+// Cria planilha Google Sheets para o evento a partir do template configurado.
+// Usado pelo botao "Gerar planilha agora" no modal de evento (eventos antigos
+// que ainda nao tem google_sheet_id). Eventos novos ganham planilha automatica
+// na primeira despesa/receita sincronizada.
+router.post('/api/eventos/:id/gerar-planilha', auth, async (req, res) => {
+  try {
+    if (req.user.funcao !== 'admin' && req.user.funcao !== 'diretor') {
+      return res.status(403).json({ erro: 'Sem permissao' });
+    }
+    const id = parseInt(req.params.id);
+    const ev = await pool.query('SELECT id FROM eventos WHERE id=$1 AND org_id=$2', [id, req.user.org_id]);
+    if (!ev.rows.length) return res.status(404).json({ erro: 'Evento nao encontrado' });
+
+    const r = await criarPlanilhaParaEvento(pool, id);
+    if (!r.ok) {
+      if (r.reason === 'ja-tem-planilha') return res.json({ ok: true, ja_existia: true, google_sheet_id: r.google_sheet_id });
+      if (r.reason === 'sem-template-id') return res.status(400).json({ erro: 'Template Google Sheets nao configurado no servidor (GOOGLE_SHEETS_TEMPLATE_ID)' });
+      if (r.reason === 'sem-credenciais') return res.status(400).json({ erro: 'Credenciais Google nao configuradas no servidor' });
+      if (r.reason === 'template-inacessivel') return res.status(400).json({ erro: 'Service Account nao tem acesso ao template: ' + (r.detalhe || '') });
+      if (r.reason === 'copia-falhou') return res.status(500).json({ erro: 'Falha ao duplicar template: ' + (r.detalhe || '') });
+      return res.status(500).json({ erro: 'Falha ao criar planilha: ' + (r.reason || 'desconhecido') });
+    }
+    // Dispara sync dos dados existentes em background
+    sincronizarEventoBackground(pool, id);
+    res.json({ ok: true, google_sheet_id: r.google_sheet_id, url: `https://docs.google.com/spreadsheets/d/${r.google_sheet_id}/edit` });
+  } catch (e) {
+    console.error('[gerar-planilha] erro:', e);
+    res.status(500).json({ erro: e.message });
+  }
+});
 
 router.delete('/api/eventos/:id',auth,async(req,res)=>{try{
 if(req.user.funcao!=='admin'&&req.user.funcao!=='diretor')return res.status(403).json({erro:'Sem permissao'});

@@ -19,12 +19,17 @@ const fs = require('fs');
 const { google } = require('googleapis');
 
 const ABA_DADOS = 'EventHub Dados';
-const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
+const SCOPES = [
+  'https://www.googleapis.com/auth/spreadsheets',
+  'https://www.googleapis.com/auth/drive',
+];
 
+let cachedAuth = null;
 let cachedSheets = null;
+let cachedDrive = null;
 
-function getSheetsClient() {
-  if (cachedSheets) return cachedSheets;
+function getAuth() {
+  if (cachedAuth) return cachedAuth;
   const path = process.env.GOOGLE_SHEETS_CREDENTIALS_PATH;
   if (!path) {
     console.warn('[sheets] GOOGLE_SHEETS_CREDENTIALS_PATH nao configurado - integracao desabilitada');
@@ -32,13 +37,84 @@ function getSheetsClient() {
   }
   try {
     const credentials = JSON.parse(fs.readFileSync(path, 'utf8'));
-    const auth = new google.auth.GoogleAuth({ credentials, scopes: SCOPES });
-    cachedSheets = google.sheets({ version: 'v4', auth });
-    return cachedSheets;
+    cachedAuth = new google.auth.GoogleAuth({ credentials, scopes: SCOPES });
+    return cachedAuth;
   } catch (e) {
     console.error('[sheets] erro ao carregar credenciais:', e.message);
     return null;
   }
+}
+
+function getSheetsClient() {
+  if (cachedSheets) return cachedSheets;
+  const auth = getAuth();
+  if (!auth) return null;
+  cachedSheets = google.sheets({ version: 'v4', auth });
+  return cachedSheets;
+}
+
+function getDriveClient() {
+  if (cachedDrive) return cachedDrive;
+  const auth = getAuth();
+  if (!auth) return null;
+  cachedDrive = google.drive({ version: 'v3', auth });
+  return cachedDrive;
+}
+
+// Duplica a planilha-template definida em GOOGLE_SHEETS_TEMPLATE_ID,
+// renomeia para o nome do evento, mantem na mesma pasta do template
+// (que normalmente eh a pasta "Financeiro Eventos" compartilhada com
+// a Service Account), e grava o novo ID em eventos.google_sheet_id.
+async function criarPlanilhaParaEvento(pool, eventoId) {
+  const drive = getDriveClient();
+  if (!drive) return { skipped: true, reason: 'sem-credenciais' };
+
+  const TEMPLATE_ID = process.env.GOOGLE_SHEETS_TEMPLATE_ID;
+  if (!TEMPLATE_ID) return { skipped: true, reason: 'sem-template-id' };
+
+  const ev = await pool.query('SELECT id, nome, google_sheet_id FROM eventos WHERE id=$1', [eventoId]);
+  if (!ev.rows.length) return { skipped: true, reason: 'evento-inexistente' };
+  if (ev.rows[0].google_sheet_id && String(ev.rows[0].google_sheet_id).trim()) {
+    return { skipped: true, reason: 'ja-tem-planilha', google_sheet_id: ev.rows[0].google_sheet_id };
+  }
+
+  const nomeEvento = String(ev.rows[0].nome || `Evento ${eventoId}`).trim();
+
+  // Pega parents (pasta) do template pra preservar localizacao da copia
+  let parents = [];
+  try {
+    const tmpl = await drive.files.get({
+      fileId: TEMPLATE_ID,
+      fields: 'parents, name',
+      supportsAllDrives: true,
+    });
+    parents = tmpl.data.parents || [];
+  } catch (e) {
+    console.error('[sheets] erro ao ler template:', e.message);
+    return { skipped: true, reason: 'template-inacessivel', detalhe: e.message };
+  }
+
+  // Duplica template
+  let copy;
+  try {
+    copy = await drive.files.copy({
+      fileId: TEMPLATE_ID,
+      supportsAllDrives: true,
+      requestBody: {
+        name: nomeEvento,
+        parents: parents.length > 0 ? parents : undefined,
+      },
+    });
+  } catch (e) {
+    console.error('[sheets] erro ao copiar template:', e.message);
+    return { skipped: true, reason: 'copia-falhou', detalhe: e.message };
+  }
+
+  const newSheetId = copy.data.id;
+  await pool.query('UPDATE eventos SET google_sheet_id=$1 WHERE id=$2', [newSheetId, eventoId]);
+
+  console.log(`[sheets] planilha criada do template evento=${eventoId} sheet=${newSheetId} nome="${nomeEvento}"`);
+  return { ok: true, google_sheet_id: newSheetId, nome: nomeEvento };
 }
 
 // Garante que a aba "EventHub Dados" existe na planilha; cria se nao existir.
@@ -97,8 +173,19 @@ async function sincronizarEvento(pool, eventoId) {
   const ev = await pool.query('SELECT id, nome, google_sheet_id FROM eventos WHERE id=$1', [eventoId]);
   if (!ev.rows.length) return { skipped: true, reason: 'evento-inexistente' };
   const evento = ev.rows[0];
+
+  // Se evento nao tem planilha e existe template configurado, cria automaticamente
   if (!evento.google_sheet_id || !String(evento.google_sheet_id).trim()) {
-    return { skipped: true, reason: 'sem-google_sheet_id' };
+    if (process.env.GOOGLE_SHEETS_TEMPLATE_ID) {
+      const criou = await criarPlanilhaParaEvento(pool, eventoId);
+      if (criou.ok) {
+        evento.google_sheet_id = criou.google_sheet_id;
+      } else {
+        return { skipped: true, reason: 'auto-criar-falhou', detalhe: criou.reason };
+      }
+    } else {
+      return { skipped: true, reason: 'sem-google_sheet_id' };
+    }
   }
 
   const despesas = (await pool.query(
@@ -147,4 +234,4 @@ function sincronizarEventoBackground(pool, eventoId) {
   });
 }
 
-module.exports = { sincronizarEvento, sincronizarEventoBackground };
+module.exports = { sincronizarEvento, sincronizarEventoBackground, criarPlanilhaParaEvento };

@@ -10,6 +10,7 @@ const tiposEvento = ['Festival','Show','Balada','Rodeio','Festa','Corporativo','
 export default function EditEventoModal({ open, onClose, evento, onUpdated }) {
   const [form, setForm] = useState({})
   const [loading, setLoading] = useState(false)
+  const [gerandoPlanilha, setGerandoPlanilha] = useState(false)
   const [grupos, setGrupos] = useState([])
   const [loadGrupos, setLoadGrupos] = useState(false)
   const [filtroGrupo, setFiltroGrupo] = useState('')
@@ -78,6 +79,25 @@ export default function EditEventoModal({ open, onClose, evento, onUpdated }) {
       toast.error('Erro ao buscar grupos. WhatsApp conectado?')
     } finally {
       setLoadGrupos(false)
+    }
+  }
+
+  async function gerarPlanilha() {
+    if (!evento?.id) return
+    setGerandoPlanilha(true)
+    try {
+      const { data } = await api.post(`/eventos/${evento.id}/gerar-planilha`)
+      if (data.ja_existia) {
+        toast.success('Planilha já estava vinculada')
+      } else {
+        toast.success('Planilha criada e vinculada!')
+      }
+      set('google_sheet_id', data.google_sheet_id)
+      if (onUpdated) onUpdated()
+    } catch (e) {
+      toast.error(e.response?.data?.erro || 'Erro ao gerar planilha')
+    } finally {
+      setGerandoPlanilha(false)
     }
   }
 
@@ -276,22 +296,54 @@ export default function EditEventoModal({ open, onClose, evento, onUpdated }) {
           <p className="text-xs text-gray-400 mt-1">ID do evento na BaladaAPP para sincronizar vendas</p>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">📊 Google Sheets — ID/URL da planilha (opcional)</label>
-          <input
-            type="text"
-            value={form.google_sheet_id || ''}
-            onChange={(e) => {
-              // Aceita URL completa ou ID puro — extrai o ID se for URL.
-              const raw = e.target.value.trim()
-              const m = raw.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/)
-              set('google_sheet_id', m ? m[1] : raw)
-            }}
-            placeholder="Cole o link da planilha do Google (ou só o ID)"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-          />
-          <p className="text-xs text-gray-400 mt-1">
-            Quando preenchido, despesas e receitas deste evento são gravadas na aba <strong>"EventHub Dados"</strong> da planilha em tempo real.
-            A planilha precisa estar compartilhada com <code className="text-[10px]">eventhub-sync@eventhub-sync.iam.gserviceaccount.com</code> (Editor).
+          <label className="block text-sm font-medium text-gray-700 dark:text-white/80 mb-1">📊 Google Sheets — Planilha financeira do evento</label>
+          {form.google_sheet_id ? (
+            <div className="flex items-center gap-2 flex-wrap">
+              <a
+                href={`https://docs.google.com/spreadsheets/d/${form.google_sheet_id}/edit`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-sm text-blue-600 dark:text-blue-400 hover:underline truncate max-w-md"
+                title={form.google_sheet_id}
+              >
+                ✓ Planilha vinculada — abrir no Google Sheets
+              </a>
+              <button
+                type="button"
+                onClick={() => { if (confirm('Desvincular esta planilha do evento? A planilha em si não é apagada do Drive.')) set('google_sheet_id', '') }}
+                className="text-xs text-gray-400 hover:text-red-600 dark:hover:text-red-400"
+              >
+                desvincular
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={gerarPlanilha}
+                disabled={gerandoPlanilha || !evento?.id}
+                className="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {gerandoPlanilha ? 'Gerando…' : '📊 Gerar planilha agora'}
+              </button>
+              <span className="text-xs text-gray-400 dark:text-white/40">ou cole o ID manualmente:</span>
+              <input
+                type="text"
+                value={form.google_sheet_id || ''}
+                onChange={(e) => {
+                  const raw = e.target.value.trim()
+                  const m = raw.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/)
+                  set('google_sheet_id', m ? m[1] : raw)
+                }}
+                placeholder="ID ou URL da planilha"
+                className="flex-1 min-w-[200px] border border-gray-300 dark:border-white/10 dark:bg-white/[0.04] dark:text-white/90 rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+          )}
+          <p className="text-xs text-gray-400 dark:text-white/40 mt-2">
+            <strong>Gerar planilha agora</strong> duplica o template padrão no Drive e vincula ao evento.
+            Despesas e receitas deste evento passam a sincronizar na aba <strong>"EventHub Dados"</strong> em tempo real.
+            Eventos novos ganham planilha automaticamente na primeira despesa.
           </p>
         </div>
         </form>
