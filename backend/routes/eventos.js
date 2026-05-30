@@ -154,7 +154,9 @@ router.post('/api/eventos/:id/gerar-planilha', auth, async (req, res) => {
       if (r.reason === 'ja-tem-planilha') return res.json({ ok: true, ja_existia: true, google_sheet_id: r.google_sheet_id });
       if (r.reason === 'sem-template-id') return res.status(400).json({ erro: 'Template Google Sheets nao configurado no servidor (GOOGLE_SHEETS_TEMPLATE_ID)' });
       if (r.reason === 'sem-credenciais') return res.status(400).json({ erro: 'Credenciais Google nao configuradas no servidor' });
-      if (r.reason === 'template-inacessivel') return res.status(400).json({ erro: 'Service Account nao tem acesso ao template: ' + (r.detalhe || '') });
+      if (r.reason === 'template-inacessivel') return res.status(400).json({ erro: 'A conta Google conectada nao consegue acessar o template: ' + (r.detalhe || '') });
+      if (r.reason === 'sem-conexao-google' || r.reason === 'sem-oauth') return res.status(400).json({ erro: 'Nenhuma conta Google conectada. Va em Configuracoes > Google Sheets > Conectar conta Google.' });
+      if (r.reason === 'sem-oauth-config') return res.status(400).json({ erro: 'OAuth Google nao configurado no servidor (GOOGLE_OAUTH_CLIENT_ID/SECRET)' });
       if (r.reason === 'copia-falhou') return res.status(500).json({ erro: 'Falha ao duplicar template: ' + (r.detalhe || '') });
       return res.status(500).json({ erro: 'Falha ao criar planilha: ' + (r.reason || 'desconhecido') });
     }

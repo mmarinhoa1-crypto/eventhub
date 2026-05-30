@@ -25,10 +25,15 @@ const { google } = require('googleapis');
 const ABA_DADOS = 'EventHub Dados';
 
 const SCOPES = [
-  'https://www.googleapis.com/auth/drive.file',         // criar/editar arquivos do app
+  'https://www.googleapis.com/auth/drive',              // full Drive (necessario pra duplicar template existente do user)
   'https://www.googleapis.com/auth/spreadsheets',       // sheets RW
   'https://www.googleapis.com/auth/userinfo.email',     // pegar email do user pra UI
 ];
+// Nota: drive.file (escopo restrito) so ve arquivos criados pelo app,
+// nao serve pra duplicar templates pre-existentes do user. drive (escopo
+// amplo) e classificado como "sensitive" pelo Google — requer verificacao
+// formal pra publicar em Production. Sem verificacao, app fica em modo
+// Testing e refresh_tokens expiram a cada 7 dias.
 
 function buildOAuth2Client() {
   return new google.auth.OAuth2(
