@@ -68,7 +68,7 @@ const LINHA_REC_INICIO = 138;
 const LINHA_REC_FIM = 142; // 5 linhas: 138-142
 const LINHA_TOTAL_REC = 143;
 const LINHA_RESULTADO = 145;
-const TOTAL_LINHAS = 150;
+const TOTAL_LINHAS = 145; // planilha termina no RESULTADO DO EVENTO
 
 const SCOPES = [
   'https://www.googleapis.com/auth/drive',              // full Drive (necessario pra duplicar template existente do user)
@@ -274,6 +274,13 @@ async function gerarAbaFinanceiroFormatada(sheets, spreadsheetId, evento, despes
     spreadsheetId,
     requestBody: {
       requests: [
+        // Forca rowCount = TOTAL_LINHAS (encolhe se aba foi criada maior)
+        {
+          updateSheetProperties: {
+            properties: { sheetId, gridProperties: { rowCount: TOTAL_LINHAS, columnCount: NCOLS } },
+            fields: 'gridProperties.rowCount,gridProperties.columnCount'
+          }
+        },
         { unmergeCells: { range: { sheetId, startRowIndex: 0, endRowIndex: TOTAL_LINHAS, startColumnIndex: 0, endColumnIndex: NCOLS } } },
         { updateCells: { range: { sheetId, startRowIndex: 0, endRowIndex: TOTAL_LINHAS, startColumnIndex: 0, endColumnIndex: NCOLS }, fields: 'userEnteredFormat' } },
         // Larguras de coluna
