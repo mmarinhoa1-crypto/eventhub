@@ -24,7 +24,25 @@ const { google } = require('googleapis');
 
 const ABA_DESPESAS = 'EventHub Despesas';
 const ABA_RECEITAS = 'EventHub Receitas';
+const ABA_FINANCEIRO = 'Financeiro';
 const ABAS_ANTIGAS = ['EventHub Dados']; // limpar se existirem (migracao)
+
+// Categorias do EventHub em ordem visual da planilha
+const CATEGORIAS_ORDEM = [
+  'Artistico',
+  'Logistica/Camarim',
+  'Estrutura do Evento',
+  'Divulgacao e Midia',
+  'Operacional',
+  'Bar',
+  'Alimentacao',
+  'Documentacao e Taxas',
+  'Outros',
+];
+
+// Socios fixos que viram colunas em todas as planilhas. Outros sócios
+// (Desc, Barry, etc.) podem ser preenchidos manualmente pelo usuario.
+const SOCIOS_FIXOS = ['314', 'Alma', 'Balada'];
 
 const SCOPES = [
   'https://www.googleapis.com/auth/drive',              // full Drive (necessario pra duplicar template existente do user)
@@ -181,7 +199,290 @@ function linhasReceitas(receitas) {
   return linhas;
 }
 
-// Sincroniza o evento na planilha. Idempotente: limpa a aba "EventHub Dados"
+// Cores reutilizadas no layout
+const COR_HEADER = { red: 0.13, green: 0.27, blue: 0.48 };       // azul escuro
+const COR_HEADER_TX = { red: 1, green: 1, blue: 1 };              // branco
+const COR_CATEGORIA = { red: 0.99, green: 0.91, blue: 0.62 };     // amarelo claro
+const COR_SUBTOTAL = { red: 0.87, green: 0.87, blue: 0.87 };      // cinza claro
+const COR_TOTAL = { red: 0.20, green: 0.40, blue: 0.20 };         // verde escuro
+const COR_RECEITA = { red: 0.78, green: 0.91, blue: 0.78 };       // verde claro
+
+// Helper para converter indice 0-based em letra de coluna (0->A, 1->B, ...)
+function colLetter(idx) {
+  let s = '', n = idx;
+  while (n >= 0) { s = String.fromCharCode(65 + (n % 26)) + s; n = Math.floor(n / 26) - 1; }
+  return s;
+}
+
+// Gera/regrava a aba "Financeiro" com layout formatado fiel ao template
+// Hungria Varginha (categorias agrupadas, sub-totais, socios em colunas,
+// bordero de receitas, resultado). Itens vem das despesas/receitas do
+// evento. Aplica cores, bold, formato moeda BRL e borders via batchUpdate.
+async function gerarAbaFinanceiroFormatada(sheets, spreadsheetId, evento, despesas, receitas) {
+  const NCOLS = 4 + SOCIOS_FIXOS.length + 1; // Descricao, Qtd, Vlr Uni, Vlr Total, [socios], Falta Pagar
+  const colTotal = 3; // D
+  const colsSocio = SOCIOS_FIXOS.map((_, i) => 4 + i); // E, F, G
+  const colFalta = NCOLS - 1; // ultima
+
+  // Garante aba e pega sheetId
+  const meta = await sheets.spreadsheets.get({ spreadsheetId });
+  let sheetInfo = (meta.data.sheets || []).find(s => s.properties?.title === ABA_FINANCEIRO);
+  if (!sheetInfo) {
+    const r = await sheets.spreadsheets.batchUpdate({
+      spreadsheetId,
+      requestBody: { requests: [{ addSheet: { properties: { title: ABA_FINANCEIRO, gridProperties: { rowCount: 300, columnCount: NCOLS + 2 } } } }] }
+    });
+    sheetInfo = { properties: r.data.replies[0].addSheet.properties };
+  }
+  const sheetId = sheetInfo.properties.sheetId;
+
+  // Agrupa despesas por categoria (na ordem definida)
+  const grupos = {};
+  for (const cat of CATEGORIAS_ORDEM) grupos[cat] = [];
+  const semCategoria = [];
+  for (const d of despesas) {
+    if (grupos[d.centro_custo]) grupos[d.centro_custo].push(d);
+    else semCategoria.push(d);
+  }
+  if (semCategoria.length) grupos['Outros'] = grupos['Outros'].concat(semCategoria);
+
+  // Monta as linhas e rastreia ranges pra formatacao
+  const rows = [];
+  const fmt = []; // requests de formatacao
+  const subtotaisD = []; // refs pra somar no VALOR TOTAL (col D)
+  const subtotaisSocios = {}; // {colIdx: [refs]}
+  for (const c of colsSocio) subtotaisSocios[c] = [];
+  const subtotaisFalta = [];
+
+  // Helper pra registrar formatRequest
+  function repeatCell(r0, r1, c0, c1, format) {
+    fmt.push({
+      repeatCell: {
+        range: { sheetId, startRowIndex: r0, endRowIndex: r1, startColumnIndex: c0, endColumnIndex: c1 },
+        cell: { userEnteredFormat: format },
+        fields: 'userEnteredFormat(' + Object.keys(format).join(',') + ')'
+      }
+    });
+  }
+
+  // ===== LINHA 1: titulo do evento =====
+  const titulo = String(evento.nome || `Evento ${evento.id}`).toUpperCase();
+  rows.push([titulo]);
+  // merge das colunas 0..NCOLS
+  fmt.push({
+    mergeCells: { range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: NCOLS }, mergeType: 'MERGE_ALL' }
+  });
+  repeatCell(0, 1, 0, NCOLS, {
+    backgroundColor: COR_HEADER,
+    textFormat: { foregroundColor: COR_HEADER_TX, bold: true, fontSize: 14 },
+    horizontalAlignment: 'CENTER',
+    verticalAlignment: 'MIDDLE'
+  });
+
+  // ===== LINHA 2: vazio =====
+  rows.push([]);
+
+  // ===== LINHA 3: header geral =====
+  const headerGeral = ['Descrição', 'Quantidade', 'Valor Uni', 'Valor Total'];
+  for (const s of SOCIOS_FIXOS) headerGeral.push(s);
+  headerGeral.push('FALTA PAGAR');
+  rows.push(headerGeral);
+  repeatCell(2, 3, 0, NCOLS, {
+    backgroundColor: COR_HEADER,
+    textFormat: { foregroundColor: COR_HEADER_TX, bold: true },
+    horizontalAlignment: 'CENTER'
+  });
+
+  let cursor = 3; // proxima linha (0-based: rows[3] sera a 4a linha visual)
+
+  // ===== POR CATEGORIA =====
+  for (const cat of CATEGORIAS_ORDEM) {
+    const itens = grupos[cat];
+
+    // Linha da categoria (cabecalho colorido)
+    const catRow = new Array(NCOLS).fill('');
+    catRow[0] = cat;
+    rows.push(catRow);
+    repeatCell(cursor, cursor + 1, 0, NCOLS, {
+      backgroundColor: COR_CATEGORIA,
+      textFormat: { bold: true, fontSize: 11 }
+    });
+    cursor++;
+
+    const startItens = cursor;
+
+    // Itens
+    for (const d of itens) {
+      const qtd = Number(d.quantidade || 0);
+      const vu = Number(d.valor_unitario || 0);
+      const vt = Number(d.valor || 0);
+      const falta = Number(d.falta_pagar || 0);
+      const fonte = d.fonte_pagamento || '';
+      const linha = [d.descricao || '', qtd, vu, vt];
+      for (const s of SOCIOS_FIXOS) linha.push(fonte === s ? vt : '');
+      linha.push(falta);
+      rows.push(linha);
+      cursor++;
+    }
+
+    // Linha em branco interna se categoria sem itens (mantém layout consistente)
+    if (itens.length === 0) {
+      rows.push(new Array(NCOLS).fill(''));
+      cursor++;
+    }
+
+    const endItens = cursor; // exclusivo
+
+    // SUB TOTAL com formula SUM
+    const subRow = new Array(NCOLS).fill('');
+    subRow[0] = 'SUB TOTAL';
+    if (itens.length > 0) {
+      const c = colLetter(colTotal); // D
+      subRow[colTotal] = `=SUM(${c}${startItens + 1}:${c}${endItens})`;
+      for (const cs of colsSocio) {
+        const cl = colLetter(cs);
+        subRow[cs] = `=SUM(${cl}${startItens + 1}:${cl}${endItens})`;
+      }
+      const cf = colLetter(colFalta);
+      subRow[colFalta] = `=SUM(${cf}${startItens + 1}:${cf}${endItens})`;
+    }
+    rows.push(subRow);
+    repeatCell(cursor, cursor + 1, 0, NCOLS, {
+      backgroundColor: COR_SUBTOTAL,
+      textFormat: { bold: true }
+    });
+    // Rastreia subtotal pra somar no VALOR TOTAL
+    subtotaisD.push(`${colLetter(colTotal)}${cursor + 1}`);
+    for (const cs of colsSocio) subtotaisSocios[cs].push(`${colLetter(cs)}${cursor + 1}`);
+    subtotaisFalta.push(`${colLetter(colFalta)}${cursor + 1}`);
+    cursor++;
+  }
+
+  // ===== VALOR TOTAL geral =====
+  const totRow = new Array(NCOLS).fill('');
+  totRow[0] = 'VALOR TOTAL';
+  totRow[colTotal] = `=${subtotaisD.join('+')}`;
+  for (const cs of colsSocio) totRow[cs] = `=${subtotaisSocios[cs].join('+')}`;
+  totRow[colFalta] = `=${subtotaisFalta.join('+')}`;
+  rows.push(totRow);
+  repeatCell(cursor, cursor + 1, 0, NCOLS, {
+    backgroundColor: COR_TOTAL,
+    textFormat: { foregroundColor: COR_HEADER_TX, bold: true, fontSize: 12 }
+  });
+  const linhaValorTotal = cursor + 1;
+  cursor++;
+
+  // ===== Linhas em branco =====
+  rows.push([]); rows.push([]); cursor += 2;
+
+  // ===== BORDERO DE RECEITAS =====
+  rows.push(['BORDERO DE RECEITAS']);
+  fmt.push({
+    mergeCells: { range: { sheetId, startRowIndex: cursor, endRowIndex: cursor + 1, startColumnIndex: 0, endColumnIndex: NCOLS }, mergeType: 'MERGE_ALL' }
+  });
+  repeatCell(cursor, cursor + 1, 0, NCOLS, {
+    backgroundColor: COR_HEADER,
+    textFormat: { foregroundColor: COR_HEADER_TX, bold: true, fontSize: 12 },
+    horizontalAlignment: 'CENTER'
+  });
+  cursor++;
+
+  // Header receitas
+  rows.push(['Descrição', '', '', 'Valor Total', 'Conta', '', '', '']);
+  repeatCell(cursor, cursor + 1, 0, NCOLS, {
+    backgroundColor: COR_RECEITA,
+    textFormat: { bold: true }
+  });
+  cursor++;
+  const startReceitas = cursor;
+
+  // Itens receitas
+  for (const r of receitas) {
+    const linha = new Array(NCOLS).fill('');
+    linha[0] = r.descricao || '';
+    linha[colTotal] = Number(r.valor || 0);
+    linha[4] = r.conta || '';
+    rows.push(linha);
+    cursor++;
+  }
+  const endReceitas = cursor;
+
+  // TOTAL DE RECEITA
+  const totRecRow = new Array(NCOLS).fill('');
+  totRecRow[0] = 'TOTAL DE RECEITA';
+  if (receitas.length > 0) {
+    const c = colLetter(colTotal);
+    totRecRow[colTotal] = `=SUM(${c}${startReceitas + 1}:${c}${endReceitas})`;
+  }
+  rows.push(totRecRow);
+  repeatCell(cursor, cursor + 1, 0, NCOLS, {
+    backgroundColor: COR_SUBTOTAL,
+    textFormat: { bold: true }
+  });
+  const linhaTotalReceita = cursor + 1;
+  cursor++;
+
+  // Espaco
+  rows.push([]); cursor++;
+
+  // ===== RESULTADO DO EVENTO =====
+  rows.push(['RESULTADO DO EVENTO']);
+  fmt.push({
+    mergeCells: { range: { sheetId, startRowIndex: cursor, endRowIndex: cursor + 1, startColumnIndex: 0, endColumnIndex: NCOLS }, mergeType: 'MERGE_ALL' }
+  });
+  repeatCell(cursor, cursor + 1, 0, NCOLS, {
+    backgroundColor: COR_HEADER,
+    textFormat: { foregroundColor: COR_HEADER_TX, bold: true, fontSize: 12 },
+    horizontalAlignment: 'CENTER'
+  });
+  cursor++;
+
+  rows.push(['Total de Receitas', '', '', `=${colLetter(colTotal)}${linhaTotalReceita}`]);
+  cursor++;
+  rows.push(['Total de Despesas', '', '', `=${colLetter(colTotal)}${linhaValorTotal}`]);
+  cursor++;
+  rows.push(['LUCRO / PREJUÍZO', '', '', `=${colLetter(colTotal)}${cursor - 1}-${colLetter(colTotal)}${cursor}`]);
+  repeatCell(cursor, cursor + 1, 0, NCOLS, {
+    backgroundColor: COR_TOTAL,
+    textFormat: { foregroundColor: COR_HEADER_TX, bold: true, fontSize: 12 }
+  });
+  cursor++;
+
+  // Limpa tudo e escreve
+  await sheets.spreadsheets.values.clear({ spreadsheetId, range: `${ABA_FINANCEIRO}!A:Z` });
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range: `${ABA_FINANCEIRO}!A1`,
+    valueInputOption: 'USER_ENTERED',
+    requestBody: { values: rows }
+  });
+
+  // Limpa formatacao anterior antes de aplicar nova (evita acumulo de merges)
+  // Aplica formatacao
+  // Adiciona tambem: formato moeda BRL nas colunas de valor (Total + sócios + Falta)
+  const colsMoeda = [colTotal, ...colsSocio, colFalta];
+  for (const c of colsMoeda) {
+    fmt.push({
+      repeatCell: {
+        range: { sheetId, startRowIndex: 1, endRowIndex: cursor, startColumnIndex: c, endColumnIndex: c + 1 },
+        cell: { userEnteredFormat: { numberFormat: { type: 'CURRENCY', pattern: 'R$ #,##0.00' } } },
+        fields: 'userEnteredFormat.numberFormat'
+      }
+    });
+  }
+  // Auto-resize colunas
+  fmt.push({
+    autoResizeDimensions: {
+      dimensions: { sheetId, dimension: 'COLUMNS', startIndex: 0, endIndex: NCOLS }
+    }
+  });
+
+  if (fmt.length > 0) {
+    await sheets.spreadsheets.batchUpdate({ spreadsheetId, requestBody: { requests: fmt } });
+  }
+}
+
+// Sincroniza o evento na planilha. Idempotente: limpa as abas EventHub
 // e regrava com o estado atual do banco. Cria planilha do template se evento
 // ainda nao tem uma vinculada.
 async function sincronizarEvento(pool, eventoId) {
@@ -246,6 +547,14 @@ async function sincronizarEvento(pool, eventoId) {
     valueInputOption: 'RAW',
     requestBody: { values: linhasReceitas(receitas) },
   });
+
+  // Aba bonita formatada (layout fiel ao template)
+  try {
+    await gerarAbaFinanceiroFormatada(sheets, spreadsheetId, evento, despesas, receitas);
+  } catch (e) {
+    // Nao bloqueia o sync se a parte visual falhar
+    console.error(`[sheets] erro ao gerar aba ${ABA_FINANCEIRO} evento=${eventoId}:`, e.message);
+  }
 
   return { ok: true, despesas: despesas.length, receitas: receitas.length };
 }
