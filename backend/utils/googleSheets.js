@@ -22,7 +22,9 @@
 
 const { google } = require('googleapis');
 
-const ABA_DADOS = 'EventHub Dados';
+const ABA_DESPESAS = 'EventHub Despesas';
+const ABA_RECEITAS = 'EventHub Receitas';
+const ABAS_ANTIGAS = ['EventHub Dados']; // limpar se existirem (migracao)
 
 const SCOPES = [
   'https://www.googleapis.com/auth/drive',              // full Drive (necessario pra duplicar template existente do user)
@@ -83,18 +85,24 @@ async function criarPlanilhaParaEvento(pool, eventoId) {
   const drive = google.drive({ version: 'v3', auth: client });
   const nomeEvento = String(ev.rows[0].nome || `Evento ${eventoId}`).trim();
 
-  // Pega parents (pasta) do template pra preservar localizacao da copia
+  // Decide pasta destino:
+  // 1) Se GOOGLE_DRIVE_FOLDER_ID estiver setado, usa ele (forca pasta destino).
+  // 2) Senao, tenta usar a mesma pasta do template.
   let parents = [];
-  try {
-    const tmpl = await drive.files.get({
-      fileId: TEMPLATE_ID,
-      fields: 'parents, name',
-      supportsAllDrives: true,
-    });
-    parents = tmpl.data.parents || [];
-  } catch (e) {
-    console.error('[sheets] erro ao ler template:', e.message);
-    return { skipped: true, reason: 'template-inacessivel', detalhe: e.message };
+  if (process.env.GOOGLE_DRIVE_FOLDER_ID) {
+    parents = [process.env.GOOGLE_DRIVE_FOLDER_ID];
+  } else {
+    try {
+      const tmpl = await drive.files.get({
+        fileId: TEMPLATE_ID,
+        fields: 'parents, name',
+        supportsAllDrives: true,
+      });
+      parents = tmpl.data.parents || [];
+    } catch (e) {
+      console.error('[sheets] erro ao ler template:', e.message);
+      return { skipped: true, reason: 'template-inacessivel', detalhe: e.message };
+    }
   }
 
   // Duplica template
@@ -116,32 +124,38 @@ async function criarPlanilhaParaEvento(pool, eventoId) {
   const newSheetId = copy.data.id;
   await pool.query('UPDATE eventos SET google_sheet_id=$1 WHERE id=$2', [newSheetId, eventoId]);
 
-  console.log(`[sheets] planilha criada do template evento=${eventoId} sheet=${newSheetId} nome="${nomeEvento}"`);
+  console.log(`[sheets] planilha criada do template evento=${eventoId} sheet=${newSheetId} nome="${nomeEvento}" pasta=${parents[0] || 'raiz'}`);
   return { ok: true, google_sheet_id: newSheetId, nome: nomeEvento };
 }
 
-// Garante que a aba "EventHub Dados" existe na planilha; cria se nao existir.
-async function garantirAbaDados(sheets, spreadsheetId) {
+// Garante que uma aba especifica existe na planilha; cria se nao existir.
+async function garantirAba(sheets, spreadsheetId, titulo, cols = 12) {
   const meta = await sheets.spreadsheets.get({ spreadsheetId });
-  const existe = (meta.data.sheets || []).some(s => s.properties && s.properties.title === ABA_DADOS);
+  const existe = (meta.data.sheets || []).some(s => s.properties && s.properties.title === titulo);
   if (existe) return;
   await sheets.spreadsheets.batchUpdate({
     spreadsheetId,
     requestBody: {
-      requests: [{ addSheet: { properties: { title: ABA_DADOS, gridProperties: { rowCount: 500, columnCount: 12 } } } }],
+      requests: [{ addSheet: { properties: { title: titulo, gridProperties: { rowCount: 500, columnCount: cols } } } }],
     },
   });
 }
 
-// Monta as linhas a serem escritas na aba, organizadas em 3 blocos:
-// header global, despesas (com header), receitas (com header).
-function montarLinhas({ evento, despesas, receitas }) {
-  const linhas = [];
-  linhas.push([`EventHub - sync ${new Date().toISOString()}  |  Evento: ${evento.nome || ''}`]);
-  linhas.push([]);
-  // Despesas
-  linhas.push(['== DESPESAS ==']);
-  linhas.push(['ID', 'Descricao', 'Categoria', 'Quantidade', 'Valor Unit.', 'Valor Total', 'Fornecedor', 'Fonte Pagamento', 'Data', 'Vencimento', 'Falta Pagar', 'Situacao']);
+// Remove abas antigas (migracao) se existirem
+async function removerAbasAntigas(sheets, spreadsheetId) {
+  try {
+    const meta = await sheets.spreadsheets.get({ spreadsheetId });
+    const toDelete = (meta.data.sheets || [])
+      .filter(s => ABAS_ANTIGAS.includes(s.properties?.title))
+      .map(s => ({ deleteSheet: { sheetId: s.properties.sheetId } }));
+    if (toDelete.length === 0) return;
+    await sheets.spreadsheets.batchUpdate({ spreadsheetId, requestBody: { requests: toDelete } });
+    console.log(`[sheets] removidas abas antigas: ${toDelete.length}`);
+  } catch (e) { /* ignora */ }
+}
+
+function linhasDespesas(despesas) {
+  const linhas = [['ID', 'Descricao', 'Categoria', 'Quantidade', 'Valor Unit.', 'Valor Total', 'Fornecedor', 'Fonte Pagamento', 'Data', 'Vencimento', 'Falta Pagar', 'Situacao']];
   for (const d of despesas) {
     linhas.push([
       d.id, d.descricao || '', d.centro_custo || '',
@@ -151,10 +165,11 @@ function montarLinhas({ evento, despesas, receitas }) {
       Number(d.falta_pagar || 0), d.situacao || '',
     ]);
   }
-  linhas.push([]);
-  // Receitas
-  linhas.push(['== RECEITAS ==']);
-  linhas.push(['ID', 'Descricao', 'Categoria', 'Valor', 'Conta', 'Data Pagamento', 'Situacao']);
+  return linhas;
+}
+
+function linhasReceitas(receitas) {
+  const linhas = [['ID', 'Descricao', 'Categoria', 'Valor', 'Conta', 'Data Pagamento', 'Situacao']];
   for (const r of receitas) {
     linhas.push([
       r.id, r.descricao || '', r.centro_custo || '',
@@ -208,19 +223,28 @@ async function sincronizarEvento(pool, eventoId) {
   )).rows;
 
   const spreadsheetId = String(evento.google_sheet_id).trim();
-  await garantirAbaDados(sheets, spreadsheetId);
 
-  await sheets.spreadsheets.values.clear({
-    spreadsheetId,
-    range: `${ABA_DADOS}!A:Z`,
-  });
+  // Garante 2 abas separadas e remove abas antigas (migracao)
+  await garantirAba(sheets, spreadsheetId, ABA_DESPESAS, 12);
+  await garantirAba(sheets, spreadsheetId, ABA_RECEITAS, 7);
+  await removerAbasAntigas(sheets, spreadsheetId);
 
-  const linhas = montarLinhas({ evento, despesas, receitas });
+  // Limpa e regrava DESPESAS
+  await sheets.spreadsheets.values.clear({ spreadsheetId, range: `${ABA_DESPESAS}!A:Z` });
   await sheets.spreadsheets.values.update({
     spreadsheetId,
-    range: `${ABA_DADOS}!A1`,
+    range: `${ABA_DESPESAS}!A1`,
     valueInputOption: 'RAW',
-    requestBody: { values: linhas },
+    requestBody: { values: linhasDespesas(despesas) },
+  });
+
+  // Limpa e regrava RECEITAS
+  await sheets.spreadsheets.values.clear({ spreadsheetId, range: `${ABA_RECEITAS}!A:Z` });
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range: `${ABA_RECEITAS}!A1`,
+    valueInputOption: 'RAW',
+    requestBody: { values: linhasReceitas(receitas) },
   });
 
   return { ok: true, despesas: despesas.length, receitas: receitas.length };

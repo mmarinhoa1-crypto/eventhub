@@ -101,6 +101,19 @@ export default function EditEventoModal({ open, onClose, evento, onUpdated }) {
     }
   }
 
+  async function ressincronizar() {
+    if (!evento?.id) return
+    setGerandoPlanilha(true)
+    try {
+      const { data } = await api.post(`/eventos/${evento.id}/ressincronizar`)
+      toast.success(`Sincronizado: ${data.despesas} despesas, ${data.receitas} receitas`)
+    } catch (e) {
+      toast.error(e.response?.data?.erro || 'Erro ao ressincronizar')
+    } finally {
+      setGerandoPlanilha(false)
+    }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
     if (!form.nome.trim()) return
@@ -308,6 +321,14 @@ export default function EditEventoModal({ open, onClose, evento, onUpdated }) {
               >
                 ✓ Planilha vinculada — abrir no Google Sheets
               </a>
+              <button
+                type="button"
+                onClick={ressincronizar}
+                disabled={gerandoPlanilha}
+                className="text-xs px-2 py-1 rounded bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-500/25 disabled:opacity-50"
+              >
+                {gerandoPlanilha ? 'Sincronizando…' : '🔄 Ressincronizar'}
+              </button>
               <button
                 type="button"
                 onClick={() => { if (confirm('Desvincular esta planilha do evento? A planilha em si não é apagada do Drive.')) set('google_sheet_id', '') }}

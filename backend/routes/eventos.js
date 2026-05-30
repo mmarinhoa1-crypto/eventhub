@@ -1,5 +1,5 @@
 const express = require('express');
-const { criarPlanilhaParaEvento, sincronizarEventoBackground } = require('../utils/googleSheets');
+const { criarPlanilhaParaEvento, sincronizarEvento, sincronizarEventoBackground } = require('../utils/googleSheets');
 module.exports = function({ pool, auth }) {
   const router = express.Router();
 
@@ -165,6 +165,26 @@ router.post('/api/eventos/:id/gerar-planilha', auth, async (req, res) => {
     res.json({ ok: true, google_sheet_id: r.google_sheet_id, url: `https://docs.google.com/spreadsheets/d/${r.google_sheet_id}/edit` });
   } catch (e) {
     console.error('[gerar-planilha] erro:', e);
+    res.status(500).json({ erro: e.message });
+  }
+});
+
+// Forca re-sincronizacao da planilha do evento (regrava abas EventHub
+// Despesas e Receitas com estado atual do banco). Util quando muda a
+// estrutura/template ou quando user nao quer esperar nova despesa.
+router.post('/api/eventos/:id/ressincronizar', auth, async (req, res) => {
+  try {
+    if (req.user.funcao !== 'admin' && req.user.funcao !== 'diretor') {
+      return res.status(403).json({ erro: 'Sem permissao' });
+    }
+    const id = parseInt(req.params.id);
+    const ev = await pool.query('SELECT id FROM eventos WHERE id=$1 AND org_id=$2', [id, req.user.org_id]);
+    if (!ev.rows.length) return res.status(404).json({ erro: 'Evento nao encontrado' });
+    const r = await sincronizarEvento(pool, id);
+    if (r.ok) return res.json({ ok: true, despesas: r.despesas, receitas: r.receitas });
+    return res.status(400).json({ erro: 'Sync nao executou', detalhe: r.reason, sub: r.detalhe });
+  } catch (e) {
+    console.error('[ressincronizar] erro:', e);
     res.status(500).json({ erro: e.message });
   }
 });
