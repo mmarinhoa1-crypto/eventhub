@@ -40,9 +40,35 @@ const CATEGORIAS_ORDEM = [
   'Outros',
 ];
 
-// Socios fixos que viram colunas em todas as planilhas. Outros sócios
-// (Desc, Barry, etc.) podem ser preenchidos manualmente pelo usuario.
+// Socios fixos que viram colunas E-I em todas as planilhas (ordem importa)
 const SOCIOS_FIXOS = ['314', 'Alma', 'Balada', 'Gustavo', 'Bar'];
+
+// Layout FIXO do template Hungria Varginha. Cada categoria ocupa um bloco
+// de tamanho fixo (linha do titulo, N linhas de itens, linha de subtotal).
+// Se evento tiver mais despesas que o bloco comporta, as extras sao
+// dropadas com log. Categorias do template sem mapeamento ficam visuais
+// mas vazias.
+const TEMPLATE_CATEGORIAS = [
+  { titulo: 'Artistas',                       linhaTitulo: 5,   itens: 5,  eventHubCats: ['Artistico'] },
+  { titulo: 'Hotel, logística',               linhaTitulo: 12,  itens: 8,  eventHubCats: ['Logistica/Camarim'] },
+  { titulo: 'Estrutura do evento',            linhaTitulo: 22,  itens: 13, eventHubCats: ['Estrutura do Evento'] },
+  { titulo: 'Divulgação e Mídias',            linhaTitulo: 37,  itens: 15, eventHubCats: ['Divulgacao e Midia'] },
+  { titulo: 'Operacional',                    linhaTitulo: 54,  itens: 9,  eventHubCats: ['Operacional'] },
+  { titulo: 'Logística de Bar e Alimentação', linhaTitulo: 65,  itens: 23, eventHubCats: ['Bar', 'Alimentacao'] },
+  { titulo: 'Taxas Operacionais e Sistema',   linhaTitulo: 90,  itens: 6,  eventHubCats: [] },
+  { titulo: 'Camarim',                        linhaTitulo: 98,  itens: 5,  eventHubCats: [] },
+  { titulo: 'Documentações Necessárias',      linhaTitulo: 105, itens: 8,  eventHubCats: ['Documentacao e Taxas'] },
+  { titulo: 'Outros',                         linhaTitulo: 115, itens: 15, eventHubCats: ['Outros'] },
+];
+
+const LINHA_VALOR_TOTAL = 132;
+const LINHA_BORDERO = 136;
+const LINHA_HEADER_REC = 137;
+const LINHA_REC_INICIO = 138;
+const LINHA_REC_FIM = 142; // 5 linhas: 138-142
+const LINHA_TOTAL_REC = 143;
+const LINHA_RESULTADO = 145;
+const TOTAL_LINHAS = 150;
 
 const SCOPES = [
   'https://www.googleapis.com/auth/drive',              // full Drive (necessario pra duplicar template existente do user)
@@ -214,25 +240,21 @@ function colLetter(idx) {
   return s;
 }
 
-// Gera/regrava a aba "Financeiro" com layout fiel ao template Hungria
-// Varginha. Constantes de layout:
-//   colA = Descrição
-//   colB = Quantidade
-//   colC = Valor Uni
-//   colD = Valor Total
-//   colE..colI = sócios (314, Alma, Balada, Gustavo, Bar)
-//   colJ = FALTA PAGAR
-// Cores: cinza topo, laranja claro nos headers/subtotais, laranja escuro
-// nas linhas de categoria, verde claro na coluna FALTA PAGAR dos itens.
+// Gera/regrava a aba "Financeiro" com layout 100% FIXO replicando o template
+// Hungria Varginha. Posicoes de linhas, mesclagens, cores e larguras de
+// coluna sao constantes — apenas dados (descrições, qtd, valor, sócio) sao
+// dinamicos. Categorias do template sem mapeamento no EventHub ficam visuais
+// mas vazias.
 async function gerarAbaFinanceiroFormatada(sheets, spreadsheetId, evento, despesas, receitas) {
-  const NSOCIOS = SOCIOS_FIXOS.length;
-  const COL_DESC = 0;
-  const COL_QTD = 1;
-  const COL_VU = 2;
-  const COL_VT = 3;
-  const COL_SOCIO0 = 4;
-  const COL_FALTA = COL_SOCIO0 + NSOCIOS;
-  const NCOLS = COL_FALTA + 1;
+  // === COLUNAS ===
+  const COL_DESC = 0, COL_QTD = 1, COL_VU = 2, COL_VT = 3;
+  const COL_SOCIO0 = 4;          // E = 314
+  const NSOCIOS = SOCIOS_FIXOS.length; // 5
+  const COL_FALTA = COL_SOCIO0 + NSOCIOS; // J = 9
+  const NCOLS = COL_FALTA + 1;   // 10
+
+  // Larguras (chars do template * fator px aproximado)
+  const LARGURAS_PX = [255, 101, 104, 117, 121, 122, 104, 104, 155, 104];
 
   // Garante aba e pega sheetId
   const meta = await sheets.spreadsheets.get({ spreadsheetId });
@@ -240,40 +262,181 @@ async function gerarAbaFinanceiroFormatada(sheets, spreadsheetId, evento, despes
   if (!sheetInfo) {
     const r = await sheets.spreadsheets.batchUpdate({
       spreadsheetId,
-      requestBody: { requests: [{ addSheet: { properties: { title: ABA_FINANCEIRO, gridProperties: { rowCount: 300, columnCount: NCOLS + 2 } } } }] }
+      requestBody: { requests: [{ addSheet: { properties: { title: ABA_FINANCEIRO, gridProperties: { rowCount: TOTAL_LINHAS, columnCount: NCOLS } } } }] }
     });
     sheetInfo = { properties: r.data.replies[0].addSheet.properties };
   }
   const sheetId = sheetInfo.properties.sheetId;
 
-  // Limpa formatacao + merges anteriores (evita acumulo entre re-syncs)
+  // === RESET ===
+  await sheets.spreadsheets.values.clear({ spreadsheetId, range: `${ABA_FINANCEIRO}!A:Z` });
   await sheets.spreadsheets.batchUpdate({
     spreadsheetId,
     requestBody: {
       requests: [
-        { unmergeCells: { range: { sheetId, startRowIndex: 0, endRowIndex: 300, startColumnIndex: 0, endColumnIndex: NCOLS + 2 } } },
-        { updateCells: { range: { sheetId, startRowIndex: 0, endRowIndex: 300, startColumnIndex: 0, endColumnIndex: NCOLS + 2 }, fields: 'userEnteredFormat' } },
+        { unmergeCells: { range: { sheetId, startRowIndex: 0, endRowIndex: TOTAL_LINHAS, startColumnIndex: 0, endColumnIndex: NCOLS } } },
+        { updateCells: { range: { sheetId, startRowIndex: 0, endRowIndex: TOTAL_LINHAS, startColumnIndex: 0, endColumnIndex: NCOLS }, fields: 'userEnteredFormat' } },
+        // Larguras de coluna
+        ...LARGURAS_PX.map((px, i) => ({
+          updateDimensionProperties: {
+            range: { sheetId, dimension: 'COLUMNS', startIndex: i, endIndex: i + 1 },
+            properties: { pixelSize: px },
+            fields: 'pixelSize'
+          }
+        })),
       ]
     }
   });
-  await sheets.spreadsheets.values.clear({ spreadsheetId, range: `${ABA_FINANCEIRO}!A:Z` });
 
-  // Agrupa despesas por categoria
-  const grupos = {};
-  for (const cat of CATEGORIAS_ORDEM) grupos[cat] = [];
-  const semCategoria = [];
+  // === AGRUPA DESPESAS POR CATEGORIA EVENTHUB ===
+  const porCategoria = {};
   for (const d of despesas) {
-    if (grupos[d.centro_custo]) grupos[d.centro_custo].push(d);
-    else semCategoria.push(d);
+    const k = d.centro_custo || 'Outros';
+    if (!porCategoria[k]) porCategoria[k] = [];
+    porCategoria[k].push(d);
   }
-  if (semCategoria.length) grupos['Outros'] = grupos['Outros'].concat(semCategoria);
 
-  const rows = [];
-  const fmt = [];
-  let cursor = 0;
+  // === MONTA VALORES (formato grid 2D, indexado por linha 1-based) ===
+  const grid = [];
+  for (let i = 0; i < TOTAL_LINHAS; i++) grid.push(new Array(NCOLS).fill(''));
+  function set(linha1, col, val) { grid[linha1 - 1][col] = val; }
+  function L(c) { return String.fromCharCode(65 + c); }
 
+  // Linha 1: titulo do evento (merge A:J, cinza)
+  set(1, COL_DESC, String(evento.nome || `Evento ${evento.id}`).toUpperCase());
+
+  // Linha 3: header geral
+  set(3, COL_DESC, 'Descrição');
+  set(3, COL_QTD, 'Quantidade');
+  set(3, COL_VU, 'Valor Uni');
+  set(3, COL_VT, 'Valor Total');
+  set(3, COL_SOCIO0, 'PAGAMENTOS'); // merge E:I na linha 3
+  set(3, COL_FALTA, 'FALTA PAGAR');
+
+  // Categorias e itens
+  const subtotaisD = []; // refs pro VALOR TOTAL
+  const subtotaisSocios = SOCIOS_FIXOS.map(() => []);
+  const subtotaisFalta = [];
+
+  for (const cat of TEMPLATE_CATEGORIAS) {
+    const linhaCat = cat.linhaTitulo;
+    const primeiraItem = linhaCat + 1;
+    const ultimaItem = linhaCat + cat.itens;
+    const linhaSub = ultimaItem + 1;
+
+    // Linha do título (merge A:D)
+    set(linhaCat, COL_DESC, cat.titulo);
+    // Sócios e FALTA PAGAR repetidos na linha de categoria
+    for (let i = 0; i < NSOCIOS; i++) set(linhaCat, COL_SOCIO0 + i, SOCIOS_FIXOS[i]);
+    set(linhaCat, COL_FALTA, 'FALTA PAGAR');
+
+    // Coleta despesas mapeadas pra essa categoria do template
+    let despesasDaCat = [];
+    for (const ev of cat.eventHubCats) {
+      if (porCategoria[ev]) despesasDaCat = despesasDaCat.concat(porCategoria[ev]);
+    }
+
+    // Avisa se overflow
+    if (despesasDaCat.length > cat.itens) {
+      console.warn(`[sheets] categoria "${cat.titulo}" tem ${despesasDaCat.length} despesas mas só cabe ${cat.itens}. Drop das extras.`);
+      despesasDaCat = despesasDaCat.slice(0, cat.itens);
+    }
+
+    // Preenche itens
+    for (let i = 0; i < despesasDaCat.length; i++) {
+      const linha = primeiraItem + i;
+      const d = despesasDaCat[i];
+      const qtd = Number(d.quantidade || 1);
+      const vu = Number(d.valor_unitario || d.valor || 0);
+      const fonte = d.fonte_pagamento || '';
+
+      set(linha, COL_DESC, d.descricao || '');
+      set(linha, COL_QTD, qtd);
+      set(linha, COL_VU, vu);
+      // D = B*C (fórmula)
+      set(linha, COL_VT, `=B${linha}*C${linha}`);
+      // Sócio: coloca valor total na coluna do sócio se fonte bater
+      for (let s = 0; s < NSOCIOS; s++) {
+        if (fonte === SOCIOS_FIXOS[s]) {
+          set(linha, COL_SOCIO0 + s, `=D${linha}`);
+        }
+      }
+      // J = D - soma(E:I)
+      set(linha, COL_FALTA, `=D${linha}-(E${linha}+F${linha}+G${linha}+H${linha}+I${linha})`);
+    }
+
+    // Linha do subtotal
+    set(linhaSub, COL_DESC, 'SUB TOTAL');
+    set(linhaSub, COL_VT, `=SUM(D${primeiraItem}:D${ultimaItem})`);
+    for (let s = 0; s < NSOCIOS; s++) {
+      const cl = L(COL_SOCIO0 + s);
+      set(linhaSub, COL_SOCIO0 + s, `=SUM(${cl}${primeiraItem}:${cl}${ultimaItem})`);
+    }
+    set(linhaSub, COL_FALTA, `=SUM(J${primeiraItem}:J${ultimaItem})`);
+
+    subtotaisD.push(`D${linhaSub}`);
+    for (let s = 0; s < NSOCIOS; s++) subtotaisSocios[s].push(`${L(COL_SOCIO0 + s)}${linhaSub}`);
+    subtotaisFalta.push(`J${linhaSub}`);
+  }
+
+  // VALOR TOTAL linha 132
+  set(LINHA_VALOR_TOTAL, COL_DESC, 'VALOR TOTAL');
+  set(LINHA_VALOR_TOTAL, COL_VT, `=${subtotaisD.join('+')}`);
+  for (let s = 0; s < NSOCIOS; s++) set(LINHA_VALOR_TOTAL, COL_SOCIO0 + s, `=${subtotaisSocios[s].join('+')}`);
+  set(LINHA_VALOR_TOTAL, COL_FALTA, `=${subtotaisFalta.join('+')}`);
+
+  // BORDERO DE RECEITAS linha 136 (merge A:I conforme spec)
+  set(LINHA_BORDERO, COL_DESC, 'BORDERO DE RECEITAS');
+
+  // Header receitas linha 137 (merge A:C, D = VALOR TOTAL, E-I = sócios)
+  set(LINHA_HEADER_REC, COL_DESC, 'DESCRIÇÃO');
+  set(LINHA_HEADER_REC, COL_VT, 'VALOR TOTAL');
+  for (let i = 0; i < NSOCIOS; i++) set(LINHA_HEADER_REC, COL_SOCIO0 + i, SOCIOS_FIXOS[i]);
+
+  // Receitas 138-142 (5 slots, com sócios igual despesas)
+  const recsCabe = receitas.slice(0, LINHA_REC_FIM - LINHA_REC_INICIO + 1);
+  if (receitas.length > recsCabe.length) {
+    console.warn(`[sheets] ${receitas.length} receitas mas só cabe ${recsCabe.length}. Drop das extras.`);
+  }
+  for (let i = 0; i < recsCabe.length; i++) {
+    const linha = LINHA_REC_INICIO + i;
+    const r = recsCabe[i];
+    const vt = Number(r.valor || 0);
+    const conta = r.conta || '';
+    set(linha, COL_DESC, r.descricao || '');
+    set(linha, COL_VT, vt);
+    // Se a conta bater com algum sócio, marca o valor na coluna dele
+    for (let s = 0; s < NSOCIOS; s++) {
+      if (conta === SOCIOS_FIXOS[s]) {
+        set(linha, COL_SOCIO0 + s, `=D${linha}`);
+      }
+    }
+  }
+
+  // TOTAL DE RECEITA linha 143 (somatorio por coluna)
+  set(LINHA_TOTAL_REC, COL_DESC, 'TOTAL DE RECEITA');
+  set(LINHA_TOTAL_REC, COL_VT, `=SUM(D${LINHA_REC_INICIO}:D${LINHA_REC_FIM})`);
+  for (let s = 0; s < NSOCIOS; s++) {
+    const cl = L(COL_SOCIO0 + s);
+    set(LINHA_TOTAL_REC, COL_SOCIO0 + s, `=SUM(${cl}${LINHA_REC_INICIO}:${cl}${LINHA_REC_FIM})`);
+  }
+
+  // RESULTADO DO EVENTO linha 145 (merge B:C)
+  set(LINHA_RESULTADO, COL_QTD, 'RESULTADO DO EVENTO');
+  set(LINHA_RESULTADO, COL_VT, `=D${LINHA_TOTAL_REC}-D${LINHA_VALOR_TOTAL}`);
+
+  // Escreve valores
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range: `${ABA_FINANCEIRO}!A1`,
+    valueInputOption: 'USER_ENTERED',
+    requestBody: { values: grid }
+  });
+
+  // === FORMATAÇÃO ===
+  const reqs = [];
   function repeatCell(r0, r1, c0, c1, format) {
-    fmt.push({
+    reqs.push({
       repeatCell: {
         range: { sheetId, startRowIndex: r0, endRowIndex: r1, startColumnIndex: c0, endColumnIndex: c1 },
         cell: { userEnteredFormat: format },
@@ -282,258 +445,145 @@ async function gerarAbaFinanceiroFormatada(sheets, spreadsheetId, evento, despes
     });
   }
   function merge(r0, r1, c0, c1) {
-    fmt.push({ mergeCells: { range: { sheetId, startRowIndex: r0, endRowIndex: r1, startColumnIndex: c0, endColumnIndex: c1 }, mergeType: 'MERGE_ALL' } });
+    reqs.push({ mergeCells: { range: { sheetId, startRowIndex: r0, endRowIndex: r1, startColumnIndex: c0, endColumnIndex: c1 }, mergeType: 'MERGE_ALL' } });
   }
 
-  // ===== Linha 1: TITULO (cinza) =====
-  rows.push([String(evento.nome || `Evento ${evento.id}`).toUpperCase()]);
-  merge(0, 1, 0, NCOLS);
-  repeatCell(0, 1, 0, NCOLS, {
+  // Cinza topo A1:J2 + merge A1:J2 (2 linhas)
+  merge(0, 2, 0, NCOLS);
+  repeatCell(0, 2, 0, NCOLS, {
     backgroundColor: COR_CINZA,
     textFormat: { bold: true, fontSize: 14 },
     horizontalAlignment: 'CENTER',
-    verticalAlignment: 'MIDDLE'
+    verticalAlignment: 'MIDDLE',
   });
-  cursor++;
 
-  // ===== Linha 2: vazia cinza =====
-  rows.push([]);
-  repeatCell(1, 2, 0, NCOLS, { backgroundColor: COR_CINZA });
-  cursor++;
-
-  // ===== Linha 3: header geral (laranja claro) =====
-  // Descrição | Quantidade | Valor Uni | Valor Total | PAGAMENTOS (merge E-I) | FALTA PAGAR
-  const headerRow = new Array(NCOLS).fill('');
-  headerRow[COL_DESC] = 'Descrição';
-  headerRow[COL_QTD] = 'Quantidade';
-  headerRow[COL_VU] = 'Valor Uni';
-  headerRow[COL_VT] = 'Valor Total';
-  headerRow[COL_SOCIO0] = 'PAGAMENTOS';
-  headerRow[COL_FALTA] = 'FALTA PAGAR';
-  rows.push(headerRow);
-  merge(2, 3, COL_SOCIO0, COL_FALTA); // PAGAMENTOS ocupa E até I
-  repeatCell(2, 3, 0, NCOLS, {
+  // Header geral A3:J4 laranja claro + merge PAGAMENTOS E3:I3 + verticais A-D e J nas linhas 3-4
+  repeatCell(2, 4, 0, NCOLS, {
     backgroundColor: COR_LARANJA_CLARO,
     textFormat: { bold: true },
     horizontalAlignment: 'CENTER',
-    verticalAlignment: 'MIDDLE'
+    verticalAlignment: 'MIDDLE',
   });
-  cursor++;
+  // Merges verticais nas colunas singulares pra ocupar linhas 3-4
+  merge(2, 4, COL_DESC, COL_DESC + 1);  // Descrição A3:A4
+  merge(2, 4, COL_QTD, COL_QTD + 1);    // Quantidade B3:B4
+  merge(2, 4, COL_VU, COL_VU + 1);      // Valor Uni C3:C4
+  merge(2, 4, COL_VT, COL_VT + 1);      // Valor Total D3:D4
+  merge(2, 3, COL_SOCIO0, COL_FALTA);   // PAGAMENTOS E3:I3 (só linha 3)
+  merge(2, 4, COL_FALTA, COL_FALTA + 1);// FALTA PAGAR J3:J4
 
-  // Rastreia subtotais pra somar no VALOR TOTAL geral
-  const subRefs = { D: [], socios: SOCIOS_FIXOS.map(() => []), falta: [] };
+  // Por categoria
+  for (const cat of TEMPLATE_CATEGORIAS) {
+    const linhaCat0 = cat.linhaTitulo - 1; // 0-based
+    const primeiraItem0 = linhaCat0 + 1;
+    const linhaSub0 = linhaCat0 + cat.itens + 1;
 
-  // ===== POR CATEGORIA =====
-  for (const cat of CATEGORIAS_ORDEM) {
-    const itens = grupos[cat];
-
-    // Linha da categoria (merge A:D + socios em E-I + FALTA PAGAR em J) - laranja escuro
-    const catRow = new Array(NCOLS).fill('');
-    catRow[COL_DESC] = cat;
-    for (let i = 0; i < NSOCIOS; i++) catRow[COL_SOCIO0 + i] = SOCIOS_FIXOS[i];
-    catRow[COL_FALTA] = 'FALTA PAGAR';
-    rows.push(catRow);
-    merge(cursor, cursor + 1, COL_DESC, COL_SOCIO0); // merge A-D
-    repeatCell(cursor, cursor + 1, 0, NCOLS, {
+    // Linha categoria laranja escuro + merge A:D
+    merge(linhaCat0, linhaCat0 + 1, COL_DESC, COL_SOCIO0);
+    repeatCell(linhaCat0, linhaCat0 + 1, 0, NCOLS, {
       backgroundColor: COR_LARANJA_ESCURO,
       textFormat: { bold: true },
-      horizontalAlignment: 'CENTER'
+      horizontalAlignment: 'CENTER',
     });
-    cursor++;
 
-    const startItens = cursor; // 0-based, linha que será a 1ª de itens
+    // Coluna J itens: verde claro
+    repeatCell(primeiraItem0, linhaSub0, COL_FALTA, COL_FALTA + 1, {
+      backgroundColor: COR_VERDE_CLARO,
+    });
 
-    // Itens
-    for (const d of itens) {
-      const qtd = Number(d.quantidade || 0);
-      const vu = Number(d.valor_unitario || 0);
-      const vt = Number(d.valor || 0);
-      const falta = Number(d.falta_pagar || 0);
-      const fonte = d.fonte_pagamento || '';
-      const linha = new Array(NCOLS).fill('');
-      linha[COL_DESC] = d.descricao || '';
-      linha[COL_QTD] = qtd;
-      linha[COL_VU] = vu;
-      linha[COL_VT] = vt;
-      for (let i = 0; i < NSOCIOS; i++) {
-        linha[COL_SOCIO0 + i] = fonte === SOCIOS_FIXOS[i] ? vt : '';
-      }
-      linha[COL_FALTA] = falta;
-      rows.push(linha);
-      cursor++;
-    }
-
-    const endItens = cursor; // exclusivo
-
-    // Coluna J (FALTA PAGAR) das linhas de itens: fundo verde claro
-    if (itens.length > 0) {
-      repeatCell(startItens, endItens, COL_FALTA, COL_FALTA + 1, { backgroundColor: COR_VERDE_CLARO });
-    }
-
-    // SUB TOTAL (laranja claro)
-    const subRow = new Array(NCOLS).fill('');
-    subRow[COL_DESC] = 'SUB TOTAL';
-    if (itens.length > 0) {
-      subRow[COL_VT] = `=SUM(${colLetter(COL_VT)}${startItens + 1}:${colLetter(COL_VT)}${endItens})`;
-      for (let i = 0; i < NSOCIOS; i++) {
-        const col = colLetter(COL_SOCIO0 + i);
-        subRow[COL_SOCIO0 + i] = `=SUM(${col}${startItens + 1}:${col}${endItens})`;
-      }
-      subRow[COL_FALTA] = `=SUM(${colLetter(COL_FALTA)}${startItens + 1}:${colLetter(COL_FALTA)}${endItens})`;
-    }
-    rows.push(subRow);
-    repeatCell(cursor, cursor + 1, 0, NCOLS, {
+    // Linha do subtotal: laranja claro + merge B:D (A fica isolado com "SUB TOTAL")
+    merge(linhaSub0, linhaSub0 + 1, COL_QTD, COL_SOCIO0);
+    repeatCell(linhaSub0, linhaSub0 + 1, 0, NCOLS, {
       backgroundColor: COR_LARANJA_CLARO,
-      textFormat: { bold: true }
+      textFormat: { bold: true },
     });
-    // Rastreia subtotal
-    subRefs.D.push(`${colLetter(COL_VT)}${cursor + 1}`);
-    for (let i = 0; i < NSOCIOS; i++) subRefs.socios[i].push(`${colLetter(COL_SOCIO0 + i)}${cursor + 1}`);
-    subRefs.falta.push(`${colLetter(COL_FALTA)}${cursor + 1}`);
-    cursor++;
   }
 
-  // ===== VALOR TOTAL geral (laranja escuro) =====
-  const totRow = new Array(NCOLS).fill('');
-  totRow[COL_DESC] = 'VALOR TOTAL';
-  totRow[COL_VT] = `=${subRefs.D.join('+')}`;
-  for (let i = 0; i < NSOCIOS; i++) totRow[COL_SOCIO0 + i] = `=${subRefs.socios[i].join('+')}`;
-  totRow[COL_FALTA] = `=${subRefs.falta.join('+')}`;
-  rows.push(totRow);
-  merge(cursor, cursor + 1, COL_DESC, COL_VT);
-  repeatCell(cursor, cursor + 1, 0, NCOLS, {
+  // VALOR TOTAL linha 132: laranja escuro + merge B:D
+  merge(LINHA_VALOR_TOTAL - 1, LINHA_VALOR_TOTAL, COL_QTD, COL_SOCIO0);
+  repeatCell(LINHA_VALOR_TOTAL - 1, LINHA_VALOR_TOTAL, 0, NCOLS, {
     backgroundColor: COR_LARANJA_ESCURO,
     textFormat: { bold: true, fontSize: 12 },
-    horizontalAlignment: 'CENTER'
+    horizontalAlignment: 'CENTER',
   });
-  const linhaValorTotal = cursor + 1;
-  cursor++;
 
-  // ===== Linhas em branco =====
-  rows.push([]); rows.push([]); cursor += 2;
-
-  // ===== BORDERO DE RECEITAS (cinza) =====
-  const bordRow = new Array(NCOLS).fill('');
-  bordRow[COL_DESC] = 'BORDERO DE RECEITAS';
-  rows.push(bordRow);
-  merge(cursor, cursor + 1, 0, NCOLS);
-  repeatCell(cursor, cursor + 1, 0, NCOLS, {
-    backgroundColor: COR_CINZA,
-    textFormat: { bold: true, fontSize: 12 },
-    horizontalAlignment: 'CENTER'
-  });
-  cursor++;
-
-  // Header receitas (laranja claro)
-  const hRec = new Array(NCOLS).fill('');
-  hRec[COL_DESC] = 'Descrição';
-  hRec[COL_VT] = 'Valor Total';
-  hRec[COL_SOCIO0] = 'Conta';
-  rows.push(hRec);
-  repeatCell(cursor, cursor + 1, 0, NCOLS, {
-    backgroundColor: COR_LARANJA_CLARO,
-    textFormat: { bold: true }
-  });
-  cursor++;
-  const startRec = cursor;
-
-  for (const r of receitas) {
-    const linha = new Array(NCOLS).fill('');
-    linha[COL_DESC] = r.descricao || '';
-    linha[COL_VT] = Number(r.valor || 0);
-    linha[COL_SOCIO0] = r.conta || '';
-    rows.push(linha);
-    cursor++;
-  }
-  const endRec = cursor;
-
-  // TOTAL DE RECEITA
-  const totRecRow = new Array(NCOLS).fill('');
-  totRecRow[COL_DESC] = 'TOTAL DE RECEITA';
-  if (receitas.length > 0) {
-    totRecRow[COL_VT] = `=SUM(${colLetter(COL_VT)}${startRec + 1}:${colLetter(COL_VT)}${endRec})`;
-  }
-  rows.push(totRecRow);
-  repeatCell(cursor, cursor + 1, 0, NCOLS, {
-    backgroundColor: COR_LARANJA_CLARO,
-    textFormat: { bold: true }
-  });
-  const linhaTotalReceita = cursor + 1;
-  cursor++;
-
-  rows.push([]); cursor++;
-
-  // ===== RESULTADO DO EVENTO (cinza) =====
-  const resHeader = new Array(NCOLS).fill('');
-  resHeader[COL_DESC] = 'RESULTADO DO EVENTO';
-  rows.push(resHeader);
-  merge(cursor, cursor + 1, 0, NCOLS);
-  repeatCell(cursor, cursor + 1, 0, NCOLS, {
-    backgroundColor: COR_CINZA,
-    textFormat: { bold: true, fontSize: 12 },
-    horizontalAlignment: 'CENTER'
-  });
-  cursor++;
-
-  const rowReceita = new Array(NCOLS).fill('');
-  rowReceita[COL_DESC] = 'Total de Receitas';
-  rowReceita[COL_VT] = `=${colLetter(COL_VT)}${linhaTotalReceita}`;
-  rows.push(rowReceita);
-  cursor++;
-  const linhaRowReceita = cursor;
-
-  const rowDespesa = new Array(NCOLS).fill('');
-  rowDespesa[COL_DESC] = 'Total de Despesas';
-  rowDespesa[COL_VT] = `=${colLetter(COL_VT)}${linhaValorTotal}`;
-  rows.push(rowDespesa);
-  cursor++;
-  const linhaRowDespesa = cursor;
-
-  const rowLucro = new Array(NCOLS).fill('');
-  rowLucro[COL_DESC] = 'LUCRO / PREJUÍZO';
-  rowLucro[COL_VT] = `=${colLetter(COL_VT)}${linhaRowReceita}-${colLetter(COL_VT)}${linhaRowDespesa}`;
-  rows.push(rowLucro);
-  repeatCell(cursor, cursor + 1, 0, NCOLS, {
+  // BORDERO DE RECEITAS linha 136: laranja escuro + merge A:I
+  merge(LINHA_BORDERO - 1, LINHA_BORDERO, 0, COL_FALTA);
+  repeatCell(LINHA_BORDERO - 1, LINHA_BORDERO, 0, NCOLS, {
     backgroundColor: COR_LARANJA_ESCURO,
-    textFormat: { bold: true, fontSize: 12 }
-  });
-  cursor++;
-
-  // Escreve valores
-  await sheets.spreadsheets.values.update({
-    spreadsheetId,
-    range: `${ABA_FINANCEIRO}!A1`,
-    valueInputOption: 'USER_ENTERED',
-    requestBody: { values: rows }
+    textFormat: { bold: true, fontSize: 12 },
+    horizontalAlignment: 'CENTER',
   });
 
-  // Formato moeda BRL nas colunas de valor — APENAS a partir da linha 4
-  // (linha 3 é header geral, linhas 1-2 são titulo, e essa formatacao em
-  // headers fazia o sócio "314" aparecer como "R$ 314,00").
-  const colsMoeda = [COL_VT];
-  for (let i = 0; i < NSOCIOS; i++) colsMoeda.push(COL_SOCIO0 + i);
-  colsMoeda.push(COL_FALTA);
+  // Header receitas linha 137: laranja claro + merge A:C (DESCRIÇÃO)
+  merge(LINHA_HEADER_REC - 1, LINHA_HEADER_REC, COL_DESC, COL_VT);
+  repeatCell(LINHA_HEADER_REC - 1, LINHA_HEADER_REC, 0, NCOLS, {
+    backgroundColor: COR_LARANJA_CLARO,
+    textFormat: { bold: true },
+    horizontalAlignment: 'CENTER',
+  });
+
+  // Receitas (linhas 138-142): merge A:C nas descrições + coluna J verde claro
+  for (let l = LINHA_REC_INICIO; l <= LINHA_REC_FIM; l++) {
+    merge(l - 1, l, COL_DESC, COL_VT);
+  }
+  repeatCell(LINHA_REC_INICIO - 1, LINHA_REC_FIM, COL_FALTA, COL_FALTA + 1, {
+    backgroundColor: COR_VERDE_CLARO,
+  });
+
+  // TOTAL DE RECEITA linha 143: laranja claro + merge A:C
+  merge(LINHA_TOTAL_REC - 1, LINHA_TOTAL_REC, COL_DESC, COL_VT);
+  repeatCell(LINHA_TOTAL_REC - 1, LINHA_TOTAL_REC, 0, NCOLS, {
+    backgroundColor: COR_LARANJA_CLARO,
+    textFormat: { bold: true },
+  });
+
+  // RESULTADO DO EVENTO linha 145: laranja escuro + merge B:C (A fica isolado)
+  merge(LINHA_RESULTADO - 1, LINHA_RESULTADO, COL_QTD, COL_VT);
+  repeatCell(LINHA_RESULTADO - 1, LINHA_RESULTADO, 0, NCOLS, {
+    backgroundColor: COR_LARANJA_ESCURO,
+    textFormat: { bold: true, fontSize: 12 },
+    horizontalAlignment: 'CENTER',
+  });
+
+  // Formato moeda nas colunas D, E, F, G, H, I, J (linhas 5+ até 145)
+  const colsMoeda = [COL_VT, ...SOCIOS_FIXOS.map((_, i) => COL_SOCIO0 + i), COL_FALTA];
   for (const c of colsMoeda) {
-    fmt.push({
+    reqs.push({
       repeatCell: {
-        range: { sheetId, startRowIndex: 4, endRowIndex: cursor, startColumnIndex: c, endColumnIndex: c + 1 },
+        range: { sheetId, startRowIndex: 4, endRowIndex: LINHA_RESULTADO, startColumnIndex: c, endColumnIndex: c + 1 },
         cell: { userEnteredFormat: { numberFormat: { type: 'CURRENCY', pattern: 'R$ #,##0.00' } } },
         fields: 'userEnteredFormat.numberFormat'
       }
     });
   }
-
-  // Auto-resize colunas
-  fmt.push({
-    autoResizeDimensions: {
-      dimensions: { sheetId, dimension: 'COLUMNS', startIndex: 0, endIndex: NCOLS }
+  // Quantidade (B) sem moeda
+  reqs.push({
+    repeatCell: {
+      range: { sheetId, startRowIndex: 4, endRowIndex: LINHA_RESULTADO, startColumnIndex: COL_QTD, endColumnIndex: COL_QTD + 1 },
+      cell: { userEnteredFormat: { numberFormat: { type: 'NUMBER', pattern: '0' } } },
+      fields: 'userEnteredFormat.numberFormat'
     }
   });
 
-  if (fmt.length > 0) {
-    await sheets.spreadsheets.batchUpdate({ spreadsheetId, requestBody: { requests: fmt } });
+  // Bordas pretas finas em todo o range usado (linhas 1 até RESULTADO)
+  reqs.push({
+    updateBorders: {
+      range: { sheetId, startRowIndex: 0, endRowIndex: LINHA_RESULTADO, startColumnIndex: 0, endColumnIndex: NCOLS },
+      top:    { style: 'SOLID', width: 1, color: COR_PRETO },
+      bottom: { style: 'SOLID', width: 1, color: COR_PRETO },
+      left:   { style: 'SOLID', width: 1, color: COR_PRETO },
+      right:  { style: 'SOLID', width: 1, color: COR_PRETO },
+      innerHorizontal: { style: 'SOLID', width: 1, color: COR_PRETO },
+      innerVertical:   { style: 'SOLID', width: 1, color: COR_PRETO },
+    }
+  });
+
+  if (reqs.length > 0) {
+    await sheets.spreadsheets.batchUpdate({ spreadsheetId, requestBody: { requests: reqs } });
   }
 }
+
 
 // Sincroniza o evento na planilha. Idempotente: limpa as abas EventHub
 // e regrava com o estado atual do banco. Cria planilha do template se evento
