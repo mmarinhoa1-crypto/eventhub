@@ -205,7 +205,7 @@ export default function ProjecaoTab({ eventoId }) {
     reader.readAsText(f, 'utf-8')
   }
 
-  if (loading) return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div></div>
+  if (loading) return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white/70"></div></div>
 
   const despesas = itens.filter(i => i.tipo === 'despesa')
   const receitas = itens.filter(i => i.tipo === 'receita')
@@ -219,7 +219,7 @@ export default function ProjecaoTab({ eventoId }) {
   return (
     <div className="space-y-4">
       {/* Resumo compacto + menu */}
-      <div className="bg-white rounded-xl border border-gray-200 px-4 py-3 flex items-center justify-between gap-6">
+      <div className="bg-white dark:bg-[#1c1c24] rounded-xl border border-gray-200 dark:border-white/10 px-4 py-3 flex items-center justify-between gap-6">
         <div className="flex items-center gap-6 flex-wrap">
           <ResumoItem label="Receita projetada" value={fmt(resumo.receita.projetado)} sub={'realiz. ' + fmt(resumo.receita.realizado + resumo.receita.fora_projecao)} />
           <ResumoItem label="Despesa projetada" value={fmt(resumo.despesa.projetado)} sub={'realiz. ' + fmt(resumo.despesa.realizado + resumo.despesa.fora_projecao)} />
@@ -228,21 +228,21 @@ export default function ProjecaoTab({ eventoId }) {
         </div>
         <div className="relative" ref={menuRef}>
           <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={onFileUpload} />
-          <button onClick={() => setMenuOpen(o => !o)} className="p-2 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50" title="Mais ações">
+          <button onClick={() => setMenuOpen(o => !o)} className="p-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] text-gray-600 dark:text-white/70 hover:bg-gray-50 dark:hover:bg-white/[0.08]" title="Mais ações">
             <MoreHorizontal size={16} />
           </button>
           {menuOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden">
-              <button onClick={() => { setMenuOpen(false); fileRef.current?.click() }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left">
+            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-[#1c1c24] border border-gray-200 dark:border-white/10 rounded-lg shadow-lg z-10 overflow-hidden">
+              <button onClick={() => { setMenuOpen(false); fileRef.current?.click() }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-white/80 hover:bg-gray-50 dark:hover:bg-white/[0.06] text-left">
                 <Upload size={14} /> Importar CSV
               </button>
-              <button onClick={() => { setMenuOpen(false); setShowImport(true) }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left">
+              <button onClick={() => { setMenuOpen(false); setShowImport(true) }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-white/80 hover:bg-gray-50 dark:hover:bg-white/[0.06] text-left">
                 <Upload size={14} /> Colar CSV
               </button>
-              <button onClick={() => { setMenuOpen(false); exportarExcel() }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left">
+              <button onClick={() => { setMenuOpen(false); exportarExcel() }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-white/80 hover:bg-gray-50 dark:hover:bg-white/[0.06] text-left">
                 <FileSpreadsheet size={14} /> Exportar Excel
               </button>
-              <button onClick={() => { setMenuOpen(false); exportarCSV() }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left">
+              <button onClick={() => { setMenuOpen(false); exportarCSV() }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-white/80 hover:bg-gray-50 dark:hover:bg-white/[0.06] text-left">
                 <Download size={14} /> Exportar CSV
               </button>
             </div>
@@ -253,8 +253,8 @@ export default function ProjecaoTab({ eventoId }) {
       {/* Despesas — um bloco por centro de custo */}
       <section className="space-y-3">
         <div className="flex items-baseline justify-between px-1">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-500">Despesas</h2>
-          <span className="text-[11px] text-gray-400">Projetado {fmt(resumo.despesa.projetado)} · Realizado {fmt(resumo.despesa.realizado + resumo.despesa.fora_projecao)}</span>
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-white/50">Despesas</h2>
+          <span className="text-[11px] text-gray-400 dark:text-white/40">Projetado {fmt(resumo.despesa.projetado)} · Realizado {fmt(resumo.despesa.realizado + resumo.despesa.fora_projecao)}</span>
         </div>
         {CENTROS_DESPESA.map(centro => (
           <BlocoCentro
@@ -280,7 +280,7 @@ export default function ProjecaoTab({ eventoId }) {
           />
         )}
         {resumo.despesa.fora_projecao > 0 && (
-          <p className="px-2 text-[11px] text-amber-700 italic">Realizado fora da projeção (sem vínculo): {fmt(resumo.despesa.fora_projecao)}</p>
+          <p className="px-2 text-[11px] text-amber-700 dark:text-amber-400 italic">Realizado fora da projeção (sem vínculo): {fmt(resumo.despesa.fora_projecao)}</p>
         )}
       </section>
 
@@ -297,24 +297,24 @@ export default function ProjecaoTab({ eventoId }) {
           onHistorico={verHistorico}
         />
         {resumo.receita.fora_projecao > 0 && (
-          <p className="px-2 text-[11px] text-amber-700 italic">Realizado fora da projeção (sem vínculo): {fmt(resumo.receita.fora_projecao)}</p>
+          <p className="px-2 text-[11px] text-amber-700 dark:text-amber-400 italic">Realizado fora da projeção (sem vínculo): {fmt(resumo.receita.fora_projecao)}</p>
         )}
       </section>
 
       {/* Modal colar CSV */}
       {showImport && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowImport(false)}>
-          <div className="bg-white rounded-xl max-w-2xl w-full p-5" onClick={e => e.stopPropagation()}>
-            <h3 className="font-semibold text-base mb-2 text-gray-900">Colar CSV</h3>
-            <p className="text-xs text-gray-500 mb-3">Colunas: <code className="bg-gray-100 px-1 rounded">tipo,centro_custo,descricao,fornecedor_previsto,quantidade,valor_unitario,valor_projetado,observacoes</code>. Se qtd e valor_unit estiverem preenchidos, total = qtd × valor_unit.</p>
+          <div className="bg-white dark:bg-[#1c1c24] rounded-xl max-w-2xl w-full p-5 border border-transparent dark:border-white/10" onClick={e => e.stopPropagation()}>
+            <h3 className="font-semibold text-base mb-2 text-gray-900 dark:text-white/90">Colar CSV</h3>
+            <p className="text-xs text-gray-500 dark:text-white/60 mb-3">Colunas: <code className="bg-gray-100 dark:bg-white/[0.06] dark:text-white/80 px-1 rounded">tipo,centro_custo,descricao,fornecedor_previsto,quantidade,valor_unitario,valor_projetado,observacoes</code>. Se qtd e valor_unit estiverem preenchidos, total = qtd × valor_unit.</p>
             <textarea
               value={csvText} onChange={e => setCsvText(e.target.value)}
               placeholder="tipo,centro_custo,descricao,fornecedor_previsto,quantidade,valor_unitario,valor_projetado,observacoes&#10;despesa,Bar,Cerveja lata,Ambev,500,12,6000,&#10;despesa,Artistico,DJ X,,1,12000,12000,&#10;receita,,Ingressos,,500,160,80000,"
-              className="w-full h-48 border border-gray-200 rounded-lg p-2 text-xs font-mono outline-none focus:border-gray-400"
+              className="w-full h-48 border border-gray-200 dark:border-white/10 dark:bg-white/[0.03] dark:text-white/90 dark:placeholder:text-white/30 rounded-lg p-2 text-xs font-mono outline-none focus:border-gray-400 dark:focus:border-white/30"
             />
             <div className="flex justify-end gap-2 mt-3">
-              <button onClick={() => setShowImport(false)} className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50">Cancelar</button>
-              <button onClick={() => importarCSV(csvText)} className="px-3 py-1.5 text-sm rounded-lg bg-gray-900 text-white hover:bg-gray-800">Importar</button>
+              <button onClick={() => setShowImport(false)} className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] text-gray-700 dark:text-white/80 hover:bg-gray-50 dark:hover:bg-white/[0.08]">Cancelar</button>
+              <button onClick={() => importarCSV(csvText)} className="px-3 py-1.5 text-sm rounded-lg bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-white/90">Importar</button>
             </div>
           </div>
         </div>
@@ -323,28 +323,28 @@ export default function ProjecaoTab({ eventoId }) {
       {/* Modal histórico */}
       {historico && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setHistorico(null)}>
-          <div className="bg-white rounded-xl max-w-xl w-full p-5" onClick={e => e.stopPropagation()}>
-            <h3 className="font-semibold text-base text-gray-900">Histórico — {historico.item.descricao}</h3>
-            <p className="text-xs text-gray-500 mb-4">Valor atual: {fmt(historico.item.valor_projetado)}</p>
+          <div className="bg-white dark:bg-[#1c1c24] rounded-xl max-w-xl w-full p-5 border border-transparent dark:border-white/10" onClick={e => e.stopPropagation()}>
+            <h3 className="font-semibold text-base text-gray-900 dark:text-white/90">Histórico — {historico.item.descricao}</h3>
+            <p className="text-xs text-gray-500 dark:text-white/60 mb-4">Valor atual: {fmt(historico.item.valor_projetado)}</p>
             {historico.revisoes.length === 0 ? (
-              <p className="text-sm text-gray-400 italic">Nenhuma revisão registrada ainda.</p>
+              <p className="text-sm text-gray-400 dark:text-white/40 italic">Nenhuma revisão registrada ainda.</p>
             ) : (
               <table className="w-full text-sm">
-                <thead><tr className="text-[10px] uppercase tracking-wide text-gray-500 font-medium border-b border-gray-100"><th className="text-left py-1.5">Quando</th><th className="text-right py-1.5">Antes</th><th className="text-right py-1.5">Depois</th><th className="text-left py-1.5 pl-3">Motivo</th></tr></thead>
+                <thead><tr className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-white/50 font-medium border-b border-gray-100 dark:border-white/[0.06]"><th className="text-left py-1.5">Quando</th><th className="text-right py-1.5">Antes</th><th className="text-right py-1.5">Depois</th><th className="text-left py-1.5 pl-3">Motivo</th></tr></thead>
                 <tbody>
                   {historico.revisoes.map(h => (
-                    <tr key={h.id} className="border-b border-gray-100 last:border-0">
-                      <td className="py-1.5 text-gray-600">{new Date(h.alterado_em).toLocaleString('pt-BR')}</td>
-                      <td className="py-1.5 text-right text-gray-500">{fmt(h.valor_antes)}</td>
-                      <td className="py-1.5 text-right font-medium text-gray-900">{fmt(h.valor_depois)}</td>
-                      <td className="py-1.5 pl-3 text-gray-700">{h.motivo || '—'}</td>
+                    <tr key={h.id} className="border-b border-gray-100 dark:border-white/[0.04] last:border-0">
+                      <td className="py-1.5 text-gray-600 dark:text-white/70">{new Date(h.alterado_em).toLocaleString('pt-BR')}</td>
+                      <td className="py-1.5 text-right text-gray-500 dark:text-white/60">{fmt(h.valor_antes)}</td>
+                      <td className="py-1.5 text-right font-medium text-gray-900 dark:text-white/90">{fmt(h.valor_depois)}</td>
+                      <td className="py-1.5 pl-3 text-gray-700 dark:text-white/80">{h.motivo || '—'}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             )}
             <div className="flex justify-end mt-4">
-              <button onClick={() => setHistorico(null)} className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50">Fechar</button>
+              <button onClick={() => setHistorico(null)} className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] text-gray-700 dark:text-white/80 hover:bg-gray-50 dark:hover:bg-white/[0.08]">Fechar</button>
             </div>
           </div>
         </div>
@@ -356,9 +356,9 @@ export default function ProjecaoTab({ eventoId }) {
 function ResumoItem({ label, value, sub, danger }) {
   return (
     <div>
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className={'text-base font-semibold ' + (danger ? 'text-red-600' : 'text-gray-900')}>{value}</p>
-      {sub && <p className="text-[11px] text-gray-400">{sub}</p>}
+      <p className="text-xs text-gray-500 dark:text-white/60">{label}</p>
+      <p className={'text-base font-semibold ' + (danger ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white/90')}>{value}</p>
+      {sub && <p className="text-[11px] text-gray-400 dark:text-white/40">{sub}</p>}
     </div>
   )
 }
@@ -373,11 +373,11 @@ function BlocoCentro({ titulo, tipo, centro, itens, onCreate, onUpdate, onRemove
   const temItens = itens.length > 0
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className="px-4 py-2.5 border-b border-gray-100 flex items-center justify-between">
+    <div className="bg-white dark:bg-[#1c1c24] rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
+      <div className="px-4 py-2.5 border-b border-gray-100 dark:border-white/[0.06] flex items-center justify-between">
         <div className="flex items-baseline gap-2">
-          <h3 className="font-semibold text-gray-900 text-sm">{nome}</h3>
-          <span className="text-[11px] text-gray-400">
+          <h3 className="font-semibold text-gray-900 dark:text-white/90 text-sm">{nome}</h3>
+          <span className="text-[11px] text-gray-400 dark:text-white/40">
             {temItens ? itens.length + ' ' + (itens.length === 1 ? 'item' : 'itens') + ' · ' + fmt(totalProjetado) : 'vazio'}
           </span>
         </div>
@@ -386,14 +386,14 @@ function BlocoCentro({ titulo, tipo, centro, itens, onCreate, onUpdate, onRemove
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-100">
-              <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wide text-gray-500 font-medium w-[32%]">Descrição</th>
-              <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wide text-gray-500 font-medium w-[18%]">Fornecedor</th>
-              <th className="px-2 py-2 text-right text-[10px] uppercase tracking-wide text-gray-500 font-medium w-[8%]">Qtd</th>
-              <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wide text-gray-500 font-medium w-[10%]">Valor Unit</th>
-              <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wide text-gray-500 font-medium w-[11%]">Projetado</th>
-              <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wide text-gray-500 font-medium w-[8%]">Realizado</th>
-              <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wide text-gray-500 font-medium w-[8%]">Variação</th>
+            <tr className="bg-gray-50 dark:bg-white/[0.03] border-b border-gray-100 dark:border-white/[0.06]">
+              <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wide text-gray-500 dark:text-white/50 font-medium w-[32%]">Descrição</th>
+              <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wide text-gray-500 dark:text-white/50 font-medium w-[18%]">Fornecedor</th>
+              <th className="px-2 py-2 text-right text-[10px] uppercase tracking-wide text-gray-500 dark:text-white/50 font-medium w-[8%]">Qtd</th>
+              <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wide text-gray-500 dark:text-white/50 font-medium w-[10%]">Valor Unit</th>
+              <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wide text-gray-500 dark:text-white/50 font-medium w-[11%]">Projetado</th>
+              <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wide text-gray-500 dark:text-white/50 font-medium w-[8%]">Realizado</th>
+              <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wide text-gray-500 dark:text-white/50 font-medium w-[8%]">Variação</th>
               <th className="px-2 py-2 w-[5%]"></th>
             </tr>
           </thead>
@@ -405,19 +405,19 @@ function BlocoCentro({ titulo, tipo, centro, itens, onCreate, onUpdate, onRemove
           </tbody>
           {temItens && (
             <tfoot>
-              <tr className="border-t border-gray-200 bg-gray-50">
-                <td className="px-3 py-2 text-xs text-gray-500 font-medium" colSpan={4}>Subtotal</td>
-                <td className="px-3 py-2 text-right font-semibold text-gray-900">{fmt(totalProjetado)}</td>
-                <td className="px-3 py-2 text-right font-medium text-gray-700">{fmt(totalRealizado)}</td>
-                <td className={'px-3 py-2 text-right font-semibold ' + (variacao === 0 ? 'text-gray-400' : (ehDespesa ? (variacao > 0 ? 'text-red-600' : 'text-green-600') : (variacao > 0 ? 'text-green-600' : 'text-red-600')))}>
+              <tr className="border-t border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.04]">
+                <td className="px-3 py-2 text-xs text-gray-500 dark:text-white/60 font-medium" colSpan={4}>Subtotal</td>
+                <td className="px-3 py-2 text-right font-semibold text-gray-900 dark:text-white/90">{fmt(totalProjetado)}</td>
+                <td className="px-3 py-2 text-right font-medium text-gray-700 dark:text-white/80">{fmt(totalRealizado)}</td>
+                <td className={'px-3 py-2 text-right font-semibold ' + (variacao === 0 ? 'text-gray-400 dark:text-white/40' : (ehDespesa ? (variacao > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400') : (variacao > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400')))}>
                   {variacao === 0 ? '—' : (variacao > 0 ? '+' : '') + fmt(variacao)}
                 </td>
                 <td></td>
               </tr>
               {totalAPagar > 0 && (
-                <tr className="bg-gray-50 border-t border-gray-100">
-                  <td className="px-3 py-1.5 text-[11px] text-gray-600" colSpan={6}>A pagar</td>
-                  <td className="px-3 py-1.5 text-right text-[11px] font-medium text-gray-700">{fmt(totalAPagar)}</td>
+                <tr className="bg-gray-50 dark:bg-white/[0.04] border-t border-gray-100 dark:border-white/[0.06]">
+                  <td className="px-3 py-1.5 text-[11px] text-gray-600 dark:text-white/70" colSpan={6}>A pagar</td>
+                  <td className="px-3 py-1.5 text-right text-[11px] font-medium text-gray-700 dark:text-white/80">{fmt(totalAPagar)}</td>
                   <td></td>
                 </tr>
               )}
@@ -434,20 +434,20 @@ function LinhaItem({ item, ehDespesa, onUpdate, onRemove, onHistorico }) {
   const real = Number(item.valor_realizado || 0)
   const vari = real - proj
   return (
-    <tr className="border-b border-gray-100 hover:bg-gray-50/60">
+    <tr className="border-b border-gray-100 dark:border-white/[0.04] hover:bg-gray-50/60 dark:hover:bg-white/[0.03]">
       <td className="px-3 py-1.5"><CellText value={item.descricao || ''} onSave={v => onUpdate(item.id, 'descricao', v)} /></td>
       <td className="px-3 py-1.5"><CellText value={item.fornecedor_previsto || ''} onSave={v => onUpdate(item.id, 'fornecedor_previsto', v)} placeholder="—" /></td>
       <td className="px-2 py-1.5 text-right"><CellNumber value={item.quantidade} onSave={v => onUpdate(item.id, 'quantidade', v)} /></td>
       <td className="px-3 py-1.5 text-right"><CellMoney value={item.valor_unitario} onSave={v => onUpdate(item.id, 'valor_unitario', v)} nullable /></td>
       <td className="px-3 py-1.5 text-right"><CellMoney value={proj} onSave={v => onUpdate(item.id, 'valor_projetado', v)} /></td>
-      <td className="px-3 py-1.5 text-right text-sm text-gray-600">{fmt(real)}</td>
-      <td className={'px-3 py-1.5 text-right text-sm font-medium ' + (vari === 0 ? 'text-gray-400' : (ehDespesa ? (vari > 0 ? 'text-red-600' : 'text-green-600') : (vari > 0 ? 'text-green-600' : 'text-red-600')))}>
+      <td className="px-3 py-1.5 text-right text-sm text-gray-600 dark:text-white/70">{fmt(real)}</td>
+      <td className={'px-3 py-1.5 text-right text-sm font-medium ' + (vari === 0 ? 'text-gray-400 dark:text-white/40' : (ehDespesa ? (vari > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400') : (vari > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400')))}>
         {vari === 0 ? '—' : (vari > 0 ? '+' : '') + fmt(vari)}
       </td>
       <td className="px-2 py-1.5 text-right">
         <div className="inline-flex gap-0.5">
-          <button onClick={() => onHistorico(item)} title="Histórico" className="p-1 text-gray-300 hover:text-gray-700 rounded"><History size={13} /></button>
-          <button onClick={() => onRemove(item.id)} title="Remover" className="p-1 text-gray-300 hover:text-red-600 rounded"><Trash2 size={13} /></button>
+          <button onClick={() => onHistorico(item)} title="Histórico" className="p-1 text-gray-300 dark:text-white/30 hover:text-gray-700 dark:hover:text-white/80 rounded"><History size={13} /></button>
+          <button onClick={() => onRemove(item.id)} title="Remover" className="p-1 text-gray-300 dark:text-white/30 hover:text-red-600 dark:hover:text-red-400 rounded"><Trash2 size={13} /></button>
         </div>
       </td>
     </tr>
@@ -492,41 +492,41 @@ function LinhaNova({ centro, onCreate }) {
   const pronto = draft.descricao.trim().length > 0
 
   return (
-    <tr className="border-b border-gray-100 bg-gray-50/40">
+    <tr className="border-b border-gray-100 dark:border-white/[0.04] bg-gray-50/40 dark:bg-white/[0.02]">
       <td className="px-3 py-1.5">
         <input ref={descRef} value={draft.descricao} onChange={e => setDraft(d => ({ ...d, descricao: e.target.value }))} onKeyDown={onKey}
           placeholder="+ Nova linha — descrição..."
-          className="w-full bg-transparent text-sm px-1 py-0.5 rounded border-0 placeholder:text-gray-400 placeholder:italic focus:bg-white focus:ring-1 focus:ring-gray-300 outline-none" />
+          className="w-full bg-transparent text-sm px-1 py-0.5 rounded border-0 dark:text-white/90 placeholder:text-gray-400 dark:placeholder:text-white/30 placeholder:italic focus:bg-white dark:focus:bg-white/[0.06] focus:ring-1 focus:ring-gray-300 dark:focus:ring-white/20 outline-none" />
       </td>
       <td className="px-3 py-1.5">
         <input value={draft.fornecedor_previsto} onChange={e => setDraft(d => ({ ...d, fornecedor_previsto: e.target.value }))} onKeyDown={onKey}
           placeholder="—"
-          className="w-full bg-transparent text-sm px-1 py-0.5 rounded border-0 placeholder:text-gray-300 focus:bg-white focus:ring-1 focus:ring-gray-300 outline-none" />
+          className="w-full bg-transparent text-sm px-1 py-0.5 rounded border-0 dark:text-white/90 placeholder:text-gray-300 dark:placeholder:text-white/25 focus:bg-white dark:focus:bg-white/[0.06] focus:ring-1 focus:ring-gray-300 dark:focus:ring-white/20 outline-none" />
       </td>
       <td className="px-2 py-1.5 text-right">
         <input value={draft.quantidade} onChange={e => setDraft(d => ({ ...d, quantidade: e.target.value }))} onKeyDown={onKey}
           placeholder="—"
-          className="w-full bg-transparent text-sm text-right px-1 py-0.5 rounded border-0 placeholder:text-gray-300 focus:bg-white focus:ring-1 focus:ring-gray-300 outline-none" />
+          className="w-full bg-transparent text-sm text-right px-1 py-0.5 rounded border-0 dark:text-white/90 placeholder:text-gray-300 dark:placeholder:text-white/25 focus:bg-white dark:focus:bg-white/[0.06] focus:ring-1 focus:ring-gray-300 dark:focus:ring-white/20 outline-none" />
       </td>
       <td className="px-3 py-1.5 text-right">
         <input value={draft.valor_unitario} onChange={e => setDraft(d => ({ ...d, valor_unitario: e.target.value }))} onKeyDown={onKey}
           placeholder="—"
-          className="w-full bg-transparent text-sm text-right px-1 py-0.5 rounded border-0 placeholder:text-gray-300 focus:bg-white focus:ring-1 focus:ring-gray-300 outline-none" />
+          className="w-full bg-transparent text-sm text-right px-1 py-0.5 rounded border-0 dark:text-white/90 placeholder:text-gray-300 dark:placeholder:text-white/25 focus:bg-white dark:focus:bg-white/[0.06] focus:ring-1 focus:ring-gray-300 dark:focus:ring-white/20 outline-none" />
       </td>
       <td className="px-3 py-1.5 text-right">
         {totalCalc != null ? (
-          <span className="text-sm text-gray-500 italic" title="Calculado (Qtd × Valor Unit)">{fmt(totalCalc)}</span>
+          <span className="text-sm text-gray-500 dark:text-white/60 italic" title="Calculado (Qtd × Valor Unit)">{fmt(totalCalc)}</span>
         ) : (
           <input value={draft.valor_projetado} onChange={e => setDraft(d => ({ ...d, valor_projetado: e.target.value }))} onKeyDown={onKey}
             placeholder="0,00"
-            className="w-full bg-transparent text-sm text-right px-1 py-0.5 rounded border-0 placeholder:text-gray-300 focus:bg-white focus:ring-1 focus:ring-gray-300 outline-none" />
+            className="w-full bg-transparent text-sm text-right px-1 py-0.5 rounded border-0 dark:text-white/90 placeholder:text-gray-300 dark:placeholder:text-white/25 focus:bg-white dark:focus:bg-white/[0.06] focus:ring-1 focus:ring-gray-300 dark:focus:ring-white/20 outline-none" />
         )}
       </td>
       <td></td>
       <td></td>
       <td className="px-2 py-1.5 text-right">
         <button onClick={() => salvar(true)} disabled={!pronto || saving} title="Adicionar (Enter)"
-          className={'p-1 rounded ' + (pronto && !saving ? 'text-gray-700 hover:bg-white' : 'text-gray-300 cursor-not-allowed')}>
+          className={'p-1 rounded ' + (pronto && !saving ? 'text-gray-700 dark:text-white/80 hover:bg-white dark:hover:bg-white/[0.08]' : 'text-gray-300 dark:text-white/25 cursor-not-allowed')}>
           <Check size={13} />
         </button>
       </td>
@@ -544,7 +544,7 @@ function CellText({ value, onSave, placeholder = '' }) {
       onBlur={() => v !== value && onSave(v)}
       onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }}
       placeholder={placeholder}
-      className="w-full bg-transparent px-1 py-0.5 rounded border-0 placeholder:text-gray-300 hover:bg-white focus:bg-white focus:ring-1 focus:ring-gray-300 outline-none text-sm"
+      className="w-full bg-transparent px-1 py-0.5 rounded border-0 dark:text-white/90 placeholder:text-gray-300 dark:placeholder:text-white/25 hover:bg-white dark:hover:bg-white/[0.04] focus:bg-white dark:focus:bg-white/[0.06] focus:ring-1 focus:ring-gray-300 dark:focus:ring-white/20 outline-none text-sm"
     />
   )
 }
@@ -567,7 +567,7 @@ function CellMoney({ value, onSave, nullable = false }) {
       }}
       onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }}
       placeholder={nullable ? '—' : '0,00'}
-      className="w-full bg-transparent text-right px-1 py-0.5 rounded border-0 placeholder:text-gray-300 hover:bg-white focus:bg-white focus:ring-1 focus:ring-gray-300 outline-none text-sm"
+      className="w-full bg-transparent text-right px-1 py-0.5 rounded border-0 dark:text-white/90 placeholder:text-gray-300 dark:placeholder:text-white/25 hover:bg-white dark:hover:bg-white/[0.04] focus:bg-white dark:focus:bg-white/[0.06] focus:ring-1 focus:ring-gray-300 dark:focus:ring-white/20 outline-none text-sm"
     />
   )
 }
@@ -590,7 +590,7 @@ function CellNumber({ value, onSave }) {
       }}
       onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }}
       placeholder="—"
-      className="w-full bg-transparent text-right px-1 py-0.5 rounded border-0 placeholder:text-gray-300 hover:bg-white focus:bg-white focus:ring-1 focus:ring-gray-300 outline-none text-sm"
+      className="w-full bg-transparent text-right px-1 py-0.5 rounded border-0 dark:text-white/90 placeholder:text-gray-300 dark:placeholder:text-white/25 hover:bg-white dark:hover:bg-white/[0.04] focus:bg-white dark:focus:bg-white/[0.06] focus:ring-1 focus:ring-gray-300 dark:focus:ring-white/20 outline-none text-sm"
     />
   )
 }
