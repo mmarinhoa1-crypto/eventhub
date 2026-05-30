@@ -42,7 +42,7 @@ const CATEGORIAS_ORDEM = [
 
 // Socios fixos que viram colunas em todas as planilhas. Outros sócios
 // (Desc, Barry, etc.) podem ser preenchidos manualmente pelo usuario.
-const SOCIOS_FIXOS = ['314', 'Alma', 'Balada'];
+const SOCIOS_FIXOS = ['314', 'Alma', 'Balada', 'Gustavo', 'Bar'];
 
 const SCOPES = [
   'https://www.googleapis.com/auth/drive',              // full Drive (necessario pra duplicar template existente do user)
@@ -199,13 +199,13 @@ function linhasReceitas(receitas) {
   return linhas;
 }
 
-// Cores reutilizadas no layout
-const COR_HEADER = { red: 0.13, green: 0.27, blue: 0.48 };       // azul escuro
-const COR_HEADER_TX = { red: 1, green: 1, blue: 1 };              // branco
-const COR_CATEGORIA = { red: 0.99, green: 0.91, blue: 0.62 };     // amarelo claro
-const COR_SUBTOTAL = { red: 0.87, green: 0.87, blue: 0.87 };      // cinza claro
-const COR_TOTAL = { red: 0.20, green: 0.40, blue: 0.20 };         // verde escuro
-const COR_RECEITA = { red: 0.78, green: 0.91, blue: 0.78 };       // verde claro
+// Cores fieis ao template Hungria Varginha
+const COR_CINZA = { red: 0.80, green: 0.80, blue: 0.80 };          // #cccccc
+const COR_LARANJA_CLARO = { red: 0.976, green: 0.796, blue: 0.608 };// #f9cb9b
+const COR_LARANJA_ESCURO = { red: 0.964, green: 0.694, blue: 0.416 };// #f6b16a
+const COR_VERDE_CLARO = { red: 0.827, green: 0.945, blue: 0.859 };  // #d3f1db
+const COR_BRANCO = { red: 1, green: 1, blue: 1 };
+const COR_PRETO = { red: 0, green: 0, blue: 0 };
 
 // Helper para converter indice 0-based em letra de coluna (0->A, 1->B, ...)
 function colLetter(idx) {
@@ -214,15 +214,25 @@ function colLetter(idx) {
   return s;
 }
 
-// Gera/regrava a aba "Financeiro" com layout formatado fiel ao template
-// Hungria Varginha (categorias agrupadas, sub-totais, socios em colunas,
-// bordero de receitas, resultado). Itens vem das despesas/receitas do
-// evento. Aplica cores, bold, formato moeda BRL e borders via batchUpdate.
+// Gera/regrava a aba "Financeiro" com layout fiel ao template Hungria
+// Varginha. Constantes de layout:
+//   colA = Descrição
+//   colB = Quantidade
+//   colC = Valor Uni
+//   colD = Valor Total
+//   colE..colI = sócios (314, Alma, Balada, Gustavo, Bar)
+//   colJ = FALTA PAGAR
+// Cores: cinza topo, laranja claro nos headers/subtotais, laranja escuro
+// nas linhas de categoria, verde claro na coluna FALTA PAGAR dos itens.
 async function gerarAbaFinanceiroFormatada(sheets, spreadsheetId, evento, despesas, receitas) {
-  const NCOLS = 4 + SOCIOS_FIXOS.length + 1; // Descricao, Qtd, Vlr Uni, Vlr Total, [socios], Falta Pagar
-  const colTotal = 3; // D
-  const colsSocio = SOCIOS_FIXOS.map((_, i) => 4 + i); // E, F, G
-  const colFalta = NCOLS - 1; // ultima
+  const NSOCIOS = SOCIOS_FIXOS.length;
+  const COL_DESC = 0;
+  const COL_QTD = 1;
+  const COL_VU = 2;
+  const COL_VT = 3;
+  const COL_SOCIO0 = 4;
+  const COL_FALTA = COL_SOCIO0 + NSOCIOS;
+  const NCOLS = COL_FALTA + 1;
 
   // Garante aba e pega sheetId
   const meta = await sheets.spreadsheets.get({ spreadsheetId });
@@ -236,7 +246,19 @@ async function gerarAbaFinanceiroFormatada(sheets, spreadsheetId, evento, despes
   }
   const sheetId = sheetInfo.properties.sheetId;
 
-  // Agrupa despesas por categoria (na ordem definida)
+  // Limpa formatacao + merges anteriores (evita acumulo entre re-syncs)
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId,
+    requestBody: {
+      requests: [
+        { unmergeCells: { range: { sheetId, startRowIndex: 0, endRowIndex: 300, startColumnIndex: 0, endColumnIndex: NCOLS + 2 } } },
+        { updateCells: { range: { sheetId, startRowIndex: 0, endRowIndex: 300, startColumnIndex: 0, endColumnIndex: NCOLS + 2 }, fields: 'userEnteredFormat' } },
+      ]
+    }
+  });
+  await sheets.spreadsheets.values.clear({ spreadsheetId, range: `${ABA_FINANCEIRO}!A:Z` });
+
+  // Agrupa despesas por categoria
   const grupos = {};
   for (const cat of CATEGORIAS_ORDEM) grupos[cat] = [];
   const semCategoria = [];
@@ -246,15 +268,10 @@ async function gerarAbaFinanceiroFormatada(sheets, spreadsheetId, evento, despes
   }
   if (semCategoria.length) grupos['Outros'] = grupos['Outros'].concat(semCategoria);
 
-  // Monta as linhas e rastreia ranges pra formatacao
   const rows = [];
-  const fmt = []; // requests de formatacao
-  const subtotaisD = []; // refs pra somar no VALOR TOTAL (col D)
-  const subtotaisSocios = {}; // {colIdx: [refs]}
-  for (const c of colsSocio) subtotaisSocios[c] = [];
-  const subtotaisFalta = [];
+  const fmt = [];
+  let cursor = 0;
 
-  // Helper pra registrar formatRequest
   function repeatCell(r0, r1, c0, c1, format) {
     fmt.push({
       repeatCell: {
@@ -264,52 +281,67 @@ async function gerarAbaFinanceiroFormatada(sheets, spreadsheetId, evento, despes
       }
     });
   }
+  function merge(r0, r1, c0, c1) {
+    fmt.push({ mergeCells: { range: { sheetId, startRowIndex: r0, endRowIndex: r1, startColumnIndex: c0, endColumnIndex: c1 }, mergeType: 'MERGE_ALL' } });
+  }
 
-  // ===== LINHA 1: titulo do evento =====
-  const titulo = String(evento.nome || `Evento ${evento.id}`).toUpperCase();
-  rows.push([titulo]);
-  // merge das colunas 0..NCOLS
-  fmt.push({
-    mergeCells: { range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: NCOLS }, mergeType: 'MERGE_ALL' }
-  });
+  // ===== Linha 1: TITULO (cinza) =====
+  rows.push([String(evento.nome || `Evento ${evento.id}`).toUpperCase()]);
+  merge(0, 1, 0, NCOLS);
   repeatCell(0, 1, 0, NCOLS, {
-    backgroundColor: COR_HEADER,
-    textFormat: { foregroundColor: COR_HEADER_TX, bold: true, fontSize: 14 },
+    backgroundColor: COR_CINZA,
+    textFormat: { bold: true, fontSize: 14 },
     horizontalAlignment: 'CENTER',
     verticalAlignment: 'MIDDLE'
   });
+  cursor++;
 
-  // ===== LINHA 2: vazio =====
+  // ===== Linha 2: vazia cinza =====
   rows.push([]);
+  repeatCell(1, 2, 0, NCOLS, { backgroundColor: COR_CINZA });
+  cursor++;
 
-  // ===== LINHA 3: header geral =====
-  const headerGeral = ['Descrição', 'Quantidade', 'Valor Uni', 'Valor Total'];
-  for (const s of SOCIOS_FIXOS) headerGeral.push(s);
-  headerGeral.push('FALTA PAGAR');
-  rows.push(headerGeral);
+  // ===== Linha 3: header geral (laranja claro) =====
+  // Descrição | Quantidade | Valor Uni | Valor Total | PAGAMENTOS (merge E-I) | FALTA PAGAR
+  const headerRow = new Array(NCOLS).fill('');
+  headerRow[COL_DESC] = 'Descrição';
+  headerRow[COL_QTD] = 'Quantidade';
+  headerRow[COL_VU] = 'Valor Uni';
+  headerRow[COL_VT] = 'Valor Total';
+  headerRow[COL_SOCIO0] = 'PAGAMENTOS';
+  headerRow[COL_FALTA] = 'FALTA PAGAR';
+  rows.push(headerRow);
+  merge(2, 3, COL_SOCIO0, COL_FALTA); // PAGAMENTOS ocupa E até I
   repeatCell(2, 3, 0, NCOLS, {
-    backgroundColor: COR_HEADER,
-    textFormat: { foregroundColor: COR_HEADER_TX, bold: true },
-    horizontalAlignment: 'CENTER'
+    backgroundColor: COR_LARANJA_CLARO,
+    textFormat: { bold: true },
+    horizontalAlignment: 'CENTER',
+    verticalAlignment: 'MIDDLE'
   });
+  cursor++;
 
-  let cursor = 3; // proxima linha (0-based: rows[3] sera a 4a linha visual)
+  // Rastreia subtotais pra somar no VALOR TOTAL geral
+  const subRefs = { D: [], socios: SOCIOS_FIXOS.map(() => []), falta: [] };
 
   // ===== POR CATEGORIA =====
   for (const cat of CATEGORIAS_ORDEM) {
     const itens = grupos[cat];
 
-    // Linha da categoria (cabecalho colorido)
+    // Linha da categoria (merge A:D + socios em E-I + FALTA PAGAR em J) - laranja escuro
     const catRow = new Array(NCOLS).fill('');
-    catRow[0] = cat;
+    catRow[COL_DESC] = cat;
+    for (let i = 0; i < NSOCIOS; i++) catRow[COL_SOCIO0 + i] = SOCIOS_FIXOS[i];
+    catRow[COL_FALTA] = 'FALTA PAGAR';
     rows.push(catRow);
+    merge(cursor, cursor + 1, COL_DESC, COL_SOCIO0); // merge A-D
     repeatCell(cursor, cursor + 1, 0, NCOLS, {
-      backgroundColor: COR_CATEGORIA,
-      textFormat: { bold: true, fontSize: 11 }
+      backgroundColor: COR_LARANJA_ESCURO,
+      textFormat: { bold: true },
+      horizontalAlignment: 'CENTER'
     });
     cursor++;
 
-    const startItens = cursor;
+    const startItens = cursor; // 0-based, linha que será a 1ª de itens
 
     // Itens
     for (const d of itens) {
@@ -318,56 +350,61 @@ async function gerarAbaFinanceiroFormatada(sheets, spreadsheetId, evento, despes
       const vt = Number(d.valor || 0);
       const falta = Number(d.falta_pagar || 0);
       const fonte = d.fonte_pagamento || '';
-      const linha = [d.descricao || '', qtd, vu, vt];
-      for (const s of SOCIOS_FIXOS) linha.push(fonte === s ? vt : '');
-      linha.push(falta);
+      const linha = new Array(NCOLS).fill('');
+      linha[COL_DESC] = d.descricao || '';
+      linha[COL_QTD] = qtd;
+      linha[COL_VU] = vu;
+      linha[COL_VT] = vt;
+      for (let i = 0; i < NSOCIOS; i++) {
+        linha[COL_SOCIO0 + i] = fonte === SOCIOS_FIXOS[i] ? vt : '';
+      }
+      linha[COL_FALTA] = falta;
       rows.push(linha);
-      cursor++;
-    }
-
-    // Linha em branco interna se categoria sem itens (mantém layout consistente)
-    if (itens.length === 0) {
-      rows.push(new Array(NCOLS).fill(''));
       cursor++;
     }
 
     const endItens = cursor; // exclusivo
 
-    // SUB TOTAL com formula SUM
-    const subRow = new Array(NCOLS).fill('');
-    subRow[0] = 'SUB TOTAL';
+    // Coluna J (FALTA PAGAR) das linhas de itens: fundo verde claro
     if (itens.length > 0) {
-      const c = colLetter(colTotal); // D
-      subRow[colTotal] = `=SUM(${c}${startItens + 1}:${c}${endItens})`;
-      for (const cs of colsSocio) {
-        const cl = colLetter(cs);
-        subRow[cs] = `=SUM(${cl}${startItens + 1}:${cl}${endItens})`;
+      repeatCell(startItens, endItens, COL_FALTA, COL_FALTA + 1, { backgroundColor: COR_VERDE_CLARO });
+    }
+
+    // SUB TOTAL (laranja claro)
+    const subRow = new Array(NCOLS).fill('');
+    subRow[COL_DESC] = 'SUB TOTAL';
+    if (itens.length > 0) {
+      subRow[COL_VT] = `=SUM(${colLetter(COL_VT)}${startItens + 1}:${colLetter(COL_VT)}${endItens})`;
+      for (let i = 0; i < NSOCIOS; i++) {
+        const col = colLetter(COL_SOCIO0 + i);
+        subRow[COL_SOCIO0 + i] = `=SUM(${col}${startItens + 1}:${col}${endItens})`;
       }
-      const cf = colLetter(colFalta);
-      subRow[colFalta] = `=SUM(${cf}${startItens + 1}:${cf}${endItens})`;
+      subRow[COL_FALTA] = `=SUM(${colLetter(COL_FALTA)}${startItens + 1}:${colLetter(COL_FALTA)}${endItens})`;
     }
     rows.push(subRow);
     repeatCell(cursor, cursor + 1, 0, NCOLS, {
-      backgroundColor: COR_SUBTOTAL,
+      backgroundColor: COR_LARANJA_CLARO,
       textFormat: { bold: true }
     });
-    // Rastreia subtotal pra somar no VALOR TOTAL
-    subtotaisD.push(`${colLetter(colTotal)}${cursor + 1}`);
-    for (const cs of colsSocio) subtotaisSocios[cs].push(`${colLetter(cs)}${cursor + 1}`);
-    subtotaisFalta.push(`${colLetter(colFalta)}${cursor + 1}`);
+    // Rastreia subtotal
+    subRefs.D.push(`${colLetter(COL_VT)}${cursor + 1}`);
+    for (let i = 0; i < NSOCIOS; i++) subRefs.socios[i].push(`${colLetter(COL_SOCIO0 + i)}${cursor + 1}`);
+    subRefs.falta.push(`${colLetter(COL_FALTA)}${cursor + 1}`);
     cursor++;
   }
 
-  // ===== VALOR TOTAL geral =====
+  // ===== VALOR TOTAL geral (laranja escuro) =====
   const totRow = new Array(NCOLS).fill('');
-  totRow[0] = 'VALOR TOTAL';
-  totRow[colTotal] = `=${subtotaisD.join('+')}`;
-  for (const cs of colsSocio) totRow[cs] = `=${subtotaisSocios[cs].join('+')}`;
-  totRow[colFalta] = `=${subtotaisFalta.join('+')}`;
+  totRow[COL_DESC] = 'VALOR TOTAL';
+  totRow[COL_VT] = `=${subRefs.D.join('+')}`;
+  for (let i = 0; i < NSOCIOS; i++) totRow[COL_SOCIO0 + i] = `=${subRefs.socios[i].join('+')}`;
+  totRow[COL_FALTA] = `=${subRefs.falta.join('+')}`;
   rows.push(totRow);
+  merge(cursor, cursor + 1, COL_DESC, COL_VT);
   repeatCell(cursor, cursor + 1, 0, NCOLS, {
-    backgroundColor: COR_TOTAL,
-    textFormat: { foregroundColor: COR_HEADER_TX, bold: true, fontSize: 12 }
+    backgroundColor: COR_LARANJA_ESCURO,
+    textFormat: { bold: true, fontSize: 12 },
+    horizontalAlignment: 'CENTER'
   });
   const linhaValorTotal = cursor + 1;
   cursor++;
@@ -375,81 +412,94 @@ async function gerarAbaFinanceiroFormatada(sheets, spreadsheetId, evento, despes
   // ===== Linhas em branco =====
   rows.push([]); rows.push([]); cursor += 2;
 
-  // ===== BORDERO DE RECEITAS =====
-  rows.push(['BORDERO DE RECEITAS']);
-  fmt.push({
-    mergeCells: { range: { sheetId, startRowIndex: cursor, endRowIndex: cursor + 1, startColumnIndex: 0, endColumnIndex: NCOLS }, mergeType: 'MERGE_ALL' }
-  });
+  // ===== BORDERO DE RECEITAS (cinza) =====
+  const bordRow = new Array(NCOLS).fill('');
+  bordRow[COL_DESC] = 'BORDERO DE RECEITAS';
+  rows.push(bordRow);
+  merge(cursor, cursor + 1, 0, NCOLS);
   repeatCell(cursor, cursor + 1, 0, NCOLS, {
-    backgroundColor: COR_HEADER,
-    textFormat: { foregroundColor: COR_HEADER_TX, bold: true, fontSize: 12 },
+    backgroundColor: COR_CINZA,
+    textFormat: { bold: true, fontSize: 12 },
     horizontalAlignment: 'CENTER'
   });
   cursor++;
 
-  // Header receitas
-  rows.push(['Descrição', '', '', 'Valor Total', 'Conta', '', '', '']);
+  // Header receitas (laranja claro)
+  const hRec = new Array(NCOLS).fill('');
+  hRec[COL_DESC] = 'Descrição';
+  hRec[COL_VT] = 'Valor Total';
+  hRec[COL_SOCIO0] = 'Conta';
+  rows.push(hRec);
   repeatCell(cursor, cursor + 1, 0, NCOLS, {
-    backgroundColor: COR_RECEITA,
+    backgroundColor: COR_LARANJA_CLARO,
     textFormat: { bold: true }
   });
   cursor++;
-  const startReceitas = cursor;
+  const startRec = cursor;
 
-  // Itens receitas
   for (const r of receitas) {
     const linha = new Array(NCOLS).fill('');
-    linha[0] = r.descricao || '';
-    linha[colTotal] = Number(r.valor || 0);
-    linha[4] = r.conta || '';
+    linha[COL_DESC] = r.descricao || '';
+    linha[COL_VT] = Number(r.valor || 0);
+    linha[COL_SOCIO0] = r.conta || '';
     rows.push(linha);
     cursor++;
   }
-  const endReceitas = cursor;
+  const endRec = cursor;
 
   // TOTAL DE RECEITA
   const totRecRow = new Array(NCOLS).fill('');
-  totRecRow[0] = 'TOTAL DE RECEITA';
+  totRecRow[COL_DESC] = 'TOTAL DE RECEITA';
   if (receitas.length > 0) {
-    const c = colLetter(colTotal);
-    totRecRow[colTotal] = `=SUM(${c}${startReceitas + 1}:${c}${endReceitas})`;
+    totRecRow[COL_VT] = `=SUM(${colLetter(COL_VT)}${startRec + 1}:${colLetter(COL_VT)}${endRec})`;
   }
   rows.push(totRecRow);
   repeatCell(cursor, cursor + 1, 0, NCOLS, {
-    backgroundColor: COR_SUBTOTAL,
+    backgroundColor: COR_LARANJA_CLARO,
     textFormat: { bold: true }
   });
   const linhaTotalReceita = cursor + 1;
   cursor++;
 
-  // Espaco
   rows.push([]); cursor++;
 
-  // ===== RESULTADO DO EVENTO =====
-  rows.push(['RESULTADO DO EVENTO']);
-  fmt.push({
-    mergeCells: { range: { sheetId, startRowIndex: cursor, endRowIndex: cursor + 1, startColumnIndex: 0, endColumnIndex: NCOLS }, mergeType: 'MERGE_ALL' }
-  });
+  // ===== RESULTADO DO EVENTO (cinza) =====
+  const resHeader = new Array(NCOLS).fill('');
+  resHeader[COL_DESC] = 'RESULTADO DO EVENTO';
+  rows.push(resHeader);
+  merge(cursor, cursor + 1, 0, NCOLS);
   repeatCell(cursor, cursor + 1, 0, NCOLS, {
-    backgroundColor: COR_HEADER,
-    textFormat: { foregroundColor: COR_HEADER_TX, bold: true, fontSize: 12 },
+    backgroundColor: COR_CINZA,
+    textFormat: { bold: true, fontSize: 12 },
     horizontalAlignment: 'CENTER'
   });
   cursor++;
 
-  rows.push(['Total de Receitas', '', '', `=${colLetter(colTotal)}${linhaTotalReceita}`]);
+  const rowReceita = new Array(NCOLS).fill('');
+  rowReceita[COL_DESC] = 'Total de Receitas';
+  rowReceita[COL_VT] = `=${colLetter(COL_VT)}${linhaTotalReceita}`;
+  rows.push(rowReceita);
   cursor++;
-  rows.push(['Total de Despesas', '', '', `=${colLetter(colTotal)}${linhaValorTotal}`]);
+  const linhaRowReceita = cursor;
+
+  const rowDespesa = new Array(NCOLS).fill('');
+  rowDespesa[COL_DESC] = 'Total de Despesas';
+  rowDespesa[COL_VT] = `=${colLetter(COL_VT)}${linhaValorTotal}`;
+  rows.push(rowDespesa);
   cursor++;
-  rows.push(['LUCRO / PREJUÍZO', '', '', `=${colLetter(colTotal)}${cursor - 1}-${colLetter(colTotal)}${cursor}`]);
+  const linhaRowDespesa = cursor;
+
+  const rowLucro = new Array(NCOLS).fill('');
+  rowLucro[COL_DESC] = 'LUCRO / PREJUÍZO';
+  rowLucro[COL_VT] = `=${colLetter(COL_VT)}${linhaRowReceita}-${colLetter(COL_VT)}${linhaRowDespesa}`;
+  rows.push(rowLucro);
   repeatCell(cursor, cursor + 1, 0, NCOLS, {
-    backgroundColor: COR_TOTAL,
-    textFormat: { foregroundColor: COR_HEADER_TX, bold: true, fontSize: 12 }
+    backgroundColor: COR_LARANJA_ESCURO,
+    textFormat: { bold: true, fontSize: 12 }
   });
   cursor++;
 
-  // Limpa tudo e escreve
-  await sheets.spreadsheets.values.clear({ spreadsheetId, range: `${ABA_FINANCEIRO}!A:Z` });
+  // Escreve valores
   await sheets.spreadsheets.values.update({
     spreadsheetId,
     range: `${ABA_FINANCEIRO}!A1`,
@@ -457,19 +507,22 @@ async function gerarAbaFinanceiroFormatada(sheets, spreadsheetId, evento, despes
     requestBody: { values: rows }
   });
 
-  // Limpa formatacao anterior antes de aplicar nova (evita acumulo de merges)
-  // Aplica formatacao
-  // Adiciona tambem: formato moeda BRL nas colunas de valor (Total + sócios + Falta)
-  const colsMoeda = [colTotal, ...colsSocio, colFalta];
+  // Formato moeda BRL nas colunas de valor — APENAS a partir da linha 4
+  // (linha 3 é header geral, linhas 1-2 são titulo, e essa formatacao em
+  // headers fazia o sócio "314" aparecer como "R$ 314,00").
+  const colsMoeda = [COL_VT];
+  for (let i = 0; i < NSOCIOS; i++) colsMoeda.push(COL_SOCIO0 + i);
+  colsMoeda.push(COL_FALTA);
   for (const c of colsMoeda) {
     fmt.push({
       repeatCell: {
-        range: { sheetId, startRowIndex: 1, endRowIndex: cursor, startColumnIndex: c, endColumnIndex: c + 1 },
+        range: { sheetId, startRowIndex: 4, endRowIndex: cursor, startColumnIndex: c, endColumnIndex: c + 1 },
         cell: { userEnteredFormat: { numberFormat: { type: 'CURRENCY', pattern: 'R$ #,##0.00' } } },
         fields: 'userEnteredFormat.numberFormat'
       }
     });
   }
+
   // Auto-resize colunas
   fmt.push({
     autoResizeDimensions: {
