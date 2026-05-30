@@ -1,13 +1,22 @@
 const express = require('express');
+const { sincronizarEventoBackground } = require('../utils/googleSheets');
 module.exports = function({ pool, ExcelJS, auth }) {
   const router = express.Router();
+
+// Helper: pega id_evento de um registro de despesa/receita (pra disparar sync no DELETE/PATCH)
+async function eventoDeDespesa(id) {
+  try { const r = await pool.query('SELECT id_evento FROM despesas WHERE id=$1', [id]); return r.rows[0]?.id_evento; } catch { return null; }
+}
+async function eventoDeReceita(id) {
+  try { const r = await pool.query('SELECT id_evento FROM receitas WHERE id=$1', [id]); return r.rows[0]?.id_evento; } catch { return null; }
+}
 
 // === DESPESAS ===
 router.get('/api/eventos/:id/despesas',auth,async(req,res)=>{try{
 const r=await pool.query('SELECT * FROM despesas WHERE id_evento=$1 AND org_id=$2 ORDER BY criado_em DESC',[req.params.id,req.user.org_id]);
 res.json(r.rows)}catch(e){res.status(500).json({erro:e.message})}});
 
-router.post("/api/eventos/:id/despesas",auth,async(req,res)=>{try{const{descricao,quantidade,valor_unitario,valor,centro_custo,fonte_pagamento,situacao,data,fornecedor,id_projecao}=req.body;if(!descricao&&!fornecedor)return res.status(400).json({erro:"Descricao obrigatoria"});const r=await pool.query("INSERT INTO despesas(id_evento,org_id,valor,quantidade,valor_unitario,fornecedor,data,descricao,centro_custo,fonte_pagamento,situacao,registrado_por,fonte,id_projecao) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *",[req.params.id,req.user.org_id,parseFloat(valor)||0,parseFloat(quantidade)||1,parseFloat(valor_unitario)||0,fornecedor||"",data||new Date().toISOString().split("T")[0],descricao||"",centro_custo||"Outros",fonte_pagamento||"",situacao||"pendente",req.user.nome||"manual","manual",id_projecao?parseInt(id_projecao):null]);res.json(r.rows[0])}catch(e){console.error(e);res.status(500).json({erro:e.message})}});
+router.post("/api/eventos/:id/despesas",auth,async(req,res)=>{try{const{descricao,quantidade,valor_unitario,valor,centro_custo,fonte_pagamento,situacao,data,fornecedor,id_projecao}=req.body;if(!descricao&&!fornecedor)return res.status(400).json({erro:"Descricao obrigatoria"});const r=await pool.query("INSERT INTO despesas(id_evento,org_id,valor,quantidade,valor_unitario,fornecedor,data,descricao,centro_custo,fonte_pagamento,situacao,registrado_por,fonte,id_projecao) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *",[req.params.id,req.user.org_id,parseFloat(valor)||0,parseFloat(quantidade)||1,parseFloat(valor_unitario)||0,fornecedor||"",data||new Date().toISOString().split("T")[0],descricao||"",centro_custo||"Outros",fonte_pagamento||"",situacao||"pendente",req.user.nome||"manual","manual",id_projecao?parseInt(id_projecao):null]);sincronizarEventoBackground(pool,parseInt(req.params.id));res.json(r.rows[0])}catch(e){console.error(e);res.status(500).json({erro:e.message})}});
 
 router.get('/api/eventos/:id/exportar',async(req,res)=>{try{
 const ev=await pool.query('SELECT * FROM eventos WHERE id=$1',[req.params.id]);
@@ -27,10 +36,13 @@ if(b.id_projecao!==undefined){f.push('id_projecao=$'+i);v.push(b.id_projecao?par
 if(!f.length)return res.status(400).json({erro:'Nada'});
 v.push(parseInt(req.params.id));v.push(req.user.org_id);
 const r=await pool.query('UPDATE despesas SET '+f.join(',')+' WHERE id=$'+i+' AND org_id=$'+(i+1)+' RETURNING *',v);
+if(r.rows[0]?.id_evento)sincronizarEventoBackground(pool,r.rows[0].id_evento);
 res.json(r.rows[0])}catch(e){res.status(500).json({erro:e.message})}});
 
 router.delete('/api/despesas/:id',auth,async(req,res)=>{try{
+const eid=await eventoDeDespesa(req.params.id);
 await pool.query('DELETE FROM despesas WHERE id=$1 AND org_id=$2',[req.params.id,req.user.org_id]);
+if(eid)sincronizarEventoBackground(pool,eid);
 res.json({sucesso:true})}catch(e){res.status(500).json({erro:e.message})}});
 
 // === RECEITAS ===
@@ -43,6 +55,7 @@ const{descricao,centro_custo,valor,situacao,conta,data_pagamento,id_projecao}=re
 if(!descricao||!valor)return res.status(400).json({erro:'Descricao e valor obrigatorios'});
 const r=await pool.query('INSERT INTO receitas(org_id,id_evento,descricao,centro_custo,valor,situacao,conta,data_pagamento,id_projecao) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *',
 [req.user.org_id,req.params.id,descricao,centro_custo||'Outro',parseFloat(valor)||0,situacao||'pendente',conta||'',data_pagamento||null,id_projecao?parseInt(id_projecao):null]);
+sincronizarEventoBackground(pool,parseInt(req.params.id));
 res.json(r.rows[0])}catch(e){res.status(500).json({erro:e.message})}});
 
 router.patch('/api/receitas/:id',auth,async(req,res)=>{try{
@@ -53,10 +66,13 @@ if(b.id_projecao!==undefined){f.push('id_projecao=$'+i);v.push(b.id_projecao?par
 if(!f.length)return res.status(400).json({erro:'Nada para atualizar'});
 v.push(parseInt(req.params.id));v.push(req.user.org_id);
 const r=await pool.query('UPDATE receitas SET '+f.join(',')+' WHERE id=$'+i+' AND org_id=$'+(i+1)+' RETURNING *',v);
+if(r.rows[0]?.id_evento)sincronizarEventoBackground(pool,r.rows[0].id_evento);
 res.json(r.rows[0])}catch(e){res.status(500).json({erro:e.message})}});
 
 router.delete('/api/receitas/:id',auth,async(req,res)=>{try{
+const eid=await eventoDeReceita(req.params.id);
 await pool.query('DELETE FROM receitas WHERE id=$1 AND org_id=$2',[req.params.id,req.user.org_id]);
+if(eid)sincronizarEventoBackground(pool,eid);
 res.json({sucesso:true})}catch(e){res.status(500).json({erro:e.message})}});
 
 // === RESUMO FINANCEIRO ===

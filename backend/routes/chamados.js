@@ -1,4 +1,5 @@
 const express = require('express');
+const { sincronizarEventoBackground } = require('../utils/googleSheets');
 module.exports = function({ pool, axios, auth, EVO, KEY, INST, CLAUDE }) {
   const router = express.Router();
 
@@ -217,6 +218,7 @@ await enviarGrupo(pendente.id_grupo,'\u2705 *Despesa registrada!*\n\n\u{1F4B0} *
 console.log('DESPESA #'+x.id+': R$'+x.valor+' | '+catFinal);
 }
 await pool.query("UPDATE comprovantes_pendentes SET status='confirmado',confirmed_at=NOW(),confirmed_ref_id=$1,confirmed_ref_type=$2 WHERE id=$3",[refId,refType,pendente.id]);
+sincronizarEventoBackground(pool,pendente.id_evento);
 return{id:refId,tipo:refType};
 }catch(e){console.error('Erro confirmar comprovante:',e.message);return null}}
 
@@ -285,6 +287,7 @@ const txt=r.data.content.map(b=>b.text||'').join('');const match=txt.match(/\{[\
 const p=JSON.parse(match[0]);if(!p.valor||p.valor===0)return;
 const ev=await pool.query('SELECT org_id FROM eventos WHERE id=$1',[idEvento]);if(!ev.rows.length)return;
 const desp=await pool.query('INSERT INTO despesas(id_evento,org_id,valor,fornecedor,data,descricao,centro_custo,registrado_por,fonte) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *',[idEvento,ev.rows[0].org_id,parseFloat(p.valor)||0,p.fornecedor||'N/I',p.data||new Date().toLocaleDateString('pt-BR'),p.descricao||texto.substring(0,100),p.centro_custo||'Outros',remetente,'texto']);
+sincronizarEventoBackground(pool,idEvento);
 const x=desp.rows[0];const evtR=await pool.query('SELECT nome,id_grupo FROM eventos WHERE id=$1',[idEvento]);
 const emo={Estrutura:'\u{1F3AA}',Artistico:'\u{1F3A4}',Seguranca:'\u{1F6E1}','Alimentacao/Bebidas':'\u{1F354}',Marketing:'\u{1F4E2}','Impostos/Taxas':'\u{1F4CB}','Equipe/Staff':'\u{1F465}',Outros:'\u{1F4E6}'};
 await enviarGrupo(evtR.rows[0].id_grupo,'\u2705 *Despesa registrada!*\n\n\u{1F4B0} *R$ '+parseFloat(x.valor).toLocaleString('pt-BR',{minimumFractionDigits:2})+'*\n\u{1F4C2} '+(emo[x.centro_custo]||'\u{1F4E6}')+' '+x.centro_custo+'\n\u{1F3E2} '+x.fornecedor+'\n\u{1F4DD} '+x.descricao+'\n\u{1F4C5} '+x.data+'\n\u{1F464} '+remetente+'\n\n_#'+x.id+' | '+evtR.rows[0].nome+'_');
@@ -428,6 +431,7 @@ await pool.query('DELETE FROM despesas WHERE id=$1 AND org_id=$2',[p.confirmed_r
 await pool.query('DELETE FROM receitas WHERE id=$1 AND org_id=$2',[p.confirmed_ref_id,p.org_id]);
 }
 await pool.query("UPDATE comprovantes_pendentes SET status='pendente',confirmed_at=NULL,confirmed_ref_id=NULL,confirmed_ref_type=NULL WHERE id=$1",[p.id]);
+sincronizarEventoBackground(pool,p.id_evento);
 await enviarGrupo(p.id_grupo,'\u21A9\uFE0F Registro desfeito. Comprovante voltou para pendente.');
 console.log('DESFAZER: comprovante #'+p.id);
 res.json({sucesso:true});

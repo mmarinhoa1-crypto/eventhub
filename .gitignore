@@ -4,6 +4,11 @@ node_modules/
 # Variáveis de ambiente
 .env
 
+# Credenciais / segredos (Google Service Account, etc)
+.secrets/
+**/.secrets/
+*.serviceaccount.json
+
 # IDE
 .vscode/
 

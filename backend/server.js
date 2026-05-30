@@ -32,6 +32,7 @@ app.use(require('./routes/marketing')({ pool, axios, auth, upload, CLAUDE }));
 app.use(require('./routes/equipe')({ pool, bcrypt, auth, EVO, KEY, INST_MARKETING }));
 app.use(require('./routes/organizacao')({ pool, axios, auth, EVO, KEY, INST_MARKETING }));
 app.use(require('./routes/financeiro')({ pool, ExcelJS, auth }));
+app.use(require('./routes/categorias')({ pool, auth }));
 app.use(require('./routes/vendas')({ pool, axios, auth }));
 app.use(require('./routes/consumo')({ pool, auth }));
 app.use(require('./routes/anuncios')({ pool, auth, CLAUDE }));

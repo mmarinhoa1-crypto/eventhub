@@ -126,7 +126,7 @@ res.send(csv)}catch(e){res.status(500).json({erro:e.message})}});
 router.patch('/api/eventos/:id',auth,async(req,res)=>{try{
 if(req.user.funcao!=='admin'&&req.user.funcao!=='diretor')return res.status(403).json({erro:'Sem permissao'});
 const b=req.body;const f=[];const v=[];let i=1;
-['nome','id_grupo','data_evento','hora_evento','hora_abertura','local_evento','cidade','descricao','publico_alvo','atracoes','tipo_evento','info_lotes','observacoes','data_abertura_vendas','hora_abertura_vendas','promo_abertura','pontos_venda','classificacao','instagram','designer','social_media','diretor','designer_id','social_media_id','diretor_id'].forEach(function(k){if(b[k]!==undefined){f.push(k+'=$'+i);v.push(b[k]);i++}});
+['nome','id_grupo','data_evento','hora_evento','hora_abertura','local_evento','cidade','descricao','publico_alvo','atracoes','tipo_evento','info_lotes','observacoes','data_abertura_vendas','hora_abertura_vendas','promo_abertura','pontos_venda','classificacao','instagram','designer','social_media','diretor','designer_id','social_media_id','diretor_id','google_sheet_id'].forEach(function(k){if(b[k]!==undefined){f.push(k+'=$'+i);v.push(b[k]);i++}});
 if(b.orcamento!==undefined){f.push('orcamento=$'+i);v.push(parseFloat(b.orcamento)||0);i++}
 if(b.capacidade!==undefined){f.push('capacidade=$'+i);v.push(parseInt(b.capacidade)||0);i++}
 if(!f.length)return res.status(400).json({erro:'Nada para atualizar'});

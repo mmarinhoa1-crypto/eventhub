@@ -61,6 +61,7 @@ export default function EditEventoModal({ open, onClose, evento, onUpdated }) {
         publico: evento.publico || '',
         tipo_local: evento.tipo_local || '',
         tipo_bar: evento.tipo_bar || '',
+        google_sheet_id: evento.google_sheet_id || '',
       })
     }
   }, [evento])
@@ -273,6 +274,25 @@ export default function EditEventoModal({ open, onClose, evento, onUpdated }) {
           <label className="block text-sm font-medium text-gray-700 mb-1">ID BaladaAPP (opcional)</label>
           <input type="number" value={form.baladapp_id} onChange={e => setForm({...form, baladapp_id: e.target.value})} placeholder="Ex: 8203" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
           <p className="text-xs text-gray-400 mt-1">ID do evento na BaladaAPP para sincronizar vendas</p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">📊 Google Sheets — ID/URL da planilha (opcional)</label>
+          <input
+            type="text"
+            value={form.google_sheet_id || ''}
+            onChange={(e) => {
+              // Aceita URL completa ou ID puro — extrai o ID se for URL.
+              const raw = e.target.value.trim()
+              const m = raw.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/)
+              set('google_sheet_id', m ? m[1] : raw)
+            }}
+            placeholder="Cole o link da planilha do Google (ou só o ID)"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+          />
+          <p className="text-xs text-gray-400 mt-1">
+            Quando preenchido, despesas e receitas deste evento são gravadas na aba <strong>"EventHub Dados"</strong> da planilha em tempo real.
+            A planilha precisa estar compartilhada com <code className="text-[10px]">eventhub-sync@eventhub-sync.iam.gserviceaccount.com</code> (Editor).
+          </p>
         </div>
         </form>
     </Modal>
