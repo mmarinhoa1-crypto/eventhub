@@ -286,19 +286,19 @@ function EventoSeletor({ eventos, eventoId, eventoNome, onSelect }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-[380px] bg-white border border-gray-200 rounded-2xl shadow-xl z-40 overflow-hidden">
-          <div className="p-3 border-b border-gray-100 space-y-2">
+        <div className="absolute right-0 mt-2 w-[380px] bg-white dark:bg-[#1c1c24] border border-gray-200 dark:border-white/[0.08] rounded-2xl shadow-xl z-40 overflow-hidden">
+          <div className="p-3 border-b border-gray-100 dark:border-white/[0.08] space-y-2">
             <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/40" />
               <input
                 autoFocus
                 value={busca}
                 onChange={e => setBusca(e.target.value)}
                 placeholder="Buscar evento..."
-                className="w-full pl-8 pr-8 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-blue-400"
+                className="w-full pl-8 pr-8 py-2 text-sm border border-gray-200 dark:border-white/[0.10] rounded-lg outline-none focus:border-blue-400 dark:bg-white/[0.04] dark:text-white/90 dark:placeholder-white/40"
               />
               {busca && (
-                <button onClick={() => setBusca('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <button onClick={() => setBusca('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-white/40 dark:hover:text-white/80">
                   <X size={14} />
                 </button>
               )}
@@ -313,16 +313,16 @@ function EventoSeletor({ eventos, eventoId, eventoNome, onSelect }) {
                   key={t.k}
                   onClick={() => setFiltro(t.k)}
                   className={'flex-1 px-2 py-1.5 rounded-lg text-xs font-semibold transition-colors ' +
-                    (filtro === t.k ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200')}
+                    (filtro === t.k ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-white/60 hover:bg-gray-200 dark:hover:bg-white/[0.10]')}
                 >
-                  {t.label} <span className={'ml-1 ' + (filtro === t.k ? 'opacity-80' : 'text-gray-400')}>({contagens[t.k]})</span>
+                  {t.label} <span className={'ml-1 ' + (filtro === t.k ? 'opacity-80' : 'text-gray-400 dark:text-white/40')}>({contagens[t.k]})</span>
                 </button>
               ))}
             </div>
           </div>
           <div className="max-h-[360px] overflow-y-auto">
             {filtrados.length === 0 ? (
-              <div className="py-8 text-center text-sm text-gray-400 italic">Nenhum evento encontrado</div>
+              <div className="py-8 text-center text-sm text-gray-400 dark:text-white/30 italic">Nenhum evento encontrado</div>
             ) : (
               filtrados.map(ev => {
                 const ativo = ev.id === eventoId
@@ -331,16 +331,16 @@ function EventoSeletor({ eventos, eventoId, eventoNome, onSelect }) {
                   <button
                     key={ev.id}
                     onClick={() => { onSelect(ev.id); setOpen(false); setBusca('') }}
-                    className={'w-full flex items-center justify-between gap-3 px-4 py-2.5 text-left hover:bg-blue-50 transition-colors border-b border-gray-50 last:border-0 ' +
-                      (ativo ? 'bg-blue-50' : '')}
+                    className={'w-full flex items-center justify-between gap-3 px-4 py-2.5 text-left hover:bg-blue-50 dark:hover:bg-white/[0.06] transition-colors border-b border-gray-50 dark:border-white/[0.04] last:border-0 ' +
+                      (ativo ? 'bg-blue-50 dark:bg-blue-500/15' : '')}
                   >
                     <div className="min-w-0 flex-1">
-                      <p className={'text-sm truncate ' + (ativo ? 'font-bold text-blue-700' : 'font-medium text-gray-800')}>{ev.nome}</p>
-                      {ev.cidade && <p className="text-[11px] text-gray-400 truncate">{ev.cidade}</p>}
+                      <p className={'text-sm truncate ' + (ativo ? 'font-bold text-blue-700 dark:text-blue-400' : 'font-medium text-gray-800 dark:text-white/85')}>{ev.nome}</p>
+                      {ev.cidade && <p className="text-[11px] text-gray-400 dark:text-white/40 truncate">{ev.cidade}</p>}
                     </div>
                     <div className="shrink-0 text-right">
-                      <p className={'text-xs font-medium ' + (passado ? 'text-gray-400' : 'text-gray-600')}>{ev.data_evento ? fmtData(ev.data_evento) : '—'}</p>
-                      {passado && <span className="text-[9px] text-gray-400 uppercase">passado</span>}
+                      <p className={'text-xs font-medium ' + (passado ? 'text-gray-400 dark:text-white/30' : 'text-gray-600 dark:text-white/70')}>{ev.data_evento ? fmtData(ev.data_evento) : '—'}</p>
+                      {passado && <span className="text-[9px] text-gray-400 dark:text-white/30 uppercase">passado</span>}
                     </div>
                   </button>
                 )
