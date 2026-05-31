@@ -40,8 +40,11 @@ const CATEGORIAS_ORDEM = [
   'Outros',
 ];
 
-// Socios fixos que viram colunas E-I em todas as planilhas (ordem importa)
-const SOCIOS_FIXOS = ['314', 'Alma', 'Balada', 'Gustavo', 'Bar'];
+// Socios FIXOS que aparecem em TODA planilha de evento (sempre essas 2 colunas).
+// Outros pagadores cadastrados no link do comprovante ("+ criar nova conta")
+// viram colunas EXTRAS por evento, adicionadas dinamicamente entre Alma e
+// FALTA PAGAR conforme aparecerem em despesas/receitas daquele evento.
+const SOCIOS_FIXOS = ['314', 'Alma'];
 
 // Layout FIXO do template Hungria Varginha. Cada categoria ocupa um bloco
 // de tamanho fixo (linha do titulo, N linhas de itens, linha de subtotal).
@@ -245,16 +248,20 @@ function colLetter(idx) {
 // coluna sao constantes — apenas dados (descrições, qtd, valor, sócio) sao
 // dinamicos. Categorias do template sem mapeamento no EventHub ficam visuais
 // mas vazias.
-async function gerarAbaFinanceiroFormatada(sheets, spreadsheetId, evento, despesas, receitas) {
+async function gerarAbaFinanceiroFormatada(sheets, spreadsheetId, evento, despesas, receitas, socios) {
+  // socios = [SOCIOS_FIXOS] + extras dinamicos do evento (passado por sincronizarEvento).
+  // Layout tem largura variavel: 4 colunas fixas (Desc, Qtd, VU, VT) + N socios + 1 FALTA PAGAR.
   // === COLUNAS ===
   const COL_DESC = 0, COL_QTD = 1, COL_VU = 2, COL_VT = 3;
-  const COL_SOCIO0 = 4;          // E = 314
-  const NSOCIOS = SOCIOS_FIXOS.length; // 5
-  const COL_FALTA = COL_SOCIO0 + NSOCIOS; // J = 9
-  const NCOLS = COL_FALTA + 1;   // 10
+  const COL_SOCIO0 = 4;
+  const NSOCIOS = socios.length;
+  const COL_FALTA = COL_SOCIO0 + NSOCIOS;
+  const NCOLS = COL_FALTA + 1;
 
-  // Larguras (chars do template * fator px aproximado)
-  const LARGURAS_PX = [255, 101, 104, 117, 121, 122, 104, 104, 155, 104];
+  // Larguras: 4 colunas iniciais + N socios (~120px cada) + FALTA PAGAR
+  const LARGURAS_PX = [255, 101, 104, 117];
+  for (let i = 0; i < NSOCIOS; i++) LARGURAS_PX.push(120);
+  LARGURAS_PX.push(104);
 
   // Garante aba e pega sheetId
   const meta = await sheets.spreadsheets.get({ spreadsheetId });
@@ -322,7 +329,7 @@ async function gerarAbaFinanceiroFormatada(sheets, spreadsheetId, evento, despes
 
   // Categorias e itens
   const subtotaisD = []; // refs pro VALOR TOTAL
-  const subtotaisSocios = SOCIOS_FIXOS.map(() => []);
+  const subtotaisSocios = socios.map(() => []);
   const subtotaisFalta = [];
 
   for (const cat of TEMPLATE_CATEGORIAS) {
@@ -334,7 +341,7 @@ async function gerarAbaFinanceiroFormatada(sheets, spreadsheetId, evento, despes
     // Linha do título (merge A:D)
     set(linhaCat, COL_DESC, cat.titulo);
     // Sócios e FALTA PAGAR repetidos na linha de categoria
-    for (let i = 0; i < NSOCIOS; i++) set(linhaCat, COL_SOCIO0 + i, SOCIOS_FIXOS[i]);
+    for (let i = 0; i < NSOCIOS; i++) set(linhaCat, COL_SOCIO0 + i, socios[i]);
     set(linhaCat, COL_FALTA, 'FALTA PAGAR');
 
     // Coleta despesas mapeadas pra essa categoria do template
@@ -364,12 +371,14 @@ async function gerarAbaFinanceiroFormatada(sheets, spreadsheetId, evento, despes
       set(linha, COL_VT, `=B${linha}*C${linha}`);
       // Sócio: coloca valor total na coluna do sócio se fonte bater
       for (let s = 0; s < NSOCIOS; s++) {
-        if (fonte === SOCIOS_FIXOS[s]) {
+        if (fonte === socios[s]) {
           set(linha, COL_SOCIO0 + s, `=D${linha}`);
         }
       }
-      // J = D - soma(E:I)
-      set(linha, COL_FALTA, `=D${linha}-(E${linha}+F${linha}+G${linha}+H${linha}+I${linha})`);
+      // J = D - soma(colunas de socios)
+      const fontesSomadas = [];
+      for (let s = 0; s < NSOCIOS; s++) fontesSomadas.push(`${L(COL_SOCIO0 + s)}${linha}`);
+      set(linha, COL_FALTA, `=D${linha}-(${fontesSomadas.join('+')})`);
     }
 
     // Linha do subtotal
@@ -398,7 +407,7 @@ async function gerarAbaFinanceiroFormatada(sheets, spreadsheetId, evento, despes
   // Header receitas linha 137 (merge A:C, D = VALOR TOTAL, E-I = sócios)
   set(LINHA_HEADER_REC, COL_DESC, 'DESCRIÇÃO');
   set(LINHA_HEADER_REC, COL_VT, 'VALOR TOTAL');
-  for (let i = 0; i < NSOCIOS; i++) set(LINHA_HEADER_REC, COL_SOCIO0 + i, SOCIOS_FIXOS[i]);
+  for (let i = 0; i < NSOCIOS; i++) set(LINHA_HEADER_REC, COL_SOCIO0 + i, socios[i]);
 
   // Receitas 138-142 (5 slots, com sócios igual despesas)
   const recsCabe = receitas.slice(0, LINHA_REC_FIM - LINHA_REC_INICIO + 1);
@@ -414,7 +423,7 @@ async function gerarAbaFinanceiroFormatada(sheets, spreadsheetId, evento, despes
     set(linha, COL_VT, vt);
     // Se a conta bater com algum sócio, marca o valor na coluna dele
     for (let s = 0; s < NSOCIOS; s++) {
-      if (conta === SOCIOS_FIXOS[s]) {
+      if (conta === socios[s]) {
         set(linha, COL_SOCIO0 + s, `=D${linha}`);
       }
     }
@@ -554,7 +563,7 @@ async function gerarAbaFinanceiroFormatada(sheets, spreadsheetId, evento, despes
   });
 
   // Formato moeda nas colunas D, E, F, G, H, I, J (linhas 5+ até 145)
-  const colsMoeda = [COL_VT, ...SOCIOS_FIXOS.map((_, i) => COL_SOCIO0 + i), COL_FALTA];
+  const colsMoeda = [COL_VT, ...socios.map((_, i) => COL_SOCIO0 + i), COL_FALTA];
   for (const c of colsMoeda) {
     reqs.push({
       repeatCell: {
@@ -658,9 +667,20 @@ async function sincronizarEvento(pool, eventoId) {
     requestBody: { values: linhasReceitas(receitas) },
   });
 
-  // Aba bonita formatada (layout fiel ao template)
+  // Calcula lista de socios: SOCIOS_FIXOS + extras unicos do evento (contas_evento
+  // + fontes de pagamento das despesas + contas das receitas, sem duplicar)
+  const contasEvtR = await pool.query('SELECT nome FROM contas_evento WHERE id_evento=$1', [eventoId]);
+  const fontesPag = [
+    ...contasEvtR.rows.map(c => (c.nome || '').trim()),
+    ...despesas.map(d => (d.fonte_pagamento || '').trim()),
+    ...receitas.map(r => (r.conta || '').trim()),
+  ].filter(Boolean);
+  const sociosExtras = [...new Set(fontesPag)].filter(s => !SOCIOS_FIXOS.includes(s));
+  const sociosTodos = [...SOCIOS_FIXOS, ...sociosExtras];
+
+  // Aba bonita formatada (layout fiel ao template, com socios dinamicos)
   try {
-    await gerarAbaFinanceiroFormatada(sheets, spreadsheetId, evento, despesas, receitas);
+    await gerarAbaFinanceiroFormatada(sheets, spreadsheetId, evento, despesas, receitas, sociosTodos);
   } catch (e) {
     // Nao bloqueia o sync se a parte visual falhar
     console.error(`[sheets] erro ao gerar aba ${ABA_FINANCEIRO} evento=${eventoId}:`, e.message);
