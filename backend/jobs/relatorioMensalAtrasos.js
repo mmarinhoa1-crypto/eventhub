@@ -24,12 +24,15 @@ function inicioDoProximoMes(d) {
   return `${proxY}-${pad2(proxM + 1)}-01 00:00:00`;
 }
 
-async function montarRelatorio(pool, orgId) {
-  const agora = new Date();
+// dataRef opcional: passe um Date qualquer e o relatorio refere-se ao MES
+// inteiro dessa data. Default = mes corrente. Usuarios marcados ativo=false
+// nao aparecem na listagem.
+async function montarRelatorio(pool, orgId, dataRef) {
+  const agora = dataRef instanceof Date ? dataRef : new Date();
   const inicio = inicioDoMes(agora);
   const fim = inicioDoProximoMes(agora);
 
-  // Conta atrasos por SM
+  // Conta atrasos por SM (apenas ativos)
   const sm = await pool.query(`
     SELECT u.id, u.nome,
       COUNT(n.id) FILTER (WHERE n.tipo_alerta = 'atraso') AS atrasos
@@ -42,12 +45,12 @@ async function montarRelatorio(pool, orgId) {
       AND n.org_id = u.org_id
       AND n.enviado_em >= $2
       AND n.enviado_em < $3
-    WHERE u.org_id = $1 AND u.funcao = 'social_media'
+    WHERE u.org_id = $1 AND u.funcao = 'social_media' AND COALESCE(u.ativo, true) = true
     GROUP BY u.id, u.nome
     ORDER BY atrasos DESC, u.nome
   `, [orgId, inicio, fim]);
 
-  // Conta atrasos por Designer
+  // Conta atrasos por Designer (apenas ativos)
   const ds = await pool.query(`
     SELECT u.id, u.nome,
       COUNT(n.id) FILTER (WHERE n.tipo_alerta = 'atraso') AS atrasos
@@ -60,7 +63,7 @@ async function montarRelatorio(pool, orgId) {
       AND n.org_id = u.org_id
       AND n.enviado_em >= $2
       AND n.enviado_em < $3
-    WHERE u.org_id = $1 AND u.funcao = 'designer'
+    WHERE u.org_id = $1 AND u.funcao = 'designer' AND COALESCE(u.ativo, true) = true
     GROUP BY u.id, u.nome
     ORDER BY atrasos DESC, u.nome
   `, [orgId, inicio, fim]);
