@@ -22,7 +22,8 @@ eventosIds=ev.rows.map(e=>e.id);
 if(!eventosIds.length)return res.json({briefings:[],posts:[],demandas:[],eventos:[]});
 
 // Todas as demandas (unificado: posts + briefings = mesma coisa)
-const demR=await pool.query('SELECT c.*,e.nome as evento_nome FROM cronograma_marketing c JOIN eventos e ON c.id_evento=e.id WHERE c.id_evento=ANY($1) AND c.org_id=$2 ORDER BY c.data_publicacao ASC NULLS LAST,c.hora_publicacao ASC',[eventosIds,orgId]);
+// uploads_count vem em subselect pra evitar 810 chamadas paralelas no frontend
+const demR=await pool.query('SELECT c.*,e.nome as evento_nome,(SELECT COUNT(*)::int FROM arquivos a WHERE a.cronograma_id=c.id AND a.org_id=c.org_id) AS uploads_count FROM cronograma_marketing c JOIN eventos e ON c.id_evento=e.id WHERE c.id_evento=ANY($1) AND c.org_id=$2 ORDER BY c.data_publicacao ASC NULLS LAST,c.hora_publicacao ASC',[eventosIds,orgId]);
 
 // Eventos do usuario
 const evR=await pool.query('SELECT id,nome,data_evento,cidade,instagram,designer_id,social_media_id FROM eventos WHERE id=ANY($1) ORDER BY data_evento',[eventosIds]);

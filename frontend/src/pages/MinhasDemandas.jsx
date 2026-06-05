@@ -220,11 +220,9 @@ export default function MinhasDemandas() {
     return () => clearInterval(interval)
   }, [])
 
-  useEffect(() => {
-    if (data.posts.length) {
-      data.posts.forEach(p => carregarCardArquivos('post', p.id))
-    }
-  }, [data.posts.length])
+  // NAO disparar carregarCardArquivos pra todos os posts no mount —
+  // backend ja retorna uploads_count em cada post via subselect.
+  // cardArquivos so eh carregado quando o card eh expandido (lazy).
 
   useEffect(() => {
     if (designerTab === 'materiais' && data.eventos.length > 0 && Object.keys(materiaisArquivos).length === 0) {
@@ -1110,7 +1108,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                     <div className="flex items-center justify-between text-[10px] text-gray-400 dark:text-white/40">
                                       <div className="flex items-center gap-1">
                                         <Paperclip size={10} />
-                                        <span className="font-semibold">Uploads: {(cardArquivos[d._tipo + '-' + d.id] || []).length}</span>
+                                        <span className="font-semibold">Uploads: {cardArquivos[d._tipo + '-' + d.id]?.length ?? d.uploads_count ?? 0}</span>
                                       </div>
                                       {horaCardExibida(d) && <span className="flex items-center gap-0.5 font-bold text-gray-500 dark:text-white/50"><Clock size={9} />{isDesigner && <span className="text-[9px] font-semibold mr-0.5">Horário de entrega:</span>}{horaCardExibida(d).slice(0,5)}</span>}
                                     </div>
@@ -1817,7 +1815,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                       <div className="flex items-center justify-between text-[10px] text-gray-400 dark:text-white/40">
                                         <div className="flex items-center gap-1">
                                           <Paperclip size={10} />
-                                          <span className="font-semibold">Uploads: {(cardArquivos[d._tipo + '-' + d.id] || []).length}</span>
+                                          <span className="font-semibold">Uploads: {cardArquivos[d._tipo + '-' + d.id]?.length ?? d.uploads_count ?? 0}</span>
                                         </div>
                                         {horaCardExibida(d) && <span className="flex items-center gap-0.5 font-bold text-gray-500 dark:text-white/50"><Clock size={9} />{isDesigner && <span className="text-[9px] font-semibold mr-0.5">Horário de entrega:</span>}{horaCardExibida(d).slice(0,5)}</span>}
                                       </div>
@@ -2126,7 +2124,7 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                   <div className="flex items-center justify-between text-[10px] text-gray-400 dark:text-white/40">
                                     <div className="flex items-center gap-1">
                                       <Paperclip size={10} />
-                                      <span className="font-semibold">Uploads: {(cardArquivos[d._tipo + '-' + d.id] || []).length}</span>
+                                      <span className="font-semibold">Uploads: {cardArquivos[d._tipo + '-' + d.id]?.length ?? d.uploads_count ?? 0}</span>
                                     </div>
                                     {horaCardExibida(d) && <span className="flex items-center gap-0.5 font-bold text-gray-500 dark:text-white/50"><Clock size={9} />{isDesigner && <span className="text-[9px] font-semibold mr-0.5">Horário de entrega:</span>}{horaCardExibida(d).slice(0,5)}</span>}
                                   </div>
