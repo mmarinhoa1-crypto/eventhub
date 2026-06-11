@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Calendar, Clock, CheckCircle, AlertCircle, FileText, Palette, Megaphone, ArrowRight, X as XIcon, Paperclip, ChevronLeft, ChevronRight, ChevronDown, Plus, FolderOpen, Download, Search, Copy } from 'lucide-react'
+import { Calendar, Clock, CheckCircle, AlertCircle, FileText, Palette, Megaphone, ArrowRight, X as XIcon, Paperclip, ChevronLeft, ChevronRight, ChevronDown, Plus, FolderOpen, Download, Search, Copy, MoreVertical, Pencil, Trash2 } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import api from '../api/client'
 import toast from 'react-hot-toast'
@@ -135,6 +135,8 @@ export default function MinhasDemandas() {
   const [dragOverDay, setDragOverDay] = useState(null)
   const [cardOrder, setCardOrder] = useState({})
   const [dragOverCard, setDragOverCard] = useState(null)
+  // Menu de acoes (3 pontinhos) do subcard: guarda a demanda e a posicao na tela
+  const [cardMenu, setCardMenu] = useState(null)
   const [tagsStore, setTagsStore] = useState({})
   const [novoPostForm, setNovoPostForm] = useState({ titulo: '', plataforma: 'Instagram', data_publicacao: '', hora_publicacao: '', hora_entrega: '', conteudo: '', tipo_conteudo: '', formato: '', descricao: '', referencia: '', musica: '', destino: 'social', status: 'pendente', collaborators: '', id_evento: '', etiquetas: [] })
   const [novoPostArquivos, setNovoPostArquivos] = useState([])
@@ -412,6 +414,31 @@ export default function MinhasDemandas() {
     } catch (err) {
       toast.error('Erro ao duplicar: ' + (err.response?.data?.erro || err.message))
     }
+  }
+
+  // Abre o modal de detalhe ja em modo edicao (usado pelo menu dos 3 pontinhos)
+  function iniciarEdicao(d) {
+    setDetalhe({...d})
+    carregarArquivosDetalhe(d._tipo, d.id)
+    carregarComentarios(d._tipo, d.id, false)
+    setEditMode(true)
+    setEditForm({
+      titulo: d.titulo||'', descricao: d.descricao||'', conteudo: d.conteudo||'',
+      referencia: d.referencia||'', musica: d.musica||'',
+      data_vencimento: d.data_vencimento||'', data_publicacao: d.data_publicacao||'',
+      hora_publicacao: d.hora_publicacao||'', hora_entrega: d.hora_entrega||'',
+      etiquetas: Array.isArray(d.etiquetas) ? d.etiquetas : [], is_impresso: !!d.is_impresso,
+      collaborators: d.collaborators||'', tipo_conteudo: d.tipo_conteudo||'', formato: d.formato||'',
+      plataforma: d.plataforma||'Instagram', status: d.status||'pendente',
+      id_evento: d.id_evento||'', aparecer_designer: !!d.aparecer_designer,
+    })
+  }
+
+  // Abre o menu de acoes do subcard ancorado abaixo/a esquerda do botao clicado
+  function abrirCardMenu(e, d) {
+    e.stopPropagation()
+    const r = e.currentTarget.getBoundingClientRect()
+    setCardMenu({ key: d._tipo + '-' + d.id, d, x: r.right, y: r.bottom })
   }
 
   async function adminSalvarEdicao() {
@@ -2136,9 +2163,21 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                                           : <span key={etKey} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-white/[0.08] text-gray-500 dark:text-white/50">🏷️ {etKey}</span>
                                       })}
                                     </div>
-                                    {tagConf && (
-                                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: tagConf.color + '20', color: tagConf.color }}>{tagConf.label}</span>
-                                    )}
+                                    <div className="flex items-center gap-1 flex-shrink-0">
+                                      {tagConf && (
+                                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: tagConf.color + '20', color: tagConf.color }}>{tagConf.label}</span>
+                                      )}
+                                      {isSocialMedia && (
+                                        <button
+                                          onClick={e => abrirCardMenu(e, d)}
+                                          onMouseDown={e => e.stopPropagation()}
+                                          draggable={false}
+                                          className="w-5 h-5 -mr-1 flex items-center justify-center rounded-md text-gray-400 dark:text-white/40 hover:bg-gray-100 dark:hover:bg-white/[0.10] hover:text-gray-600 dark:hover:text-white/70 transition"
+                                          title="Ações">
+                                          <MoreVertical size={14} />
+                                        </button>
+                                      )}
+                                    </div>
                                   </div>
                                   {alertaHora && <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-red-500 text-white animate-pulse"><Clock size={10} /><span className="text-[10px] font-bold">HORÁRIO PRÓXIMO</span></div>}
                                   <p className="text-sm font-semibold text-gray-900 dark:text-white/90 line-clamp-2 leading-snug">{d.titulo || 'Sem título'}</p>
@@ -2369,6 +2408,36 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
             </div>
           </div>
         </div>
+      )}
+
+      {/* ===== MENU DE ACOES DO SUBCARD (3 pontinhos) ===== */}
+      {cardMenu && (
+        <>
+          <div className="fixed inset-0 z-[70]" onClick={() => setCardMenu(null)} />
+          <div
+            className="fixed z-[71] w-40 py-1 rounded-xl shadow-2xl border overflow-hidden"
+            style={{
+              top: Math.min(cardMenu.y + 4, window.innerHeight - 140),
+              left: Math.max(8, cardMenu.x - 160),
+              backgroundColor: isDark ? '#1e1e2a' : '#ffffff',
+              borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <button onClick={() => { duplicarDemanda(cardMenu.d); setCardMenu(null) }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-white/80 hover:bg-gray-100 dark:hover:bg-white/[0.08] transition">
+              <Copy size={14} /> Duplicar
+            </button>
+            <button onClick={() => { iniciarEdicao(cardMenu.d); setCardMenu(null) }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-white/80 hover:bg-gray-100 dark:hover:bg-white/[0.08] transition">
+              <Pencil size={14} /> Editar
+            </button>
+            <button onClick={() => { const dd = cardMenu.d; setCardMenu(null); excluirDemanda(dd.id, () => {}) }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition">
+              <Trash2 size={14} /> Excluir
+            </button>
+          </div>
+        </>
       )}
 
       {/* ===== DETAIL MODAL (Designer/SocialMedia/Admin) ===== */}
