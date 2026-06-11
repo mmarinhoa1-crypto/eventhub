@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Calendar, Clock, CheckCircle, AlertCircle, FileText, Palette, Megaphone, ArrowRight, X as XIcon, Paperclip, ChevronLeft, ChevronRight, ChevronDown, Plus, FolderOpen, Download, Search } from 'lucide-react'
+import { Calendar, Clock, CheckCircle, AlertCircle, FileText, Palette, Megaphone, ArrowRight, X as XIcon, Paperclip, ChevronLeft, ChevronRight, ChevronDown, Plus, FolderOpen, Download, Search, Copy } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import api from '../api/client'
 import toast from 'react-hot-toast'
@@ -379,6 +379,39 @@ export default function MinhasDemandas() {
       fecharModal()
       carregar()
     } catch { toast.error('Erro ao excluir demanda') }
+  }
+
+  // Duplica uma demanda criando uma nova entrada no cronograma com os mesmos
+  // dados (mesmo evento, mesmo dia), status reiniciado para 'pendente' e titulo
+  // com sufixo ' (copia)'. Reusa o POST de cronograma; arquivos NAO sao copiados.
+  async function duplicarDemanda(d, fecharModal) {
+    try {
+      const payload = {
+        titulo: (d.titulo || 'Sem titulo') + ' (cópia)',
+        plataforma: d.plataforma || '',
+        data_publicacao: d.data_publicacao || '',
+        hora_publicacao: d.hora_publicacao || '',
+        hora_entrega: d.hora_entrega || null,
+        conteudo: d.conteudo || '',
+        hashtags: d.hashtags || '',
+        formato: d.formato || '',
+        tipo_conteudo: d.tipo_conteudo || '',
+        descricao: d.descricao || '',
+        referencia: d.referencia || '',
+        musica: d.musica || '',
+        collaborators: d.collaborators || '',
+        status: 'pendente',
+        aparecer_designer: !!d.aparecer_designer,
+        etiquetas: Array.isArray(d.etiquetas) ? d.etiquetas : [],
+        is_impresso: !!d.is_impresso,
+      }
+      await api.post('/eventos/' + d.id_evento + '/cronograma', payload)
+      toast.success('Demanda duplicada!')
+      if (fecharModal) fecharModal()
+      carregar()
+    } catch (err) {
+      toast.error('Erro ao duplicar: ' + (err.response?.data?.erro || err.message))
+    }
   }
 
   async function adminSalvarEdicao() {
@@ -2421,6 +2454,12 @@ const isDragTarget = dragOverDay === dayStr && draggedItem
                         }}
                         className="text-xs px-3.5 py-1.5 rounded-lg font-semibold bg-accent/10 text-accent hover:bg-accent/20 transition">
                         Editar
+                      </button>}
+                      {(isSocialMedia || isAdmin || isDiretor) && <button
+                        onClick={() => duplicarDemanda(d, () => setDetalhe(null))}
+                        title="Duplicar demanda"
+                        className="text-xs px-3.5 py-1.5 rounded-lg font-semibold bg-gray-100 dark:bg-white/[0.08] text-gray-600 dark:text-white/70 hover:bg-gray-200 dark:hover:bg-white/[0.12] transition flex items-center gap-1.5">
+                        <Copy size={13} /> Duplicar
                       </button>}
                       <button onClick={() => { setDetalhe(null); setEditMode(false); setEditForm({}) }}
                         className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-white/[0.08] flex items-center justify-center text-gray-400 dark:text-white/50 hover:text-gray-600 dark:hover:text-white/80 hover:bg-gray-200 dark:hover:bg-white/[0.12] transition">
