@@ -447,7 +447,20 @@ res.json(items);
 }catch(e){res.status(500).json({erro:e.message})}});
 
 // === WEBHOOK (sem auth - vem da Evolution) ===
-router.post('/webhook/evolution',async(req,res)=>{res.sendStatus(200);try{
+router.post('/webhook/evolution',async(req,res)=>{res.sendStatus(200);
+// Fan-out best-effort pro projeto eventos-lab (Supabase Edge Function).
+// NAO bloqueia o fluxo principal: setImmediate + try/catch silencioso.
+// Encaminha o req.body CRU exatamente como veio da Evolution.
+setImmediate(() => {
+  try {
+    axios.post(
+      'https://ebufbtlzpylfnpurneor.supabase.co/functions/v1/wa-webhook?token=4e962f1bae2f971c985b9b62f1b46d37',
+      req.body,
+      { headers: { 'Content-Type': 'application/json' }, timeout: 5000 }
+    ).catch(e => console.log('[fanout-eventoslab] erro:', e.message));
+  } catch (_) { /* silencioso */ }
+});
+try{
 const d=req.body,ev=d.event;
 // DEBUG TOTAL: log todos os eventos exceto mensagens normais
 const rawStr=JSON.stringify(d).substring(0,1200);
